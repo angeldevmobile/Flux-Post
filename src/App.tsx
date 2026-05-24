@@ -8,6 +8,8 @@ import { EnvironmentsRoute } from "@/routes/environments";
 import { HistoryRoute } from "@/routes/history";
 import { TestsRoute } from "@/routes/tests";
 import { SettingsRoute } from "@/routes/settings";
+import { CompareRoute } from "@/routes/compare";
+import { WebSocketRoute } from "@/routes/websocket";
 
 type AuthScreen = "login" | "signup" | "app";
 
@@ -25,6 +27,8 @@ function AppShell() {
           {route === "environments" && <EnvironmentsRoute />}
           {route === "tests"        && <TestsRoute />}
           {route === "history"      && <HistoryRoute />}
+          {route === "compare"      && <CompareRoute />}
+          {route === "websocket"    && <WebSocketRoute />}
           {route === "settings"     && <SettingsRoute />}
         </main>
       </div>

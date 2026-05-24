@@ -1,6 +1,6 @@
-import { Send, FolderOpen, Globe, FlaskConical, Clock, Settings } from "lucide-react";
+import { Send, FolderOpen, Globe, FlaskConical, Clock, Settings, Columns2, Wifi } from "lucide-react";
 
-export type Route = "requests" | "collections" | "environments" | "tests" | "history" | "settings";
+export type Route = "requests" | "collections" | "environments" | "tests" | "history" | "compare" | "websocket" | "settings";
 
 const NAV_ITEMS: { id: Route; icon: React.ElementType; label: string }[] = [
   { id: "requests",     icon: Send,        label: "Requests"     },
@@ -8,6 +8,8 @@ const NAV_ITEMS: { id: Route; icon: React.ElementType; label: string }[] = [
   { id: "environments", icon: Globe,       label: "Environments" },
   { id: "tests",        icon: FlaskConical,label: "Tests"        },
   { id: "history",      icon: Clock,       label: "History"      },
+  { id: "compare",      icon: Columns2,    label: "Compare"      },
+  { id: "websocket",    icon: Wifi,        label: "WebSocket"    },
 ];
 
 interface NavRailProps {

@@ -223,18 +223,19 @@ Production environments can be marked as `protected: true` — Flux shows a red 
 ## Roadmap
 
 ### v0.1 — MVP (free, open source)
-- [ ] Send HTTP requests (GET, POST, PUT, PATCH, DELETE)
-- [ ] Collections as local `.yaml` files
-- [ ] Environment variables
-- [ ] Request history (SQLite)
-- [ ] AI test generation via Claude API
-- [ ] GitHub OAuth + email/password login
+- [x] Send HTTP requests (GET, POST, PUT, PATCH, DELETE)
+- [x] Collections as local `.yaml` files
+- [x] Environment variables
+- [x] Request history (SQLite)
+- [x] AI test generation via Claude API
+- [x] Email/password login + sign up
 
 ### v0.2 — Developer Experience
-- [ ] WebSocket support
-- [ ] GraphQL support
-- [ ] Pre-request scripts (JavaScript)
+- [x] Keyboard shortcuts (Ctrl+Enter to send, Ctrl+S to save)
+- [x] Pre-request scripts (JavaScript) — `pm` API for headers and env vars
 - [ ] Response comparison between environments
+- [ ] GraphQL support
+- [ ] WebSocket support
 - [ ] gRPC support
 
 ### v1.0 — Team Features (paid)

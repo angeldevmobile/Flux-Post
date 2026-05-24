@@ -14,7 +14,11 @@ interface RequestStore {
   headers: KeyValue[];
   params: KeyValue[];
   body: string;
-  bodyType: "none" | "json" | "form" | "raw";
+  bodyType: "none" | "json" | "form" | "raw" | "graphql";
+  formFields: KeyValue[];
+  graphqlQuery: string;
+  graphqlVariables: string;
+  preRequestScript: string;
   response: HttpResponse | null;
   isLoading: boolean;
   error: string | null;
@@ -25,6 +29,10 @@ interface RequestStore {
   setParams: (params: KeyValue[]) => void;
   setBody: (body: string) => void;
   setBodyType: (type: RequestStore["bodyType"]) => void;
+  setFormFields: (fields: KeyValue[]) => void;
+  setGraphqlQuery: (query: string) => void;
+  setGraphqlVariables: (variables: string) => void;
+  setPreRequestScript: (script: string) => void;
   setResponse: (response: HttpResponse | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -39,6 +47,10 @@ const defaultState = {
   params: [],
   body: "",
   bodyType: "none" as const,
+  formFields: [] as KeyValue[],
+  graphqlQuery: "",
+  graphqlVariables: "",
+  preRequestScript: "",
   response: null,
   isLoading: false,
   error: null,
@@ -53,6 +65,10 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
   setParams: (params) => set({ params }),
   setBody: (body) => set({ body }),
   setBodyType: (bodyType) => set({ bodyType }),
+  setFormFields: (formFields) => set({ formFields }),
+  setGraphqlQuery: (graphqlQuery) => set({ graphqlQuery }),
+  setGraphqlVariables: (graphqlVariables) => set({ graphqlVariables }),
+  setPreRequestScript: (preRequestScript) => set({ preRequestScript }),
   setResponse: (response) => set({ response }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
@@ -69,12 +85,23 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
       const qs = enabledParams.map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`).join("&");
       url = url.includes("?") ? `${url}&${qs}` : `${url}?${qs}`;
     }
-    return {
-      method: s.method,
-      url,
-      headers,
-      body: s.bodyType !== "none" ? s.body : undefined,
-    };
+    let body: string | undefined;
+    if (s.bodyType === "form") {
+      const pairs = s.formFields
+        .filter(f => f.enabled && f.key)
+        .map(f => `${encodeURIComponent(f.key)}=${encodeURIComponent(f.value)}`);
+      body = pairs.join("&");
+      if (!headers["Content-Type"]) headers["Content-Type"] = "application/x-www-form-urlencoded";
+    } else if (s.bodyType === "graphql") {
+      let variables: unknown;
+      try { variables = JSON.parse(s.graphqlVariables); } catch { /* omit if invalid */ }
+      body = JSON.stringify({ query: s.graphqlQuery, ...(variables !== undefined ? { variables } : {}) });
+      if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+    } else if (s.bodyType !== "none") {
+      body = s.body;
+    }
+
+    return { method: s.method, url, headers, body };
   },
 
   reset: () => set(defaultState),

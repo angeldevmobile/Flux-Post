@@ -8,6 +8,7 @@ export interface CollectionRequest {
   path: string;
   headers?: Record<string, string>;
   body?: string;
+  tests?: { assert: string }[];
 }
 
 export interface Collection {

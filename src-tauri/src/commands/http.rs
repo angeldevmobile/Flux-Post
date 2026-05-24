@@ -10,6 +10,9 @@ pub struct HttpRequest {
     pub url: String,
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
+    pub timeout_ms: Option<u64>,
+    pub follow_redirects: Option<bool>,
+    pub ssl_verify: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -24,8 +27,18 @@ pub struct HttpResponse {
 
 #[tauri::command]
 pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> {
+    let ssl_verify = request.ssl_verify.unwrap_or(true);
+    let follow_redirects = request.follow_redirects.unwrap_or(true);
+
+    let redirect_policy = if follow_redirects {
+        reqwest::redirect::Policy::default()
+    } else {
+        reqwest::redirect::Policy::none()
+    };
+
     let client = Client::builder()
-        .danger_accept_invalid_certs(false)
+        .danger_accept_invalid_certs(!ssl_verify)
+        .redirect(redirect_policy)
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -41,6 +54,9 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
     let mut req = client.request(method, &request.url).headers(header_map);
     if let Some(body) = request.body {
         req = req.body(body);
+    }
+    if let Some(ms) = request.timeout_ms {
+        req = req.timeout(std::time::Duration::from_millis(ms));
     }
 
     let start = Instant::now();

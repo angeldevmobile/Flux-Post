@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Sparkles, Copy, Check, Timer } from "lucide-react";
+import { Sparkles, Copy, Check, Timer, Bug } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
-import { generateTests } from "@/lib/tauri";
+import { generateTests, debugAssist } from "@/lib/tauri";
 
 const STATUS_COLOR = (s: number) =>
   s >= 200 && s < 300 ? "#22C55E" : s >= 300 && s < 400 ? "#F59E0B" : "#EF4444";
@@ -23,6 +23,8 @@ export function ResponsePanel() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
 
+  const isError = response ? response.status >= 400 : false;
+
   async function handleGenerateTests() {
     if (!response) return;
     setAiLoading(true); setAiResult(null);
@@ -31,6 +33,21 @@ export function ResponsePanel() {
       const apiKey = localStorage.getItem("flux_claude_key") ?? "";
       setAiResult(await generateTests(
         { method: req.method, url: req.url, body: req.body },
+        { status: response.status, body: response.body },
+        apiKey,
+      ));
+    } catch (e) { setAiResult(`Error: ${e}`); }
+    finally { setAiLoading(false); }
+  }
+
+  async function handleDebugAssist() {
+    if (!response) return;
+    setAiLoading(true); setAiResult(null);
+    try {
+      const req = getRequest();
+      const apiKey = localStorage.getItem("flux_claude_key") ?? "";
+      setAiResult(await debugAssist(
+        { method: req.method, url: req.url, headers: req.headers, body: req.body },
         { status: response.status, body: response.body },
         apiKey,
       ));
@@ -124,27 +141,53 @@ export function ResponsePanel() {
         {tab === "Cookies" && <p className="text-[12px] text-[#71717A]">No cookies</p>}
       </div>
 
-      {/* AI Test Generator */}
-      <div className="shrink-0 flex flex-col gap-2 p-3" style={{ background: "#0F0A1A", borderTop: "1px solid #27272A" }}>
+      {/* AI Panel */}
+      <div className="shrink-0 flex flex-col gap-2 p-3"
+        style={{ background: isError ? "#150A0A" : "#0F0A1A", borderTop: "1px solid #27272A" }}>
         <div className="flex items-center gap-1.5">
-          <Sparkles size={14} className="text-[#A855F7]" />
-          <span className="flex-1 text-[12px] font-semibold text-[#E4E4E7]">AI Test Generator</span>
+          {isError
+            ? <Bug size={14} className="text-[#EF4444]" />
+            : <Sparkles size={14} className="text-[#A855F7]" />}
+          <span className="flex-1 text-[12px] font-semibold text-[#E4E4E7]">
+            {isError ? "AI Debug Assist" : "AI Test Generator"}
+          </span>
         </div>
-        <p className="text-[11px] text-[#71717A]">Generate assertions from this response automatically</p>
+        <p className="text-[11px] text-[#71717A]">
+          {isError
+            ? "Claude will explain the error and suggest fixes"
+            : "Generate assertions from this response automatically"}
+        </p>
         {aiResult && (
-          <pre className="text-[11px] rounded-lg p-2 overflow-x-auto"
-            style={{ background: "#1A0A2A", border: "1px solid #A855F730", color: "#C084FC", fontFamily: "Geist Mono, monospace" }}>
+          <pre className="text-[11px] rounded-lg p-2 overflow-x-auto whitespace-pre-wrap"
+            style={{
+              background: isError ? "#1A0A0A" : "#1A0A2A",
+              border: `1px solid ${isError ? "#EF444430" : "#A855F730"}`,
+              color: isError ? "#FCA5A5" : "#C084FC",
+              fontFamily: "Geist Mono, monospace",
+            }}>
             {aiResult}
           </pre>
         )}
-        <button
-          onClick={handleGenerateTests}
-          disabled={!response || aiLoading}
-          className="flex items-center justify-center gap-1.5 w-full rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-          style={{ height: 32, fontSize: 12, background: "#A855F7" }}>
-          <Sparkles size={13} />
-          {aiLoading ? "Generating..." : "Generate Tests"}
-        </button>
+        <div className="flex gap-2">
+          {isError && (
+            <button
+              onClick={handleDebugAssist}
+              disabled={!response || aiLoading}
+              className="flex items-center justify-center gap-1.5 flex-1 rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              style={{ height: 32, fontSize: 12, background: "#EF4444" }}>
+              <Bug size={13} />
+              {aiLoading ? "Analyzing..." : "Debug with AI"}
+            </button>
+          )}
+          <button
+            onClick={handleGenerateTests}
+            disabled={!response || aiLoading}
+            className="flex items-center justify-center gap-1.5 rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            style={{ height: 32, fontSize: 12, background: "#A855F7", flex: isError ? "0 0 auto" : 1, padding: "0 12px" }}>
+            <Sparkles size={13} />
+            {aiLoading ? "Generating..." : isError ? "Tests" : "Generate Tests"}
+          </button>
+        </div>
       </div>
     </div>
   );

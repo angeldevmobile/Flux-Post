@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info, ChevronDown, Upload, EyeOff, Download, History, LogOut, Trash2, TriangleAlert } from "lucide-react";
+import { useSettingsStore } from "@/stores/settings";
+import { clearHistory } from "@/lib/tauri";
 
 type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "privacy" | "about";
 
@@ -88,15 +90,24 @@ function ShortcutRow({ label, keys, last }: { label: string; keys: string[]; las
 /* ─── SECTIONS ─── */
 
 function GeneralSection() {
-  const [timeout, setTimeout_] = useState("30000");
-  const [followRedirects, setFollowRedirects] = useState(true);
-  const [sslVerify, setSslVerify] = useState(true);
+  const { timeoutMs, setTimeoutMs, followRedirects, setFollowRedirects, sslVerify, setSslVerify } = useSettingsStore();
+  const [timeoutInput, setTimeoutInput] = useState(String(timeoutMs));
+
+  function commitTimeout() {
+    const n = parseInt(timeoutInput, 10);
+    if (!isNaN(n) && n > 0) setTimeoutMs(n);
+    else setTimeoutInput(String(timeoutMs));
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <Card title="Request Defaults">
         <SettingRow label="Default Timeout" description="Time in ms before a request is cancelled">
-          <input value={timeout} onChange={e => setTimeout_(e.target.value)}
+          <input
+            value={timeoutInput}
+            onChange={e => setTimeoutInput(e.target.value)}
+            onBlur={commitTimeout}
+            onKeyDown={e => e.key === "Enter" && commitTimeout()}
             className="h-8 px-3 rounded-md text-[12px] text-right"
             style={{ background: "#141414", border: "1px solid #27272A", color: "#A1A1AA", width: 180, fontFamily: "Geist Mono, monospace" }} />
         </SettingRow>
@@ -118,15 +129,12 @@ const MODELS = [
 ];
 
 function AiSection() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("flux_claude_key") ?? "");
+  const { claudeApiKey, setClaudeApiKey, claudeModel, setClaudeModel } = useSettingsStore();
   const [showKey, setShowKey] = useState(false);
-  const [model, setModel] = useState("claude-sonnet-4-6");
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [debugAssist, setDebugAssist] = useState(true);
   const [autocomplete, setAutocomplete] = useState(false);
   const [nlSearch, setNlSearch] = useState(false);
-
-  function saveKey() { localStorage.setItem("flux_claude_key", apiKey); }
 
   return (
     <div className="flex flex-col gap-6">
@@ -137,12 +145,11 @@ function AiSection() {
             style={{ height: 36, width: 260, background: "#141414", border: "1px solid #27272A" }}>
             <input
               type={showKey ? "text" : "password"}
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              onBlur={saveKey}
+              value={claudeApiKey}
+              onChange={e => setClaudeApiKey(e.target.value)}
               placeholder="sk-ant-••••••••••••••••"
               className="flex-1 text-[12px] bg-transparent"
-              style={{ color: apiKey ? "#A1A1AA" : "#71717A", fontFamily: "Geist Mono, monospace" }}
+              style={{ color: claudeApiKey ? "#A1A1AA" : "#71717A", fontFamily: "Geist Mono, monospace" }}
             />
             <button onClick={() => setShowKey(v => !v)}>
               <EyeOff size={13} className="text-[#52525B]" />
@@ -156,11 +163,11 @@ function AiSection() {
           </div>
           <div className="flex flex-col gap-1.5" style={{ width: 260 }}>
             {MODELS.map(m => (
-              <button key={m.id} onClick={() => setModel(m.id)}
+              <button key={m.id} onClick={() => setClaudeModel(m.id)}
                 className="flex items-center gap-2 px-3 rounded-md transition-colors"
-                style={{ height: 36, background: model === m.id ? m.activeBg : "#141414", border: `1px solid ${model === m.id ? m.activeBorder : "#27272A"}` }}>
-                <div className="shrink-0 rounded-full" style={{ width: 14, height: 14, background: model === m.id ? m.dotColor : "#27272A", border: model === m.id ? "none" : "1px solid #3F3F46" }} />
-                <span className="flex-1 text-left text-[11px]" style={{ color: model === m.id ? "#E4E4E7" : "#71717A", fontFamily: "Geist Mono, monospace" }}>{m.label}</span>
+                style={{ height: 36, background: claudeModel === m.id ? m.activeBg : "#141414", border: `1px solid ${claudeModel === m.id ? m.activeBorder : "#27272A"}` }}>
+                <div className="shrink-0 rounded-full" style={{ width: 14, height: 14, background: claudeModel === m.id ? m.dotColor : "#27272A", border: claudeModel === m.id ? "none" : "1px solid #3F3F46" }} />
+                <span className="flex-1 text-left text-[11px]" style={{ color: claudeModel === m.id ? "#E4E4E7" : "#71717A", fontFamily: "Geist Mono, monospace" }}>{m.label}</span>
                 <div className="flex items-center px-1.5 rounded" style={{ height: 18, background: m.badgeBg }}>
                   <span className="text-[10px] font-medium" style={{ color: m.badgeColor }}>{m.badge}</span>
                 </div>
@@ -442,6 +449,12 @@ function PrivacySection() {
   const [perfMetrics, setPerfMetrics] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [lockOnSleep, setLockOnSleep] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  async function handleClearHistory() {
+    setClearing(true);
+    try { await clearHistory(); } finally { setClearing(false); }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -475,9 +488,11 @@ function PrivacySection() {
             <span className="text-[13px] font-medium text-[#E4E4E7]">Request history</span>
             <span className="text-[11px] text-[#71717A]">152 requests stored locally on this device</span>
           </div>
-          <button className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 shrink-0"
+          <button onClick={handleClearHistory} disabled={clearing}
+            className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40 shrink-0"
             style={{ height: 32, background: "#1A1A1A", border: "1px solid #27272A", color: "#A1A1AA" }}>
-            <History size={13} className="text-[#A1A1AA]" /> Clear history
+            <History size={13} className="text-[#A1A1AA]" />
+            {clearing ? "Clearing…" : "Clear history"}
           </button>
         </div>
         <SettingRow label="History retention" description="How long to keep request history on this device" last>
