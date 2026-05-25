@@ -2,11 +2,22 @@ import { invoke } from "@tauri-apps/api/core";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
+export interface MultipartField {
+  key: string;
+  value?: string;
+  fileBase64?: string;
+  fileName?: string;
+  mimeType?: string;
+  enabled: boolean;
+}
+
 export interface HttpRequest {
   method: HttpMethod;
   url: string;
   headers: Record<string, string>;
   body?: string;
+  bodyBase64?: string;
+  multipartFields?: MultipartField[];
   timeoutMs?: number;
   followRedirects?: boolean;
   sslVerify?: boolean;
@@ -22,6 +33,7 @@ export interface HttpResponse {
   body: string;
   durationMs: number;
   size: number;
+  bodyEncoding: "text" | "base64";
 }
 
 export interface HistoryEntry {
@@ -31,6 +43,7 @@ export interface HistoryEntry {
   status: number;
   durationMs: number;
   timestamp: string;
+  environment: string;
 }
 
 export async function sendRequest(request: HttpRequest): Promise<HttpResponse> {
@@ -49,9 +62,10 @@ export async function saveHistory(
   method: string,
   url: string,
   status: number,
-  durationMs: number
+  durationMs: number,
+  environment: string
 ): Promise<void> {
-  return invoke("save_history", { method, url, status, durationMs });
+  return invoke("save_history", { method, url, status, durationMs, environment });
 }
 
 export interface CollectionRequest {
@@ -64,11 +78,19 @@ export interface CollectionRequest {
   tests: { assert: string }[];
 }
 
+export interface CollectionFolder {
+  id: string;
+  name: string;
+  expanded: boolean;
+  requests: CollectionRequest[];
+}
+
 export interface Collection {
   id: string;
   name: string;
   baseUrl?: string;
   requests: CollectionRequest[];
+  folders: CollectionFolder[];
   expanded: boolean;
 }
 
@@ -80,6 +102,7 @@ export async function saveCollection(dir: string, collection: Collection): Promi
   return invoke("save_collection", { dir, collection });
 }
 
+
 export async function generateTests(
   request: { method: string; url: string; body?: string },
   response: { status: number; body: string },
@@ -87,6 +110,39 @@ export async function generateTests(
   model?: string,
 ): Promise<string> {
   return invoke("generate_tests", { request, response, apiKey, model: model ?? null });
+}
+
+export interface OAuthToken {
+  accessToken: string;
+  tokenType: string;
+  expiresIn?: number;
+  refreshToken?: string;
+  scope?: string;
+}
+
+export async function oauthAuthCode(params: {
+  clientId: string;
+  clientSecret?: string;
+  authUrl: string;
+  tokenUrl: string;
+  scopes: string;
+}): Promise<number> {
+  return invoke("oauth_auth_code", {
+    clientId: params.clientId,
+    clientSecret: params.clientSecret ?? null,
+    authUrl: params.authUrl,
+    tokenUrl: params.tokenUrl,
+    scopes: params.scopes,
+  });
+}
+
+export async function oauthClientCredentials(params: {
+  clientId: string;
+  clientSecret: string;
+  tokenUrl: string;
+  scopes: string;
+}): Promise<OAuthToken> {
+  return invoke("oauth_client_credentials", params);
 }
 
 export async function wsConnect(url: string): Promise<string> {
@@ -108,6 +164,52 @@ export async function debugAssist(
   model?: string,
 ): Promise<string> {
   return invoke("debug_assist", { request, response, apiKey, model: model ?? null });
+}
+
+export async function editContent(
+  content: string,
+  instruction: string,
+  language: string,
+  apiKey: string,
+  model?: string,
+): Promise<string> {
+  return invoke("edit_content", { content, instruction, language, apiKey, model: model ?? null });
+}
+
+export interface AssertionFix {
+  kind: "assertion" | "body" | "header";
+  value: string;
+  explanation: string;
+}
+
+export async function fixAssertion(
+  assertion: string,
+  actualStatus: number,
+  actualBody: string,
+  reqMethod: string,
+  reqUrl: string,
+  reqBody: string | undefined,
+  apiKey: string,
+  model?: string,
+): Promise<AssertionFix> {
+  return invoke("fix_assertion", {
+    assertion,
+    actualStatus,
+    actualBody,
+    reqMethod,
+    reqUrl,
+    reqBody: reqBody ?? null,
+    apiKey,
+    model: model ?? null,
+  });
+}
+
+export async function analyzeTestFailures(
+  failuresJson: string,
+  apiKey: string,
+  model?: string,
+): Promise<string> {
+  return invoke("analyze_test_failures", { failuresJson, apiKey, model: model ?? null });
 }
 
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {

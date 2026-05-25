@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use reqwest::{header::{HeaderMap, HeaderName, HeaderValue}, Client, Method, Proxy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -5,11 +6,25 @@ use std::str::FromStr;
 use std::time::Instant;
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MultipartField {
+    pub key: String,
+    pub value: Option<String>,
+    pub file_base64: Option<String>,
+    pub file_name: Option<String>,
+    pub mime_type: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HttpRequest {
     pub method: String,
     pub url: String,
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
+    pub body_base64: Option<String>,
+    pub multipart_fields: Option<Vec<MultipartField>>,
     pub timeout_ms: Option<u64>,
     pub follow_redirects: Option<bool>,
     pub ssl_verify: Option<bool>,
@@ -19,6 +34,7 @@ pub struct HttpRequest {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HttpResponse {
     pub status: u16,
     pub status_text: String,
@@ -26,6 +42,7 @@ pub struct HttpResponse {
     pub body: String,
     pub duration_ms: u64,
     pub size: usize,
+    pub body_encoding: String, // "text" | "base64"
 }
 
 #[tauri::command]
@@ -79,9 +96,35 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
     }
 
     let mut req = client.request(method, &request.url).headers(header_map);
-    if let Some(body) = request.body {
+
+    if let Some(fields) = request.multipart_fields {
+        let mut form = reqwest::multipart::Form::new();
+        for field in fields.into_iter().filter(|f| f.enabled && !f.key.is_empty()) {
+            if let Some(b64) = field.file_base64 {
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(&b64)
+                    .map_err(|e| e.to_string())?;
+                let file_name = field.file_name.unwrap_or_default();
+                let mime = field.mime_type.unwrap_or_else(|| "application/octet-stream".into());
+                let part = reqwest::multipart::Part::bytes(bytes)
+                    .file_name(file_name)
+                    .mime_str(&mime)
+                    .map_err(|e| e.to_string())?;
+                form = form.part(field.key, part);
+            } else if let Some(val) = field.value {
+                form = form.text(field.key, val);
+            }
+        }
+        req = req.multipart(form);
+    } else if let Some(b64) = request.body_base64 {
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(&b64)
+            .map_err(|e| e.to_string())?;
+        req = req.body(bytes);
+    } else if let Some(body) = request.body {
         req = req.body(body);
     }
+
     if let Some(ms) = request.timeout_ms {
         req = req.timeout(std::time::Duration::from_millis(ms));
     }
@@ -101,8 +144,26 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
         );
     }
 
-    let body = resp.text().await.map_err(|e| e.to_string())?;
-    let size = body.len();
+    let ct = resp_headers
+        .get("content-type")
+        .map(|s| s.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    let is_binary = ct.starts_with("image/")
+        || ct.contains("application/octet-stream")
+        || ct.contains("application/pdf");
+
+    let (body, body_encoding, size) = if is_binary {
+        let bytes = resp.bytes().await.map_err(|e| e.to_string())?;
+        let sz = bytes.len();
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        (b64, "base64".to_string(), sz)
+    } else {
+        let text = resp.text().await.map_err(|e| e.to_string())?;
+        let sz = text.len();
+        (text, "text".to_string(), sz)
+    };
 
     Ok(HttpResponse {
         status: status.as_u16(),
@@ -111,5 +172,6 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
         body,
         duration_ms,
         size,
+        body_encoding,
     })
 }

@@ -5,6 +5,7 @@ use std::sync::Mutex;
 pub struct Db(pub Mutex<Connection>);
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HistoryEntry {
     pub id: i64,
     pub method: String,
@@ -12,6 +13,7 @@ pub struct HistoryEntry {
     pub status: u16,
     pub duration_ms: u64,
     pub timestamp: String,
+    pub environment: String,
 }
 
 pub fn init_db(conn: &Connection) -> SqlResult<()> {
@@ -22,9 +24,13 @@ pub fn init_db(conn: &Connection) -> SqlResult<()> {
             url         TEXT NOT NULL,
             status      INTEGER NOT NULL,
             duration_ms INTEGER NOT NULL,
-            timestamp   TEXT NOT NULL DEFAULT (datetime('now'))
+            timestamp   TEXT NOT NULL DEFAULT (datetime('now')),
+            environment TEXT NOT NULL DEFAULT ''
         );",
-    )
+    )?;
+    // migration for existing DBs without the environment column
+    let _ = conn.execute_batch("ALTER TABLE history ADD COLUMN environment TEXT NOT NULL DEFAULT '';");
+    Ok(())
 }
 
 #[tauri::command]
@@ -34,11 +40,12 @@ pub fn save_history(
     url: String,
     status: u16,
     duration_ms: u64,
+    environment: String,
 ) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "INSERT INTO history (method, url, status, duration_ms) VALUES (?1, ?2, ?3, ?4)",
-        rusqlite::params![method, url, status, duration_ms],
+        "INSERT INTO history (method, url, status, duration_ms, environment) VALUES (?1, ?2, ?3, ?4, ?5)",
+        rusqlite::params![method, url, status, duration_ms, environment],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -48,7 +55,7 @@ pub fn save_history(
 pub fn get_history(db: tauri::State<Db>) -> Result<Vec<HistoryEntry>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
-        .prepare("SELECT id, method, url, status, duration_ms, timestamp FROM history ORDER BY id DESC LIMIT 200")
+        .prepare("SELECT id, method, url, status, duration_ms, timestamp, environment FROM history ORDER BY id DESC LIMIT 200")
         .map_err(|e| e.to_string())?;
 
     let entries = stmt
@@ -60,6 +67,7 @@ pub fn get_history(db: tauri::State<Db>) -> Result<Vec<HistoryEntry>, String> {
                 status: row.get(3)?,
                 duration_ms: row.get(4)?,
                 timestamp: row.get(5)?,
+                environment: row.get(6)?,
             })
         })
         .map_err(|e| e.to_string())?

@@ -24,11 +24,16 @@ pub fn run() {
             commands::history::clear_history,
             commands::ai::generate_tests,
             commands::ai::debug_assist,
+            commands::ai::edit_content,
+            commands::ai::fix_assertion,
+            commands::ai::analyze_test_failures,
             commands::collections::load_collections,
             commands::collections::save_collection,
             commands::websocket::ws_connect,
             commands::websocket::ws_send,
             commands::websocket::ws_disconnect,
+            commands::oauth::oauth_auth_code,
+            commands::oauth::oauth_client_credentials,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

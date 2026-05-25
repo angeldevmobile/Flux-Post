@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Play, ChevronDown, Loader2 } from "lucide-react";
+import { Play, ChevronDown, Loader2, Sparkles, X } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
-import { sendRequest } from "@/lib/tauri";
+import { sendRequest, analyzeTestFailures } from "@/lib/tauri";
+import { useSettingsStore } from "@/stores/settings";
 import { evaluateAssertion, buildContext, type AssertionResult, type TestResult } from "@/lib/testRunner";
 import type { HttpMethod } from "@/lib/tauri";
 
@@ -103,6 +104,7 @@ function RequestGroup({ result }: { result: TestResult }) {
 export function TestsRoute() {
   const { collections } = useCollectionsStore();
   const { resolveVariable } = useEnvironmentStore();
+  const { claudeApiKey, claudeModel } = useSettingsStore();
 
   const suites = useMemo(() =>
     collections.filter(c => c.requests.some(r => r.tests && r.tests.length > 0)),
@@ -112,6 +114,8 @@ export function TestsRoute() {
   const [activeId, setActiveId] = useState<string | null>(suites[0]?.id ?? null);
   const [results, setResults] = useState<Record<string, TestResult[]>>({});
   const [running, setRunning] = useState<Record<string, boolean>>({});
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
   const activeCollection = suites.find(c => c.id === activeId);
 
@@ -119,6 +123,7 @@ export function TestsRoute() {
     const col = suites.find(c => c.id === collectionId);
     if (!col) return;
 
+    setAnalysisResult(null);
     setRunning(r => ({ ...r, [collectionId]: true }));
     const suiteResults: TestResult[] = [];
 
@@ -161,6 +166,26 @@ export function TestsRoute() {
 
     setResults(r => ({ ...r, [collectionId]: suiteResults }));
     setRunning(r => ({ ...r, [collectionId]: false }));
+  }
+
+  async function handleAnalyze() {
+    if (!activeResults || !claudeApiKey) return;
+    const failures = activeResults.flatMap(r =>
+      r.assertions
+        .filter(a => !a.passed)
+        .map(a => ({ request: r.requestName, assertion: a.assertion, detail: a.detail ?? "" }))
+    );
+    if (failures.length === 0) return;
+    setAnalyzing(true);
+    setAnalysisResult(null);
+    try {
+      const result = await analyzeTestFailures(JSON.stringify(failures, null, 2), claudeApiKey, claudeModel);
+      setAnalysisResult(result);
+    } catch (e) {
+      setAnalysisResult(`Error: ${e}`);
+    } finally {
+      setAnalyzing(false);
+    }
   }
 
   const activeResults = activeId ? results[activeId] ?? null : null;
@@ -208,6 +233,7 @@ export function TestsRoute() {
       <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--color-bg)" }}>
         {activeCollection && (
           <>
+            {/* Header */}
             <div className="flex items-center gap-3 shrink-0 px-6" style={{ height: 56, borderBottom: "1px solid var(--color-border)" }}>
               <div className="flex flex-col gap-0.5 flex-1">
                 <h2 className="text-[16px] font-semibold" style={{ fontFamily: "Geist, Inter, sans-serif", color: "var(--color-fg)" }}>
@@ -230,6 +256,19 @@ export function TestsRoute() {
                     {totalFailed} Failed
                   </span>
                 </div>
+              )}
+
+              {/* Analyze failures button — visible when there are failures and API key is set */}
+              {activeResults && totalFailed > 0 && claudeApiKey && (
+                <button
+                  onClick={handleAnalyze}
+                  disabled={analyzing}
+                  className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0"
+                  style={{ height: 32, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)", color: "var(--color-accent)" }}>
+                  {analyzing
+                    ? <><Loader2 size={12} className="animate-spin" /> Analyzing…</>
+                    : <><Sparkles size={12} /> Analyze failures</>}
+                </button>
               )}
 
               <button
@@ -255,6 +294,25 @@ export function TestsRoute() {
                   <span className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>Running tests...</span>
                 </div>
               )}
+
+              {/* AI analysis result */}
+              {analysisResult && !isRunning && (
+                <div className="rounded-lg overflow-hidden shrink-0" style={{ border: "1px solid var(--color-accent-20)" }}>
+                  <div className="flex items-center gap-2 px-4" style={{ height: 36, background: "var(--color-accent-10)", borderBottom: "1px solid var(--color-accent-20)" }}>
+                    <Sparkles size={13} style={{ color: "var(--color-accent)" }} />
+                    <span className="flex-1 text-[12px] font-semibold" style={{ color: "var(--color-accent)" }}>AI Analysis</span>
+                    <button onClick={() => setAnalysisResult(null)} style={{ color: "var(--color-fg-4)" }} className="hover:opacity-60 transition-opacity">
+                      <X size={13} />
+                    </button>
+                  </div>
+                  <div className="px-4 py-3">
+                    <pre className="text-[12px] whitespace-pre-wrap" style={{ color: "var(--color-fg-2)", fontFamily: "Geist, Inter, sans-serif", lineHeight: 1.6 }}>
+                      {analysisResult}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
               {activeResults && !isRunning && activeResults.map(r => (
                 <RequestGroup key={r.requestId} result={r} />
               ))}

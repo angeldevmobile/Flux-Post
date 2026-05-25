@@ -22,6 +22,13 @@ struct YamlRequest {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+struct YamlFolder {
+    name: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    requests: Vec<YamlRequest>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct YamlCollection {
     name: String,
@@ -31,6 +38,8 @@ struct YamlCollection {
     base_url: Option<String>,
     #[serde(default)]
     requests: Vec<YamlRequest>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    folders: Vec<YamlFolder>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -52,12 +61,45 @@ pub struct RequestOut {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FolderOut {
+    pub id: String,
+    pub name: String,
+    pub expanded: bool,
+    pub requests: Vec<RequestOut>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CollectionOut {
     pub id: String,
     pub name: String,
     pub base_url: Option<String>,
     pub requests: Vec<RequestOut>,
+    pub folders: Vec<FolderOut>,
     pub expanded: bool,
+}
+
+fn yaml_req_to_out(r: YamlRequest, id: String) -> RequestOut {
+    RequestOut {
+        id,
+        name: r.name,
+        method: r.method,
+        path: r.path,
+        headers: r.headers,
+        body: r.body,
+        tests: r.tests.into_iter().map(|t| TestAssertion { assert: t.assert }).collect(),
+    }
+}
+
+fn out_to_yaml_req(r: RequestOut) -> YamlRequest {
+    YamlRequest {
+        name: r.name,
+        method: r.method,
+        path: r.path,
+        headers: r.headers,
+        body: r.body,
+        tests: r.tests.into_iter().map(|t| YamlTest { assert: t.assert }).collect(),
+    }
 }
 
 #[tauri::command]
@@ -79,27 +121,22 @@ pub fn load_collections(dir: String) -> Result<Vec<CollectionOut>, String> {
             let content = fs::read_to_string(&p).ok()?;
             let yaml: YamlCollection = serde_yaml::from_str(&content).ok()?;
             let id = p.file_stem()?.to_str()?.to_string();
-            let requests = yaml
-                .requests
-                .into_iter()
-                .enumerate()
-                .map(|(i, r)| RequestOut {
-                    id: format!("{}-{}", id, i),
-                    name: r.name,
-                    method: r.method,
-                    path: r.path,
-                    headers: r.headers,
-                    body: r.body,
-                    tests: r.tests.into_iter().map(|t| TestAssertion { assert: t.assert }).collect(),
+
+            let requests = yaml.requests.into_iter().enumerate()
+                .map(|(i, r)| yaml_req_to_out(r, format!("{}-{}", id, i)))
+                .collect();
+
+            let folders = yaml.folders.into_iter().enumerate()
+                .map(|(fi, f)| {
+                    let fid = format!("{}-f{}", id, fi);
+                    let freq = f.requests.into_iter().enumerate()
+                        .map(|(ri, r)| yaml_req_to_out(r, format!("{}-{}", fid, ri)))
+                        .collect();
+                    FolderOut { id: fid, name: f.name, expanded: true, requests: freq }
                 })
                 .collect();
-            Some(CollectionOut {
-                id,
-                name: yaml.name,
-                base_url: yaml.base_url,
-                requests,
-                expanded: true,
-            })
+
+            Some(CollectionOut { id, name: yaml.name, base_url: yaml.base_url, requests, folders, expanded: true })
         })
         .collect();
 
@@ -115,13 +152,10 @@ pub fn save_collection(dir: String, collection: CollectionOut) -> Result<(), Str
         name: collection.name,
         description: None,
         base_url: collection.base_url,
-        requests: collection.requests.into_iter().map(|r| YamlRequest {
-            name: r.name,
-            method: r.method,
-            path: r.path,
-            headers: r.headers,
-            body: r.body,
-            tests: r.tests.into_iter().map(|t| YamlTest { assert: t.assert }).collect(),
+        requests: collection.requests.into_iter().map(out_to_yaml_req).collect(),
+        folders: collection.folders.into_iter().map(|f| YamlFolder {
+            name: f.name,
+            requests: f.requests.into_iter().map(out_to_yaml_req).collect(),
         }).collect(),
     };
 

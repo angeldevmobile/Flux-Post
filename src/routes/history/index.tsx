@@ -1,35 +1,43 @@
 import { useState, useEffect } from "react";
-import { Search, RotateCcw } from "lucide-react";
-import { getHistory, clearHistory, type HistoryEntry } from "@/lib/tauri";
+import { Search, RotateCcw, Download } from "lucide-react";
+import { getHistory, clearHistory, exportDataAsJson, type HistoryEntry } from "@/lib/tauri";
 import { useRequestStore } from "@/stores/request";
 import { methodColor, methodBg } from "@/lib/methods";
+import { exportPostman } from "@/lib/exporters";
 import type { HttpMethod } from "@/lib/tauri";
-
-// Demo entries shown when history is empty
-const DEMO: HistoryEntry[] = [
-  { id: 1,  method: "POST",   url: "/auth/login",                    status: 200, durationMs: 124,  timestamp: "2 min ago"   },
-  { id: 2,  method: "GET",    url: "/users?page=1&limit=20",         status: 200, durationMs: 89,   timestamp: "5 min ago"   },
-  { id: 3,  method: "DELETE", url: "/users/usr_x9k2m",              status: 204, durationMs: 67,   timestamp: "12 min ago"  },
-  { id: 4,  method: "POST",   url: "/products",                      status: 422, durationMs: 201,  timestamp: "18 min ago"  },
-  { id: 5,  method: "GET",    url: "/products?category=electronics", status: 200, durationMs: 156,  timestamp: "24 min ago"  },
-  { id: 6,  method: "PUT",    url: "/users/usr_abc123",              status: 200, durationMs: 178,  timestamp: "31 min ago"  },
-  { id: 7,  method: "GET",    url: "/auth/me",                       status: 401, durationMs: 45,   timestamp: "45 min ago"  },
-  { id: 8,  method: "POST",   url: "/webhooks/test",                 status: 200, durationMs: 312,  timestamp: "1 hour ago"  },
-];
-
-const ENV_COLORS: Record<number, { color: string; name: string }> = {
-  1: { color: "#22C55E", name: "Development" },
-  2: { color: "#22C55E", name: "Development" },
-  3: { color: "#F59E0B", name: "Staging"     },
-  4: { color: "#22C55E", name: "Development" },
-  5: { color: "#22C55E", name: "Development" },
-  6: { color: "#F59E0B", name: "Staging"     },
-  7: { color: "#EF4444", name: "Production"  },
-  8: { color: "#3B82F6", name: "Local"       },
-};
 
 const STATUS_COLOR = (s: number) =>
   s >= 200 && s < 300 ? "#22C55E" : s >= 400 ? "#EF4444" : "#F59E0B";
+
+const ENV_PALETTE = [
+  "#22C55E", "#3B82F6", "#F59E0B", "#A855F7",
+  "#EC4899", "#14B8A6", "#F97316", "#6366F1",
+];
+
+function envColor(name: string): string {
+  if (!name) return "#71717A";
+  const n = name.toLowerCase();
+  if (n.includes("prod")) return "#EF4444";
+  if (n.includes("stag")) return "#F59E0B";
+  if (n.includes("dev"))  return "#22C55E";
+  if (n.includes("local")) return "#3B82F6";
+  // deterministic color from name hash
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return ENV_PALETTE[hash % ENV_PALETTE.length];
+}
+
+function EnvBadge({ name }: { name: string }) {
+  const color = envColor(name);
+  const label = name || "No env";
+  return (
+    <div className="flex items-center gap-1.5 px-2 rounded shrink-0"
+      style={{ height: 22, background: `${color}15`, border: `1px solid ${color}40` }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
+      <span className="text-[10px] font-medium truncate" style={{ color, maxWidth: 80 }}>{label}</span>
+    </div>
+  );
+}
 
 function MethodPill({ method }: { method: string }) {
   return (
@@ -64,11 +72,29 @@ export function HistoryRoute() {
 
   useEffect(() => {
     getHistory()
-      .then(h => setEntries(h.length ? h : DEMO))
-      .catch(() => setEntries(DEMO));
+      .then(h => setEntries(h))
+      .catch(() => setEntries([]));
   }, []);
 
   async function handleClear() { await clearHistory(); setEntries([]); }
+
+  function handleExport() {
+    const col = {
+      id: `history-${Date.now()}`,
+      name: "History Export",
+      requests: filtered.map((e, i) => ({
+        id: `hist-${i}`,
+        name: e.url,
+        method: e.method as HttpMethod,
+        path: e.url,
+        headers: {},
+        tests: [],
+      })),
+      folders: [],
+      expanded: true,
+    };
+    exportDataAsJson(JSON.parse(exportPostman(col)), "history-export.postman_collection.json");
+  }
 
   function handleReplay(e: HistoryEntry) {
     setMethod(e.method as HttpMethod);
@@ -94,6 +120,11 @@ export function HistoryRoute() {
             className="flex-1 text-[12px] bg-transparent"
             style={{ color: "var(--color-fg-2)" }} />
         </div>
+        <button onClick={handleExport} disabled={filtered.length === 0}
+          className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-medium transition-colors hover:opacity-80 disabled:opacity-40"
+          style={{ height: 32, color: "var(--color-fg-2)", background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+          <Download size={13} /> Export collection
+        </button>
         <button onClick={handleClear}
           className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-medium transition-colors hover:opacity-80"
           style={{ height: 32, color: "var(--color-fg-3)", background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
@@ -104,7 +135,6 @@ export function HistoryRoute() {
       {/* Rows */}
       <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-0.5">
         {filtered.map((entry, i) => {
-          const env = ENV_COLORS[entry.id] ?? { color: "#71717A", name: "Unknown" };
           const isAlt = i % 2 === 0;
           return (
             <div key={entry.id}
@@ -121,12 +151,7 @@ export function HistoryRoute() {
                 style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-4)", width: 50 }}>
                 {entry.durationMs}ms
               </span>
-              {/* Env badge */}
-              <div className="flex items-center gap-1 px-2 rounded shrink-0"
-                style={{ height: 20, background: "var(--color-card)" }}>
-                <span style={{ width: 5, height: 5, borderRadius: 3, background: env.color }} />
-                <span className="text-[10px]" style={{ color: "var(--color-fg-3)" }}>{env.name}</span>
-              </div>
+              <EnvBadge name={entry.environment} />
               <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-4)", width: 80 }}>
                 {entry.timestamp}
               </span>
@@ -138,8 +163,9 @@ export function HistoryRoute() {
           );
         })}
         {filtered.length === 0 && (
-          <div className="flex items-center justify-center flex-1 h-full">
-            <p className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>No history</p>
+          <div className="flex flex-col items-center justify-center flex-1 h-full gap-2">
+            <p className="text-[14px] font-medium" style={{ color: "var(--color-fg-3)" }}>No hay historial aún</p>
+            <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Los requests que envíes aparecerán aquí.</p>
           </div>
         )}
       </div>

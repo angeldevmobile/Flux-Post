@@ -1,12 +1,14 @@
 import { useState, useId, useRef, useEffect } from "react";
-import { Send, Plus, Trash2, ChevronDown, Bookmark } from "lucide-react";
+import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
-import { sendRequest, saveHistory, saveCollection } from "@/lib/tauri";
+import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
+import { sendRequest, saveHistory, saveCollection, editContent } from "@/lib/tauri";
 import { methodColor, methodBg } from "@/lib/methods";
 import type { HttpMethod } from "@/lib/tauri";
 import { useEnvironmentStore } from "@/stores/environment";
 import { useCollectionsStore } from "@/stores/collections";
-import { runPreRequestScript } from "@/lib/preRequest";
+import { runPreRequestScript, runPostResponseScript } from "@/lib/preRequest";
+import { useTestResultsStore } from "@/stores/testResults";
 import { useSettingsStore } from "@/stores/settings";
 import { CodeEditor } from "@/components/CodeEditor";
 
@@ -45,6 +47,10 @@ function SavePopover({ onClose }: { onClose: () => void }) {
           ...col.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })),
           { id: `${col.id}-${Date.now()}`, name, method, path: url, headers: enabledHeaders, body: body || undefined, tests: [] },
         ],
+        folders: col.folders.map(f => ({
+          ...f,
+          requests: f.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })),
+        })),
       };
       await saveCollection(dir, updated);
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
@@ -118,7 +124,293 @@ function MethodSelector() {
   );
 }
 
-type Tab = "Params" | "Headers" | "Body" | "Pre-req";
+type Tab = "Params" | "Headers" | "Auth" | "Body" | "Pre-req" | "Post-req";
+
+function AuthTab() {
+  const {
+    authType, setAuthType,
+    authBearer, setAuthBearer,
+    authBasicUser, setAuthBasicUser,
+    authBasicPass, setAuthBasicPass,
+    authApiKeyName, setAuthApiKeyName,
+    authApiKeyValue, setAuthApiKeyValue,
+    authApiKeyIn, setAuthApiKeyIn,
+    authOAuthGrantType, setAuthOAuthGrantType,
+    authOAuthClientId, setAuthOAuthClientId,
+    authOAuthClientSecret, setAuthOAuthClientSecret,
+    authOAuthAuthUrl, setAuthOAuthAuthUrl,
+    authOAuthTokenUrl, setAuthOAuthTokenUrl,
+    authOAuthScopes, setAuthOAuthScopes,
+    authOAuthToken, setAuthOAuthToken,
+    authOAuthTokenExpiry,
+    authAwsRegion, setAuthAwsRegion,
+    authAwsService, setAuthAwsService,
+    authAwsAccessKeyId, setAuthAwsAccessKeyId,
+    authAwsSecretAccessKey, setAuthAwsSecretAccessKey,
+    authAwsSessionToken, setAuthAwsSessionToken,
+  } = useRequestStore();
+
+  const [showBearer, setShowBearer] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showApiVal, setShowApiVal] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+  const [oauthStatus, setOauthStatus] = useState<"idle" | "waiting" | "error">("idle");
+  const [oauthError, setOauthError] = useState<string | null>(null);
+
+  // Listen for oauth events from Rust
+  useEffect(() => {
+    if (authType !== "oauth2") return;
+    let unToken: (() => void) | undefined;
+    let unError: (() => void) | undefined;
+    (async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      unToken = await listen<{ accessToken: string; expiresIn?: number }>("oauth-token", e => {
+        setAuthOAuthToken(e.payload.accessToken, e.payload.expiresIn);
+        setOauthStatus("idle");
+        setOauthError(null);
+      });
+      unError = await listen<string>("oauth-error", e => {
+        setOauthError(e.payload);
+        setOauthStatus("error");
+      });
+    })();
+    return () => { unToken?.(); unError?.(); };
+  }, [authType, setAuthOAuthToken]);
+
+  const [showAwsSecret, setShowAwsSecret] = useState(false);
+
+  const AUTH_TYPES: { type: AuthType; label: string }[] = [
+    { type: "none", label: "No Auth" },
+    { type: "bearer", label: "Bearer Token" },
+    { type: "basic", label: "Basic Auth" },
+    { type: "apikey", label: "API Key" },
+    { type: "oauth2", label: "OAuth 2.0" },
+    { type: "awssigv4", label: "AWS Sig V4" },
+  ];
+
+  const field = (label: string, node: React.ReactNode) => (
+    <div className="flex flex-col gap-1">
+      <label className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{label}</label>
+      {node}
+    </div>
+  );
+
+  const textInput = (value: string, onChange: (v: string) => void, placeholder: string) => (
+    <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      className="h-8 px-3 rounded text-[12px]"
+      style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg)", fontFamily: "Geist Mono, monospace" }} />
+  );
+
+  const secretInput = (value: string, onChange: (v: string) => void, placeholder: string, show: boolean, toggle: () => void) => (
+    <div className="flex items-center rounded overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-card)" }}>
+      <input type={show ? "text" : "password"} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="flex-1 px-3 h-8 text-[12px] bg-transparent"
+        style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }} />
+      <button onClick={toggle} className="px-2 shrink-0 transition-opacity hover:opacity-80" style={{ color: "var(--color-fg-3)" }}>
+        {show ? <EyeOff size={13} /> : <Eye size={13} />}
+      </button>
+    </div>
+  );
+
+  const hint = (text: React.ReactNode) => (
+    <p className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>{text}</p>
+  );
+
+  const mono = (s: string) => (
+    <span style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-3)" }}>{s}</span>
+  );
+
+  async function handleGetToken() {
+    const { oauthAuthCode, oauthClientCredentials } = await import("@/lib/tauri");
+    setOauthError(null);
+    if (authOAuthGrantType === "client_credentials") {
+      setOauthStatus("waiting");
+      try {
+        const token = await oauthClientCredentials({
+          clientId: authOAuthClientId,
+          clientSecret: authOAuthClientSecret,
+          tokenUrl: authOAuthTokenUrl,
+          scopes: authOAuthScopes,
+        });
+        setAuthOAuthToken(token.accessToken, token.expiresIn);
+        setOauthStatus("idle");
+      } catch (e) {
+        setOauthError(String(e));
+        setOauthStatus("error");
+      }
+    } else {
+      setOauthStatus("waiting");
+      try {
+        await oauthAuthCode({
+          clientId: authOAuthClientId,
+          clientSecret: authOAuthClientSecret || undefined,
+          authUrl: authOAuthAuthUrl,
+          tokenUrl: authOAuthTokenUrl,
+          scopes: authOAuthScopes,
+        });
+        // result comes via "oauth-token" event
+      } catch (e) {
+        setOauthError(String(e));
+        setOauthStatus("waiting"); // stay waiting — event listener handles success
+      }
+    }
+  }
+
+  const tokenExpiresLabel = authOAuthTokenExpiry
+    ? authOAuthTokenExpiry > Date.now()
+      ? `Expires in ${Math.round((authOAuthTokenExpiry - Date.now()) / 60000)}m`
+      : "Token expired"
+    : null;
+
+  return (
+    <div className="flex flex-col gap-3 h-full overflow-y-auto">
+      {/* Type selector */}
+      <div className="flex gap-1.5 flex-wrap">
+        {AUTH_TYPES.map(({ type, label }) => (
+          <button key={type} onClick={() => setAuthType(type)}
+            className="px-3 py-1 rounded text-[12px] transition-colors"
+            style={{
+              background: authType === type ? "var(--color-accent-20)" : "var(--color-card)",
+              color: authType === type ? "var(--color-accent)" : "var(--color-fg-3)",
+              border: `1px solid ${authType === type ? "var(--color-accent-50)" : "var(--color-border)"}`,
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {authType === "none" && hint("This request has no authentication. Select a type above to configure credentials.")}
+
+      {authType === "bearer" && (
+        <>
+          {field("Token", secretInput(authBearer, setAuthBearer, "Enter token...", showBearer, () => setShowBearer(v => !v)))}
+          {hint(<>Sends as: {mono("Authorization: Bearer <token>")}</>)}
+        </>
+      )}
+
+      {authType === "basic" && (
+        <>
+          {field("Username", textInput(authBasicUser, setAuthBasicUser, "username"))}
+          {field("Password", secretInput(authBasicPass, setAuthBasicPass, "password", showPass, () => setShowPass(v => !v)))}
+          {hint(<>Sends as: {mono("Authorization: Basic <base64(user:pass)>")}</>)}
+        </>
+      )}
+
+      {authType === "apikey" && (
+        <>
+          <div className="flex gap-2 items-end">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Key name</label>
+              {textInput(authApiKeyName, setAuthApiKeyName, "X-API-Key")}
+            </div>
+            <div className="flex flex-col gap-1 shrink-0">
+              <label className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Add to</label>
+              <div className="flex rounded overflow-hidden h-8" style={{ border: "1px solid var(--color-border)" }}>
+                {(["header", "query"] as ApiKeyTarget[]).map(t => (
+                  <button key={t} onClick={() => setAuthApiKeyIn(t)}
+                    className="px-3 text-[12px] capitalize transition-colors"
+                    style={{
+                      background: authApiKeyIn === t ? "var(--color-accent)" : "var(--color-card)",
+                      color: authApiKeyIn === t ? "#fff" : "var(--color-fg-3)",
+                    }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {field("Value", secretInput(authApiKeyValue, setAuthApiKeyValue, "api-key-value", showApiVal, () => setShowApiVal(v => !v)))}
+          {hint(<>Adds {mono(authApiKeyName || "key")} to {authApiKeyIn === "header" ? "request headers" : "query string"}</>)}
+        </>
+      )}
+
+      {authType === "oauth2" && (
+        <>
+          {/* Grant type toggle */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Grant type</label>
+            <div className="flex rounded overflow-hidden h-8" style={{ border: "1px solid var(--color-border)", width: "fit-content" }}>
+              {([
+                { v: "authorization_code", label: "Auth Code + PKCE" },
+                { v: "client_credentials", label: "Client Credentials" },
+              ] as { v: OAuthGrantType; label: string }[]).map(({ v, label }) => (
+                <button key={v} onClick={() => setAuthOAuthGrantType(v)}
+                  className="px-3 text-[12px] transition-colors"
+                  style={{
+                    background: authOAuthGrantType === v ? "var(--color-accent)" : "var(--color-card)",
+                    color: authOAuthGrantType === v ? "#fff" : "var(--color-fg-3)",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {field("Client ID", textInput(authOAuthClientId, setAuthOAuthClientId, "your-client-id"))}
+          {field("Client Secret", secretInput(authOAuthClientSecret, setAuthOAuthClientSecret, "your-client-secret", showSecret, () => setShowSecret(v => !v)))}
+          {authOAuthGrantType === "authorization_code" && field("Auth URL", textInput(authOAuthAuthUrl, setAuthOAuthAuthUrl, "https://provider.com/oauth/authorize"))}
+          {field("Token URL", textInput(authOAuthTokenUrl, setAuthOAuthTokenUrl, "https://provider.com/oauth/token"))}
+          {field("Scopes", textInput(authOAuthScopes, setAuthOAuthScopes, "read write"))}
+
+          {/* Token status + Get Token button */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={handleGetToken}
+              disabled={oauthStatus === "waiting" || !authOAuthClientId || !authOAuthTokenUrl}
+              className="flex items-center gap-1.5 px-4 rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              style={{ height: 32, fontSize: 12, background: "var(--color-accent)" }}>
+              {oauthStatus === "waiting" ? <span className="animate-spin text-[14px]">⟳</span> : null}
+              {oauthStatus === "waiting"
+                ? authOAuthGrantType === "authorization_code" ? "Waiting for browser..." : "Getting token..."
+                : authOAuthToken ? "Refresh Token" : "Get New Token"}
+            </button>
+            {authOAuthToken && oauthStatus !== "waiting" && (
+              <span className="text-[11px]" style={{ color: tokenExpiresLabel?.includes("expired") ? "#EF4444" : "#22C55E" }}>
+                {tokenExpiresLabel ?? "Token acquired"}
+              </span>
+            )}
+          </div>
+
+          {oauthError && (
+            <div className="rounded-lg px-3 py-2 text-[11px]" style={{ background: "#EF444415", border: "1px solid #EF444430", color: "#EF4444" }}>
+              {oauthError}
+            </div>
+          )}
+
+          {authOAuthToken && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Current token</label>
+              <div className="flex items-center rounded overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-card)" }}>
+                <span className="flex-1 px-3 py-1.5 text-[11px] truncate" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-3)" }}>
+                  {authOAuthToken.slice(0, 40)}…
+                </span>
+                <button onClick={() => navigator.clipboard.writeText(authOAuthToken)}
+                  className="px-2 shrink-0 text-[11px] transition-opacity hover:opacity-80"
+                  style={{ color: "var(--color-fg-3)" }}>
+                  Copy
+                </button>
+              </div>
+              {hint(<>Added to requests as: {mono("Authorization: Bearer <token>")}</>)}
+            </div>
+          )}
+        </>
+      )}
+
+      {authType === "awssigv4" && (
+        <>
+          <div className="flex gap-2">
+            {field("Region", textInput(authAwsRegion, setAuthAwsRegion, "us-east-1"))}
+            {field("Service", textInput(authAwsService, setAuthAwsService, "execute-api"))}
+          </div>
+          {field("Access Key ID", textInput(authAwsAccessKeyId, setAuthAwsAccessKeyId, "AKIAIOSFODNN7EXAMPLE"))}
+          {field("Secret Access Key", secretInput(authAwsSecretAccessKey, setAuthAwsSecretAccessKey, "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", showAwsSecret, () => setShowAwsSecret(v => !v)))}
+          {field("Session Token (optional)", textInput(authAwsSessionToken, setAuthAwsSessionToken, ""))}
+          {hint("Signing is computed per-request using AWS SigV4. Headers are added automatically.")}
+        </>
+      )}
+    </div>
+  );
+}
 
 function KeyValueEditor({ label }: { label: string }) {
   const { headers, setHeaders, params, setParams, formFields, setFormFields } = useRequestStore();
@@ -135,14 +427,14 @@ function KeyValueEditor({ label }: { label: string }) {
     <div className="flex flex-col gap-1.5 h-full overflow-y-auto">
       {items.map(item => (
         <div key={item.id} className="flex items-center gap-2">
-          <input type="checkbox" checked={item.enabled} onChange={() => toggleRow(item.id)} className="accent-[#A855F7] shrink-0" />
+          <input type="checkbox" checked={item.enabled} onChange={() => toggleRow(item.id)} className="accent-accent shrink-0" />
           <input value={item.key} onChange={e => updateRow(item.id, "key", e.target.value)} placeholder="Key"
             className="flex-1 h-7 px-2 rounded text-[12px]"
             style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }} />
           <input value={item.value} onChange={e => updateRow(item.id, "value", e.target.value)} placeholder="Value"
             className="flex-1 h-7 px-2 rounded text-[12px]"
             style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }} />
-          <button onClick={() => removeRow(item.id)} style={{ color: "var(--color-fg-3)" }} className="hover:text-[#EF4444] transition-colors"><Trash2 size={12} /></button>
+          <button onClick={() => removeRow(item.id)} style={{ color: "var(--color-fg-3)" }} className="hover:text-red transition-colors"><Trash2 size={12} /></button>
         </div>
       ))}
       <button onClick={addRow} className="flex items-center gap-1.5 text-[12px] mt-1 self-start transition-colors" style={{ color: "var(--color-fg-3)" }}>
@@ -152,10 +444,126 @@ function KeyValueEditor({ label }: { label: string }) {
   );
 }
 
+async function readFileAsBase64(file: File): Promise<{ base64: string; name: string; type: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve({ base64: result.split(",")[1] ?? "", name: file.name, type: file.type || "application/octet-stream" });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function MultipartEditor() {
+  const { multipartItems, setMultipartItems } = useRequestStore();
+  const uid = useId();
+
+  function addText() {
+    setMultipartItems([...multipartItems, { id: `${uid}-${Date.now()}`, key: "", enabled: true, isFile: false, value: "", fileBase64: "", fileName: "", mimeType: "" }]);
+  }
+  function addFile() {
+    setMultipartItems([...multipartItems, { id: `${uid}-${Date.now()}`, key: "", enabled: true, isFile: true, value: "", fileBase64: "", fileName: "", mimeType: "" }]);
+  }
+  function remove(id: string) { setMultipartItems(multipartItems.filter(i => i.id !== id)); }
+  function update<K extends keyof (typeof multipartItems)[0]>(id: string, key: K, value: (typeof multipartItems)[0][K]) {
+    setMultipartItems(multipartItems.map(i => i.id === id ? { ...i, [key]: value } : i));
+  }
+
+  async function handleFileChange(id: string, file: File | null) {
+    if (!file) return;
+    const { base64, name, type } = await readFileAsBase64(file);
+    setMultipartItems(multipartItems.map(i => i.id === id ? { ...i, fileBase64: base64, fileName: name, mimeType: type } : i));
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 h-full overflow-y-auto">
+      {multipartItems.map(item => (
+        <div key={item.id} className="flex items-center gap-2">
+          <input type="checkbox" checked={item.enabled} onChange={() => update(item.id, "enabled", !item.enabled)} className="accent-accent shrink-0" />
+          <input value={item.key} onChange={e => update(item.id, "key", e.target.value)} placeholder="Key"
+            className="flex-1 h-7 px-2 rounded text-[12px]"
+            style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)", maxWidth: 140 }} />
+          <button onClick={() => update(item.id, "isFile", !item.isFile)}
+            className="shrink-0 px-2 rounded text-[10px] transition-colors"
+            style={{ height: 28, background: item.isFile ? "var(--color-accent-20)" : "var(--color-card)", color: item.isFile ? "var(--color-accent)" : "var(--color-fg-3)", border: `1px solid ${item.isFile ? "var(--color-accent-50)" : "var(--color-border)"}` }}>
+            {item.isFile ? "File" : "Text"}
+          </button>
+          {item.isFile ? (
+            <label className="flex-1 flex items-center gap-1.5 h-7 px-2 rounded cursor-pointer truncate text-[12px]"
+              style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}>
+              <FileUp size={11} className="shrink-0" />
+              <span className="truncate">{item.fileName || "Choose file…"}</span>
+              <input type="file" className="hidden" onChange={e => handleFileChange(item.id, e.target.files?.[0] ?? null)} />
+            </label>
+          ) : (
+            <input value={item.value} onChange={e => update(item.id, "value", e.target.value)} placeholder="Value"
+              className="flex-1 h-7 px-2 rounded text-[12px]"
+              style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }} />
+          )}
+          <button onClick={() => remove(item.id)} className="hover:text-red transition-colors shrink-0" style={{ color: "var(--color-fg-3)" }}><Trash2 size={12} /></button>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 mt-1">
+        <button onClick={addText} className="flex items-center gap-1.5 text-[12px] transition-colors" style={{ color: "var(--color-fg-3)" }}>
+          <Plus size={12} /> Add text
+        </button>
+        <span style={{ color: "var(--color-border)" }}>·</span>
+        <button onClick={addFile} className="flex items-center gap-1.5 text-[12px] transition-colors" style={{ color: "var(--color-fg-3)" }}>
+          <FileUp size={12} /> Add file
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BinaryFilePicker() {
+  const { binaryFileName, binaryMimeType, binaryFileBase64, setBinaryFile } = useRequestStore();
+  const ref = useRef<HTMLInputElement>(null);
+
+  async function handleChange(file: File | null) {
+    if (!file) return;
+    const { base64, name, type } = await readFileAsBase64(file);
+    setBinaryFile(base64, name, type);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input type="file" ref={ref} className="hidden" onChange={e => handleChange(e.target.files?.[0] ?? null)} />
+      {binaryFileBase64 ? (
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+          <FileUp size={16} style={{ color: "var(--color-accent)", flexShrink: 0 }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-medium truncate" style={{ color: "var(--color-fg)" }}>{binaryFileName}</p>
+            <p className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>{binaryMimeType}</p>
+          </div>
+          <button onClick={() => setBinaryFile("", "", "")} className="shrink-0 transition-opacity hover:opacity-60" style={{ color: "var(--color-fg-3)" }}><X size={13} /></button>
+        </div>
+      ) : (
+        <button onClick={() => ref.current?.click()}
+          className="flex flex-col items-center justify-center gap-2 rounded-lg transition-colors"
+          style={{ height: 120, border: "2px dashed var(--color-border)", color: "var(--color-fg-4)" }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--color-accent-50)")}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--color-border)")}>
+          <FileUp size={24} />
+          <span className="text-[12px]">Click to choose a file</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function RequestPanel() {
-  const { url, setUrl, body, setBody, bodyType, setBodyType, graphqlQuery, setGraphqlQuery, graphqlVariables, setGraphqlVariables, preRequestScript, setPreRequestScript, isLoading, setLoading, setResponse, setError, getRequest } = useRequestStore();
+  const { url, setUrl, body, setBody, bodyType, setBodyType, graphqlQuery, setGraphqlQuery, graphqlVariables, setGraphqlVariables, preRequestScript, setPreRequestScript, postResponseScript, setPostResponseScript, authType, isLoading, setLoading, setResponse, setError, getRequest } = useRequestStore();
   const { resolveVariable } = useEnvironmentStore();
-  const { showLineNumbers } = useSettingsStore();
+  const { showLineNumbers, claudeApiKey, claudeModel } = useSettingsStore();
+
+  function makeAiEdit(content: string, lang: string) {
+    if (!claudeApiKey) return undefined;
+    return (instruction: string) =>
+      editContent(content, instruction, lang, claudeApiKey, claudeModel);
+  }
   const [tab, setTab] = useState<Tab>("Body");
   const [showSave, setShowSave] = useState(false);
 
@@ -184,6 +592,26 @@ export function RequestPanel() {
         ),
         body: req.body ? resolveVariable(req.body) : undefined,
       };
+
+      // Apply AWS SigV4 (async — must run after env resolution)
+      const authState = useRequestStore.getState();
+      if (authState.authType === "awssigv4" && authState.authAwsAccessKeyId) {
+        const { signAwsRequest } = await import("@/lib/awsSigV4");
+        const awsHeaders = await signAwsRequest(
+          resolved.method,
+          resolved.url,
+          resolved.headers,
+          resolved.body,
+          {
+            accessKeyId: authState.authAwsAccessKeyId,
+            secretAccessKey: authState.authAwsSecretAccessKey,
+            sessionToken: authState.authAwsSessionToken || undefined,
+            region: authState.authAwsRegion,
+            service: authState.authAwsService,
+          },
+        );
+        Object.assign(resolved.headers, awsHeaders);
+      }
       const {
         timeoutMs, followRedirects, sslVerify,
         proxyHttp, proxyHttpPort, proxyHttps, proxyHttpsPort, noProxy, useSystemProxy,
@@ -202,7 +630,26 @@ export function RequestPanel() {
         noProxy: noProxy || undefined,
       });
       setResponse(resp);
-      await saveHistory(resolved.method, resolved.url, resp.status, resp.durationMs);
+
+      if (postResponseScript.trim()) {
+        const { environments, activeId, updateEnvironment } = useEnvironmentStore.getState();
+        const activeEnv = environments.find(e => e.id === activeId);
+        const envVars = activeEnv?.variables ?? {};
+        const postMutations = runPostResponseScript(postResponseScript, {
+          status: resp.status,
+          body: resp.body,
+          headers: resp.headers,
+          durationMs: resp.durationMs,
+        }, envVars);
+        if (activeId && Object.keys(postMutations.envVars).length > 0) {
+          updateEnvironment(activeId, { variables: { ...envVars, ...postMutations.envVars } });
+        }
+        useTestResultsStore.getState().setResults(postMutations.testResults);
+      }
+
+      const { environments: envs, activeId: envActiveId } = useEnvironmentStore.getState();
+      const envName = envs.find(e => e.id === envActiveId)?.name ?? "";
+      await saveHistory(resolved.method, resolved.url, resp.status, resp.durationMs, envName);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -228,7 +675,7 @@ export function RequestPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const TABS: Tab[] = ["Params", "Headers", "Body", "Pre-req"];
+  const TABS: Tab[] = ["Params", "Headers", "Auth", "Body", "Pre-req", "Post-req"];
 
   return (
     <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)", borderRight: "1px solid var(--color-border)" }}>
@@ -279,12 +726,15 @@ export function RequestPanel() {
             {t === "Pre-req" && preRequestScript.trim() && (
               <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
             )}
+            {t === "Auth" && authType !== "none" && (
+              <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+            )}
             {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "var(--color-accent)" }} />}
           </button>
         ))}
         {bodyType !== "none" && tab === "Body" && (
-          <div className="ml-4 flex gap-1">
-            {(["json", "form", "raw", "graphql"] as const).map(bt => (
+          <div className="ml-4 flex gap-1 flex-wrap">
+            {(["json", "form", "multipart", "binary", "raw", "graphql"] as const).map(bt => (
               <button key={bt} onClick={() => setBodyType(bt)}
                 className="px-2 py-0.5 rounded text-[11px] transition-colors"
                 style={{
@@ -306,7 +756,7 @@ export function RequestPanel() {
             {bodyType === "none" ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>Body type:</span>
-                {(["none", "json", "form", "raw", "graphql"] as const).map(bt => (
+                {(["none", "json", "form", "multipart", "binary", "raw", "graphql"] as const).map(bt => (
                   <button key={bt} onClick={() => setBodyType(bt)}
                     className="px-3 py-1 rounded text-[12px] transition-colors"
                     style={{
@@ -320,16 +770,21 @@ export function RequestPanel() {
               </div>
             ) : bodyType === "form" ? (
               <KeyValueEditor label="Form" />
+            ) : bodyType === "multipart" ? (
+              <MultipartEditor />
+            ) : bodyType === "binary" ? (
+              <BinaryFilePicker />
             ) : bodyType === "graphql" ? (
               <div className="flex flex-col h-full gap-2">
-                <div className="flex flex-col gap-1 flex-[2] min-h-0">
+                <div className="flex flex-col gap-1 flex-2 min-h-0">
                   <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-3)" }}>Query</span>
                   <CodeEditor
                     value={graphqlQuery}
                     onChange={setGraphqlQuery}
                     lang="graphql"
-                    placeholder={"query {\n  users {\n    id\n    name\n  }\n}"}
+                    placeholder="Write your GraphQL query here..."
                     showLineNumbers={showLineNumbers}
+                    onAiEdit={makeAiEdit(graphqlQuery, "graphql")}
                   />
                 </div>
                 <div className="flex flex-col gap-1 flex-1 min-h-0">
@@ -341,8 +796,9 @@ export function RequestPanel() {
                     value={graphqlVariables}
                     onChange={setGraphqlVariables}
                     lang="json"
-                    placeholder={'{\n  "id": "123"\n}'}
+                    placeholder='{ "variable": "value" }'
                     showLineNumbers={showLineNumbers}
+                    onAiEdit={makeAiEdit(graphqlVariables, "json")}
                   />
                 </div>
               </div>
@@ -351,13 +807,15 @@ export function RequestPanel() {
                 value={body}
                 onChange={setBody}
                 lang={bodyType === "json" ? "json" : "javascript"}
-                placeholder={bodyType === "json" ? '{\n  "key": "value"\n}' : ""}
+                placeholder={bodyType === "json" ? '{ "key": "value" }' : ""}
                 showLineNumbers={showLineNumbers}
+                onAiEdit={makeAiEdit(body, bodyType === "json" ? "json" : "javascript")}
               />
             )}
           </div>
         )}
         {(tab === "Headers" || tab === "Params") && <KeyValueEditor label={tab} />}
+        {tab === "Auth" && <AuthTab />}
         {tab === "Pre-req" && (
           <div className="flex flex-col h-full gap-2">
             <p className="text-[11px] shrink-0" style={{ color: "var(--color-fg-3)" }}>
@@ -371,11 +829,37 @@ export function RequestPanel() {
               lang="javascript"
               placeholder={"// pm.environment.set(\"token\", \"abc\");\n// pm.request.headers.upsert(\"Authorization\", \"Bearer \" + pm.environment.get(\"token\"));"}
               showLineNumbers={showLineNumbers}
+              onAiEdit={makeAiEdit(preRequestScript, "javascript")}
             />
             <div className="shrink-0 flex flex-col gap-0.5" style={{ fontSize: 11, color: "var(--color-fg-4)" }}>
               <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.get(key)</span> — read variable</span>
               <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.set(key, value)</span> — write variable</span>
               <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.request.headers.upsert(key, value)</span> — add / override header</span>
+            </div>
+          </div>
+        )}
+        {tab === "Post-req" && (
+          <div className="flex flex-col h-full gap-2">
+            <p className="text-[11px] shrink-0" style={{ color: "var(--color-fg-3)" }}>
+              Runs after the response is received. Use{" "}
+              <span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response</span>{" "}
+              to read status, body and headers, and{" "}
+              <span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.set</span>{" "}
+              to store values.
+            </p>
+            <CodeEditor
+              value={postResponseScript}
+              onChange={setPostResponseScript}
+              lang="javascript"
+              placeholder={"// const data = pm.response.json();\n// pm.environment.set(\"userId\", data.id);"}
+              showLineNumbers={showLineNumbers}
+              onAiEdit={makeAiEdit(postResponseScript, "javascript")}
+            />
+            <div className="shrink-0 flex flex-col gap-0.5" style={{ fontSize: 11, color: "var(--color-fg-4)" }}>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.status</span> — HTTP status code</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.json()</span> — parsed JSON body</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.text()</span> — raw body string</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.responseTime</span> — duration in ms</span>
             </div>
           </div>
         )}

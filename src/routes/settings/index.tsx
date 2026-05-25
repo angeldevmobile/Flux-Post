@@ -80,7 +80,7 @@ function ShortcutRow({ label, keys, last }: { label: string; keys: string[]; las
   );
 }
 
-/* ─── SECTIONS ─── */
+/*     SECTIONS     */
 
 function GeneralSection() {
   const s = useSettingsStore();
@@ -118,7 +118,7 @@ function GeneralSection() {
 const MODELS = [
   { id: "claude-sonnet-4-6", label: "claude-sonnet-4-6", badge: "Recommended", badgeBg: "#A855F720", badgeColor: "#A855F7", activeBg: "#1A1A2E", activeBorder: "#A855F750", dotColor: "#A855F7" },
   { id: "claude-opus-4-7",   label: "claude-opus-4-7",   badge: "Most capable", badgeBg: "var(--color-card)",   badgeColor: "var(--color-fg-4)", activeBg: "var(--color-input)",  activeBorder: "var(--color-border)",  dotColor: "var(--color-fg-4)"  },
-  { id: "claude-haiku-4-5",  label: "claude-haiku-4-5",  badge: "Fastest",      badgeBg: "var(--color-card)",   badgeColor: "var(--color-fg-4)", activeBg: "var(--color-input)",  activeBorder: "var(--color-border)",  dotColor: "var(--color-fg-4)"  },
+  { id: "claude-haiku-4-5-20251001",  label: "claude-haiku-4-5",  badge: "Fastest",      badgeBg: "var(--color-card)",   badgeColor: "var(--color-fg-4)", activeBg: "var(--color-input)",  activeBorder: "var(--color-border)",  dotColor: "var(--color-fg-4)"  },
 ];
 
 function AiSection() {
@@ -620,7 +620,7 @@ function AboutSection() {
   );
 }
 
-/* ─── ROOT ─── */
+/*     ROOT     */
 
 export function SettingsRoute() {
   const [section, setSection] = useState<Section>("general");
