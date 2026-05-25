@@ -10,6 +10,9 @@ export interface HttpRequest {
   timeoutMs?: number;
   followRedirects?: boolean;
   sslVerify?: boolean;
+  proxyHttp?: string;
+  proxyHttps?: string;
+  noProxy?: string;
 }
 
 export interface HttpResponse {
@@ -80,9 +83,10 @@ export async function saveCollection(dir: string, collection: Collection): Promi
 export async function generateTests(
   request: { method: string; url: string; body?: string },
   response: { status: number; body: string },
-  apiKey: string
+  apiKey: string,
+  model?: string,
 ): Promise<string> {
-  return invoke("generate_tests", { request, response, apiKey });
+  return invoke("generate_tests", { request, response, apiKey, model: model ?? null });
 }
 
 export async function wsConnect(url: string): Promise<string> {
@@ -100,7 +104,18 @@ export async function wsDisconnect(connectionId: string): Promise<void> {
 export async function debugAssist(
   request: { method: string; url: string; headers?: Record<string, string>; body?: string },
   response: { status: number; body: string },
-  apiKey: string
+  apiKey: string,
+  model?: string,
 ): Promise<string> {
-  return invoke("debug_assist", { request, response, apiKey });
+  return invoke("debug_assist", { request, response, apiKey, model: model ?? null });
+}
+
+export function exportDataAsJson(data: object, filename = "flux-export.json"): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }

@@ -23,28 +23,30 @@ function EnvSidebar() {
 
   return (
     <aside className="flex flex-col shrink-0 h-full"
-      style={{ width: 240, background: "#0F0F0F", borderRight: "1px solid #27272A" }}>
+      style={{ width: 240, background: "var(--color-sidebar)", borderRight: "1px solid var(--color-border)" }}>
       <div className="flex items-center gap-2 shrink-0 px-3"
-        style={{ height: 44, borderBottom: "1px solid #27272A" }}>
-        <span className="flex-1 text-[12px] font-medium text-[#A1A1AA]">Environments</span>
+        style={{ height: 44, borderBottom: "1px solid var(--color-border)" }}>
+        <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--color-fg-2)" }}>Environments</span>
         <button onClick={createNew}
           className="flex items-center justify-center rounded"
-          style={{ width: 24, height: 24, background: "#1A1A1A" }}>
-          <Plus size={14} className="text-[#71717A]" />
+          style={{ width: 24, height: 24, background: "var(--color-card)" }}>
+          <Plus size={14} style={{ color: "var(--color-fg-3)" }} />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto py-1">
         {environments.map(env => (
           <button key={env.id} onClick={() => setActive(env.id)}
-            className="flex items-center gap-2 w-full px-3 transition-colors hover:bg-[#1A1A1A]"
+            className="flex items-center gap-2 w-full px-3 transition-colors"
             style={{
               height: 40,
-              background: activeId === env.id ? "#1A1A1A" : "transparent",
-              borderLeft: activeId === env.id ? "2px solid #A855F7" : "2px solid transparent",
-            }}>
+              background: activeId === env.id ? "var(--color-card)" : "transparent",
+              borderLeft: activeId === env.id ? "2px solid var(--color-accent)" : "2px solid transparent",
+            }}
+            onMouseEnter={e => { if (activeId !== env.id) (e.currentTarget as HTMLElement).style.background = "var(--color-card)"; }}
+            onMouseLeave={e => { if (activeId !== env.id) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
-            <span className="flex-1 text-left text-[13px] text-[#A1A1AA] truncate">{env.name}</span>
+            <span className="flex-1 text-left text-[13px] truncate" style={{ color: "var(--color-fg-2)" }}>{env.name}</span>
           </button>
         ))}
       </div>
@@ -55,7 +57,7 @@ function EnvSidebar() {
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button onClick={() => onChange(!checked)} className="relative shrink-0 transition-colors"
-      style={{ width: 36, height: 20, borderRadius: 10, background: checked ? "#A855F7" : "#27272A" }}>
+      style={{ width: 36, height: 20, borderRadius: 10, background: checked ? "var(--color-accent)" : "var(--color-border)" }}>
       <span className="absolute top-0.5 transition-all"
         style={{ width: 16, height: 16, borderRadius: "50%", background: "#FFF", left: checked ? 18 : 2 }} />
     </button>
@@ -70,7 +72,6 @@ function EnvContent() {
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
 
   if (!env) {
-    // Auto-select first or create demo
     if (environments.length === 0) {
       const id = "development";
       addEnvironment({ id, name: "Development", variables: DEMO_VARS });
@@ -106,48 +107,48 @@ function EnvContent() {
   function isEnabled(key: string) { return enabled[key] !== false; }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#0A0A0A" }}>
+    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--color-bg)" }}>
       {/* Header */}
       <div className="flex items-center gap-3 shrink-0 px-6"
-        style={{ height: 56, borderBottom: "1px solid #27272A" }}>
+        style={{ height: 56, borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex flex-col gap-0.5 flex-1">
           {editingName ? (
             <div className="flex items-center gap-2">
               <input value={nameVal} onChange={e => setNameVal(e.target.value)} autoFocus
                 onKeyDown={e => { if (e.key === "Enter") { updateEnvironment(env.id, { name: nameVal }); setEditingName(false); } }}
                 className="text-[16px] font-semibold px-2 py-0.5 rounded"
-                style={{ background: "#1A1A1A", border: "1px solid #A855F7", color: "#FFF", fontFamily: "Geist, Inter, sans-serif" }} />
-              <button onClick={() => { updateEnvironment(env.id, { name: nameVal }); setEditingName(false); }}><Check size={14} className="text-[#22C55E]" /></button>
-              <button onClick={() => setEditingName(false)}><X size={14} className="text-[#71717A]" /></button>
+                style={{ background: "var(--color-card)", border: "1px solid var(--color-accent)", color: "var(--color-fg)", fontFamily: "Geist, Inter, sans-serif" }} />
+              <button onClick={() => { updateEnvironment(env.id, { name: nameVal }); setEditingName(false); }}><Check size={14} className="text-green" /></button>
+              <button onClick={() => setEditingName(false)}><X size={14} style={{ color: "var(--color-fg-3)" }} /></button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <h2 className="text-[16px] font-semibold text-white" style={{ fontFamily: "Geist, Inter, sans-serif" }}>{env.name}</h2>
-              <button onClick={() => { setNameVal(env.name); setEditingName(true); }}><Edit2 size={13} className="text-[#71717A]" /></button>
+              <h2 className="text-[16px] font-semibold" style={{ fontFamily: "Geist, Inter, sans-serif", color: "var(--color-fg)" }}>{env.name}</h2>
+              <button onClick={() => { setNameVal(env.name); setEditingName(true); }}><Edit2 size={13} style={{ color: "var(--color-fg-3)" }} /></button>
             </div>
           )}
-          <span className="text-[12px] text-[#71717A]">{varCount} variables · Last edited 2 hours ago</span>
+          <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>{varCount} variables · Last edited 2 hours ago</span>
         </div>
         {/* Active badge */}
         <div className="flex items-center gap-1.5 px-2.5 rounded"
           style={{ height: 24, background: "#22C55E18" }}>
           <span style={{ width: 6, height: 6, borderRadius: 3, background: "#22C55E" }} />
-          <span className="text-[11px] font-medium text-[#22C55E]">Active</span>
+          <span className="text-[11px] font-medium text-green">Active</span>
         </div>
         {/* Add variable */}
         <button onClick={addVar}
           className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-80"
-          style={{ height: 32, background: "#1A1A1A", border: "1px solid #27272A", color: "#A1A1AA" }}>
-          <Plus size={14} className="text-[#A1A1AA]" /> Add Variable
+          style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
+          <Plus size={14} style={{ color: "var(--color-fg-2)" }} /> Add Variable
         </button>
       </div>
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid #27272A", background: "#0D0D0D" }}>
+        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-elevated)" }}>
           {/* Column headers */}
-          <div className="flex items-center px-4 text-[11px] font-medium text-[#52525B]"
-            style={{ height: 36, background: "#111111", borderBottom: "1px solid #27272A" }}>
+          <div className="flex items-center px-4 text-[11px] font-medium"
+            style={{ height: 36, background: "var(--color-topbar)", borderBottom: "1px solid var(--color-border)", color: "var(--color-fg-4)" }}>
             <span style={{ width: 200 }}>Variable</span>
             <span style={{ flex: 1 }}>Value</span>
             <span style={{ width: 200 }}>Initial Value</span>
@@ -156,21 +157,21 @@ function EnvContent() {
 
           {Object.entries(vars).map(([key, value], i) => (
             <div key={key} className="flex items-center px-4"
-              style={{ height: 44, background: i % 2 === 0 ? "transparent" : "#0F0F0F", borderBottom: "1px solid #1A1A1A" }}>
+              style={{ height: 44, background: i % 2 === 0 ? "transparent" : "var(--color-sidebar)", borderBottom: "1px solid var(--color-card)" }}>
               <div style={{ width: 200 }}>
                 <input defaultValue={key}
                   onBlur={e => updateKey(key, e.target.value)}
                   className="w-full text-[12px] bg-transparent"
-                  style={{ color: "#A855F7", fontFamily: "Geist Mono, monospace" }} />
+                  style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }} />
               </div>
               <div style={{ flex: 1, paddingRight: 16 }}>
                 <input defaultValue={value}
                   onBlur={e => updateVal(key, e.target.value)}
                   className="w-full text-[12px] bg-transparent"
-                  style={{ color: "#A1A1AA", fontFamily: "Geist Mono, monospace" }} />
+                  style={{ color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }} />
               </div>
               <div style={{ width: 200 }}>
-                <span className="text-[12px] text-[#52525B]" style={{ fontFamily: "Geist Mono, monospace" }}>
+                <span className="text-[12px]" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-4)" }}>
                   {value || "—"}
                 </span>
               </div>

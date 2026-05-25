@@ -80,23 +80,23 @@ export function HistoryRoute() {
   );
 
   return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden" style={{ background: "#0A0A0A" }}>
+    <div className="flex flex-1 flex-col h-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
       {/* Header */}
-      <div className="flex items-center gap-3 shrink-0 px-6" style={{ height: 52, borderBottom: "1px solid #27272A" }}>
-        <h2 className="flex-1 text-[16px] font-semibold text-white" style={{ fontFamily: "Geist, Inter, sans-serif" }}>
+      <div className="flex items-center gap-3 shrink-0 px-6" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
+        <h2 className="flex-1 text-[16px] font-semibold" style={{ fontFamily: "Geist, Inter, sans-serif", color: "var(--color-fg)" }}>
           Request History
         </h2>
         <div className="flex items-center gap-2 rounded-md px-3"
-          style={{ height: 32, background: "#141414", border: "1px solid #27272A", width: 260 }}>
-          <Search size={13} className="text-[#52525B] shrink-0" />
+          style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)", width: 260 }}>
+          <Search size={13} className="shrink-0" style={{ color: "var(--color-fg-4)" }} />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search history..."
             className="flex-1 text-[12px] bg-transparent"
-            style={{ color: "#A1A1AA" }} />
+            style={{ color: "var(--color-fg-2)" }} />
         </div>
         <button onClick={handleClear}
           className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-medium transition-colors hover:opacity-80"
-          style={{ height: 32, color: "#71717A", background: "#1A1A1A", border: "1px solid #27272A" }}>
+          style={{ height: 32, color: "var(--color-fg-3)", background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
           Clear History
         </button>
       </div>
@@ -110,36 +110,36 @@ export function HistoryRoute() {
             <div key={entry.id}
               onClick={() => handleReplay(entry)}
               className="flex items-center gap-3 px-4 rounded-md cursor-pointer transition-opacity hover:opacity-80 group"
-              style={{ height: 48, background: isAlt ? "#0D0D0D" : "transparent", border: "1px solid #1A1A1A" }}>
+              style={{ height: 48, background: isAlt ? "var(--color-elevated)" : "transparent", border: "1px solid var(--color-card)" }}>
               <MethodPill method={entry.method} />
-              <span className="flex-1 truncate text-[12px] text-[#A1A1AA]"
-                style={{ fontFamily: "Geist Mono, monospace" }}>
+              <span className="flex-1 truncate text-[12px]"
+                style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)" }}>
                 {entry.url}
               </span>
               <StatusBadge status={entry.status} />
-              <span className="text-[11px] text-[#52525B] shrink-0"
-                style={{ fontFamily: "Geist Mono, monospace", width: 50 }}>
+              <span className="text-[11px] shrink-0"
+                style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-4)", width: 50 }}>
                 {entry.durationMs}ms
               </span>
               {/* Env badge */}
               <div className="flex items-center gap-1 px-2 rounded shrink-0"
-                style={{ height: 20, background: "#1A1A1A" }}>
+                style={{ height: 20, background: "var(--color-card)" }}>
                 <span style={{ width: 5, height: 5, borderRadius: 3, background: env.color }} />
-                <span className="text-[10px] text-[#71717A]">{env.name}</span>
+                <span className="text-[10px]" style={{ color: "var(--color-fg-3)" }}>{env.name}</span>
               </div>
-              <span className="text-[11px] text-[#3F3F46] shrink-0" style={{ width: 80 }}>
+              <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-4)", width: 80 }}>
                 {entry.timestamp}
               </span>
               <button className="flex items-center justify-center rounded shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{ width: 28, height: 28 }}>
-                <RotateCcw size={14} className="text-[#3F3F46]" />
+                <RotateCcw size={14} style={{ color: "var(--color-fg-4)" }} />
               </button>
             </div>
           );
         })}
         {filtered.length === 0 && (
           <div className="flex items-center justify-center flex-1 h-full">
-            <p className="text-[13px] text-[#71717A]">No history</p>
+            <p className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>No history</p>
           </div>
         )}
       </div>

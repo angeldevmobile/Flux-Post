@@ -107,15 +107,15 @@ export function WebSocketRoute() {
   const isConnected = status === "connected";
   const isConnecting = status === "connecting";
 
-  const statusColor = isConnected ? "#22C55E" : isConnecting ? "#F59E0B" : "#3F3F46";
+  const statusColor = isConnected ? "#22C55E" : isConnecting ? "#F59E0B" : "var(--color-fg-4)";
   const statusLabel = isConnected ? "Connected" : isConnecting ? "Connecting…" : "Disconnected";
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "#0A0A0A" }}>
+    <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
 
       {/* URL bar */}
-      <div className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid #27272A" }}>
-        <div className="flex-1 flex items-center px-3 rounded-md" style={{ height: 32, background: "#141414", border: "1px solid #27272A" }}>
+      <div className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
+        <div className="flex-1 flex items-center px-3 rounded-md" style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
           <input
             value={url}
             onChange={e => setUrl(e.target.value)}
@@ -123,7 +123,7 @@ export function WebSocketRoute() {
             disabled={isConnected || isConnecting}
             placeholder="wss://echo.websocket.org"
             className="flex-1 text-[12px] bg-transparent disabled:opacity-40"
-            style={{ fontFamily: "Geist Mono, monospace", color: "#E4E4E7" }}
+            style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}
           />
         </div>
 
@@ -132,7 +132,7 @@ export function WebSocketRoute() {
             onClick={handleConnect}
             disabled={!url.trim() || isConnecting}
             className="flex items-center gap-1.5 px-4 rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 shrink-0"
-            style={{ height: 32, fontSize: 13, background: "#A855F7" }}>
+            style={{ height: 32, fontSize: 13, background: "var(--color-accent)" }}>
             {isConnecting
               ? <span className="animate-spin text-[14px]">⟳</span>
               : <Wifi size={13} />}
@@ -142,7 +142,7 @@ export function WebSocketRoute() {
           <button
             onClick={handleDisconnect}
             className="flex items-center gap-1.5 px-4 rounded-md font-semibold transition-opacity hover:opacity-90 shrink-0"
-            style={{ height: 32, fontSize: 13, background: "#1A1A1A", border: "1px solid #27272A", color: "#EF4444" }}>
+            style={{ height: 32, fontSize: 13, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "#EF4444" }}>
             <WifiOff size={13} />
             Disconnect
           </button>
@@ -151,18 +151,18 @@ export function WebSocketRoute() {
 
       {/* Status bar */}
       <div className="flex items-center justify-between shrink-0 px-4"
-        style={{ height: 36, borderBottom: "1px solid #27272A", background: "#0F0F0F" }}>
+        style={{ height: 36, borderBottom: "1px solid var(--color-border)", background: "var(--color-sidebar)" }}>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: statusColor }} />
           <span className="text-[11px]" style={{ color: statusColor }}>{statusLabel}</span>
           {error && (
-            <span className="text-[11px]" style={{ color: "#EF4444" }}>— {error}</span>
+            <span className="text-[11px] text-red">— {error}</span>
           )}
         </div>
         {messages.length > 0 && (
           <button onClick={() => { setMessages([]); setError(null); }}
-            className="flex items-center gap-1 text-[11px] transition-colors hover:text-[#A1A1AA]"
-            style={{ color: "#71717A" }}>
+            className="flex items-center gap-1 text-[11px] transition-colors hover:opacity-80"
+            style={{ color: "var(--color-fg-3)" }}>
             <Trash2 size={11} /> Clear
           </button>
         )}
@@ -171,22 +171,22 @@ export function WebSocketRoute() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5">
         {messages.length === 0 && (
-          <p className="text-[12px] text-center mt-8" style={{ color: "#3F3F46" }}>
+          <p className="text-[12px] text-center mt-8" style={{ color: "var(--color-fg-4)" }}>
             Connect to a WebSocket server to start receiving messages
           </p>
         )}
         {messages.map(msg => (
           <div key={msg.id} className="flex items-start gap-3">
             <span className="text-[10px] shrink-0 mt-0.5"
-              style={{ color: "#4A4A52", fontFamily: "Geist Mono, monospace" }}>
+              style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
               {msg.time}
             </span>
             <span className="text-[12px] shrink-0 font-bold"
-              style={{ color: msg.direction === "out" ? "#A855F7" : "#4A4A52", fontFamily: "Geist Mono, monospace" }}>
+              style={{ color: msg.direction === "out" ? "var(--color-accent)" : "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
               {msg.direction === "out" ? "→" : "←"}
             </span>
             <span className="text-[12px] break-all"
-              style={{ color: msg.direction === "out" ? "#C084FC" : "#A1A1AA", fontFamily: "Geist Mono, monospace", lineHeight: 1.6 }}>
+              style={{ color: msg.direction === "out" ? "var(--color-accent-50)" : "var(--color-fg-2)", fontFamily: "Geist Mono, monospace", lineHeight: 1.6 }}>
               {msg.data}
             </span>
           </div>
@@ -196,9 +196,9 @@ export function WebSocketRoute() {
 
       {/* Send bar */}
       <div className="flex items-center gap-2 shrink-0 px-4"
-        style={{ height: 52, borderTop: "1px solid #27272A" }}>
+        style={{ height: 52, borderTop: "1px solid var(--color-border)" }}>
         <div className="flex-1 flex items-center px-3 rounded-md"
-          style={{ height: 36, background: "#141414", border: "1px solid #27272A" }}>
+          style={{ height: 36, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
           <input
             value={draft}
             onChange={e => setDraft(e.target.value)}
@@ -206,14 +206,14 @@ export function WebSocketRoute() {
             disabled={!isConnected}
             placeholder={isConnected ? "Type a message and press Enter…" : "Connect first"}
             className="flex-1 text-[12px] bg-transparent disabled:opacity-30"
-            style={{ fontFamily: "Geist Mono, monospace", color: "#E4E4E7" }}
+            style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}
           />
         </div>
         <button
           onClick={handleSend}
           disabled={!isConnected || !draft.trim()}
           className="flex items-center justify-center rounded-md transition-opacity hover:opacity-90 disabled:opacity-40 shrink-0"
-          style={{ width: 36, height: 36, background: "#A855F7" }}>
+          style={{ width: 36, height: 36, background: "var(--color-accent)" }}>
           <Send size={13} className="text-white" />
         </button>
       </div>

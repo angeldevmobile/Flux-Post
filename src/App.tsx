@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavRail, type Route } from "@/components/NavRail";
+import { useAppearance } from "@/hooks/useAppearance";
 import { TopBar } from "@/components/TopBar";
 import { Login } from "@/routes/auth/Login";
 import { SignUp } from "@/routes/auth/SignUp";
@@ -15,9 +16,10 @@ type AuthScreen = "login" | "signup" | "app";
 
 function AppShell() {
   const [route, setRoute] = useState<Route>("requests");
+  useAppearance();
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden" style={{ background: "#0A0A0A" }}>
+    <div className="flex flex-col h-full w-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
       <TopBar onNavigate={setRoute} />
       <div className="flex flex-1 overflow-hidden">
         <NavRail active={route} onChange={setRoute} />

@@ -96,10 +96,10 @@ export function CompareRoute() {
   const canRun = !!url.trim() && selectedEnvIds.length >= 1 && !isRunning;
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "#0A0A0A" }}>
+    <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
 
       {/* URL bar */}
-      <div className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid #27272A" }}>
+      <div className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
         <div className="relative shrink-0">
           <button
             onClick={() => setMethodOpen(v => !v)}
@@ -109,11 +109,13 @@ export function CompareRoute() {
           </button>
           {methodOpen && (
             <div className="absolute top-full left-0 mt-1 z-50 rounded-lg overflow-hidden py-1"
-              style={{ background: "#1A1A1A", border: "1px solid #27272A", minWidth: 120 }}>
+              style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", minWidth: 120 }}>
               {METHODS.map(m => (
                 <button key={m} onClick={() => { setMethod(m); setMethodOpen(false); }}
-                  className="flex w-full px-3 py-1.5 hover:bg-[#27272A] transition-colors"
-                  style={{ fontSize: 12, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: methodColor(m) }}>
+                  className="flex w-full px-3 py-1.5 transition-colors"
+                  style={{ fontSize: 12, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: methodColor(m) }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--color-border)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
                   {m}
                 </button>
               ))}
@@ -121,14 +123,14 @@ export function CompareRoute() {
           )}
         </div>
 
-        <div className="flex-1 flex items-center px-3 rounded-md" style={{ height: 32, background: "#141414", border: "1px solid #27272A" }}>
+        <div className="flex-1 flex items-center px-3 rounded-md" style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
           <input
             value={url}
             onChange={e => setUrl(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleRun()}
             placeholder="https://api.{{BASE_URL}}/endpoint"
             className="flex-1 text-[12px] bg-transparent"
-            style={{ fontFamily: "Geist Mono, monospace", color: "#E4E4E7" }}
+            style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}
           />
         </div>
 
@@ -136,7 +138,7 @@ export function CompareRoute() {
           onClick={handleRun}
           disabled={!canRun}
           className="flex items-center gap-1.5 px-4 rounded-md font-semibold text-white shrink-0 transition-opacity hover:opacity-90 disabled:opacity-40"
-          style={{ height: 32, fontSize: 13, background: "#A855F7" }}>
+          style={{ height: 32, fontSize: 13, background: "var(--color-accent)" }}>
           {isRunning ? <span className="animate-spin text-[14px]">⟳</span> : <Send size={13} />}
           Compare
         </button>
@@ -144,26 +146,26 @@ export function CompareRoute() {
 
       {/* Environment selector */}
       <div className="flex items-center gap-2 shrink-0 px-4 flex-wrap"
-        style={{ minHeight: 42, borderBottom: "1px solid #27272A" }}>
-        <span className="text-[11px] text-[#71717A] shrink-0">Compare across:</span>
+        style={{ minHeight: 42, borderBottom: "1px solid var(--color-border)" }}>
+        <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-3)" }}>Compare across:</span>
         {environments.map(env => {
           const selected = selectedEnvIds.includes(env.id);
           return (
             <button key={env.id} onClick={() => toggleEnv(env.id)}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors"
               style={{
-                background: selected ? "#A855F720" : "#1A1A1A",
-                border: `1px solid ${selected ? "#A855F750" : "#27272A"}`,
-                color: selected ? "#C084FC" : "#71717A",
+                background: selected ? "var(--color-accent-10)" : "var(--color-card)",
+                border: `1px solid ${selected ? "var(--color-accent-50)" : "var(--color-border)"}`,
+                color: selected ? "var(--color-accent)" : "var(--color-fg-3)",
               }}>
               <span className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ background: selected ? "#A855F7" : "#3F3F46" }} />
+                style={{ background: selected ? "var(--color-accent)" : "var(--color-fg-4)" }} />
               {env.name}
             </button>
           );
         })}
         {selectedEnvIds.length === 0 && (
-          <span className="text-[11px]" style={{ color: "#EF4444" }}>Select at least one environment</span>
+          <span className="text-[11px] text-red">Select at least one environment</span>
         )}
       </div>
 
@@ -171,7 +173,7 @@ export function CompareRoute() {
       <div className="flex flex-1 overflow-hidden">
         {selectedEnvs.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-[13px]" style={{ color: "#3F3F46" }}>
+            <p className="text-[13px]" style={{ color: "var(--color-fg-4)" }}>
               Select environments above and click Compare
             </p>
           </div>
@@ -180,13 +182,13 @@ export function CompareRoute() {
             const result = results[env.id];
             return (
               <div key={env.id} className="flex flex-col flex-1 overflow-hidden min-w-0"
-                style={{ borderRight: i < selectedEnvs.length - 1 ? "1px solid #27272A" : "none" }}>
+                style={{ borderRight: i < selectedEnvs.length - 1 ? "1px solid var(--color-border)" : "none" }}>
 
                 {/* Column header */}
                 <div className="flex items-center gap-2 shrink-0 px-4"
-                  style={{ height: 38, borderBottom: "1px solid #27272A", background: "#0F0F0F" }}>
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "#A855F7" }} />
-                  <span className="text-[12px] font-medium truncate" style={{ color: "#E4E4E7" }}>
+                  style={{ height: 38, borderBottom: "1px solid var(--color-border)", background: "var(--color-sidebar)" }}>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+                  <span className="text-[12px] font-medium truncate" style={{ color: "var(--color-fg)" }}>
                     {env.name}
                   </span>
                   {result && !result.error && (
@@ -194,28 +196,28 @@ export function CompareRoute() {
                       <span className="text-[11px] font-bold" style={{ color: statusColor(result.status) }}>
                         {result.status}
                       </span>
-                      <span className="text-[11px]" style={{ color: "#71717A" }}>{result.durationMs}ms</span>
+                      <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{result.durationMs}ms</span>
                     </div>
                   )}
                   {result?.error && (
-                    <span className="text-[11px] ml-auto" style={{ color: "#EF4444" }}>Error</span>
+                    <span className="text-[11px] ml-auto text-red">Error</span>
                   )}
                   {isRunning && !result && (
-                    <span className="text-[11px] ml-auto animate-pulse" style={{ color: "#71717A" }}>Running…</span>
+                    <span className="text-[11px] ml-auto animate-pulse" style={{ color: "var(--color-fg-3)" }}>Running…</span>
                   )}
                 </div>
 
                 {/* Column body */}
                 <div className="flex-1 overflow-auto p-4">
                   {!result && !isRunning && (
-                    <p className="text-[12px]" style={{ color: "#3F3F46" }}>Hit Compare to run</p>
+                    <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Hit Compare to run</p>
                   )}
                   {result?.error && (
-                    <p className="text-[12px]" style={{ color: "#EF4444" }}>{result.error}</p>
+                    <p className="text-[12px] text-red">{result.error}</p>
                   )}
                   {result && !result.error && (
                     <pre className="text-[12px] whitespace-pre-wrap break-all"
-                      style={{ fontFamily: "Geist Mono, monospace", color: "#A1A1AA", lineHeight: 1.6 }}>
+                      style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)", lineHeight: 1.6 }}>
                       {prettyBody(result.body)}
                     </pre>
                   )}

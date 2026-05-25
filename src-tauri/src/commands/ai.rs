@@ -36,10 +36,13 @@ pub async fn generate_tests(
     request: AiRequest,
     response: AiResponse,
     api_key: String,
+    model: Option<String>,
 ) -> Result<String, String> {
     if api_key.is_empty() {
         return Err("Claude API key not configured. Go to Settings to add your key.".to_string());
     }
+
+    let model = model.unwrap_or_else(|| "claude-sonnet-4-6".to_string());
 
     let prompt = format!(
         "Given this HTTP request and response, generate test assertions in YAML format.\n\n\
@@ -62,7 +65,7 @@ pub async fn generate_tests(
         .header("anthropic-version", "2023-06-01")
         .header("content-type", "application/json")
         .json(&json!({
-            "model": "claude-sonnet-4-6",
+            "model": model,
             "max_tokens": 1024,
             "messages": [{"role": "user", "content": prompt}]
         }))
@@ -84,10 +87,13 @@ pub async fn debug_assist(
     request: AiRequest,
     response: AiResponse,
     api_key: String,
+    model: Option<String>,
 ) -> Result<String, String> {
     if api_key.is_empty() {
         return Err("Claude API key not configured. Go to Settings to add your key.".to_string());
     }
+
+    let model = model.unwrap_or_else(|| "claude-sonnet-4-6".to_string());
 
     let headers_str = request
         .headers
@@ -124,7 +130,7 @@ pub async fn debug_assist(
         .header("anthropic-version", "2023-06-01")
         .header("content-type", "application/json")
         .json(&json!({
-            "model": "claude-sonnet-4-6",
+            "model": model,
             "max_tokens": 1024,
             "messages": [{"role": "user", "content": prompt}]
         }))

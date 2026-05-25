@@ -62,3 +62,17 @@ input, textarea {
 input::placeholder, textarea::placeholder {
   color: var(--color-fg-3);
 }
+
+/* Compact mode: reduce row heights and padding */
+html.compact body { font-size: 12px; }
+html.compact input, html.compact textarea { font-size: 12px; }
+
+/* Disable animations */
+html.no-animations *, html.no-animations *::before, html.no-animations *::after {
+  animation-duration: 0ms !important;
+  transition-duration: 0ms !important;
+}
+
+/* Light theme overrides for elements that use var() */
+html[data-theme="light"] body { color-scheme: light; }
+html[data-theme="dark"]  body { color-scheme: dark; }

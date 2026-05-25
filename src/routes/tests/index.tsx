@@ -24,19 +24,21 @@ function SuiteItem({ name, results, active, onClick }: {
   const total = results?.flatMap(r => r.assertions).length ?? 0;
 
   return (
-    <button onClick={onClick} className="flex flex-col gap-0.5 w-full px-3 py-2.5 transition-colors hover:bg-[#1A1A1A] text-left"
+    <button onClick={onClick} className="flex flex-col gap-0.5 w-full px-3 py-2.5 transition-colors text-left"
       style={{
-        background: active ? "#1A1A1A" : "transparent",
-        borderLeft: active ? "2px solid #A855F7" : "2px solid transparent",
-      }}>
-      <span className="text-[13px] font-medium" style={{ color: active ? "#E4E4E7" : "#A1A1AA" }}>{name}</span>
+        background: active ? "var(--color-card)" : "transparent",
+        borderLeft: active ? "2px solid var(--color-accent)" : "2px solid transparent",
+      }}
+      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "var(--color-card)"; }}
+      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+      <span className="text-[13px] font-medium" style={{ color: active ? "var(--color-fg)" : "var(--color-fg-2)" }}>{name}</span>
       {results && total > 0 && (
         <div className="flex items-center gap-2">
           <span className="text-[11px]" style={{ color: "#22C55E" }}>{passed} passed</span>
           {failed > 0 && <span className="text-[11px]" style={{ color: "#EF4444" }}>{failed} failed</span>}
         </div>
       )}
-      {!results && <span className="text-[11px] text-[#3F3F46]">Not run yet</span>}
+      {!results && <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>Not run yet</span>}
     </button>
   );
 }
@@ -60,12 +62,11 @@ function AssertionRow({ result }: { result: AssertionResult }) {
             ? <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             : <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1L7 7M7 1L1 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" /></svg>}
         </div>
-        <span className="flex-1 text-[12px]" style={{ color: result.passed ? "#A1A1AA" : "#FCA5A5", fontFamily: "Geist Mono, monospace" }}>
+        <span className="flex-1 text-[12px]" style={{ color: result.passed ? "var(--color-fg-2)" : "#FCA5A5", fontFamily: "Geist Mono, monospace" }}>
           {result.assertion}
         </span>
         {result.detail && (
-          <ChevronDown size={13} className="text-[#71717A] transition-transform shrink-0"
-            style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }} />
+          <ChevronDown size={13} className="transition-transform shrink-0" style={{ color: "var(--color-fg-3)", transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }} />
         )}
       </div>
       {expanded && result.detail && (
@@ -85,13 +86,13 @@ function RequestGroup({ result }: { result: TestResult }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2 px-1">
-        <span className="text-[12px] font-semibold text-[#E4E4E7]">{result.requestName}</span>
+        <span className="text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>{result.requestName}</span>
         {result.error
           ? <span className="text-[11px] text-[#EF4444]">{result.error}</span>
           : <>
               <span className="text-[11px] text-[#22C55E]">{passed} passed</span>
               {failed > 0 && <span className="text-[11px] text-[#EF4444]">{failed} failed</span>}
-              <span className="text-[11px] text-[#52525B] ml-auto">{result.durationMs}ms</span>
+              <span className="text-[11px] ml-auto" style={{ color: "var(--color-fg-4)" }}>{result.durationMs}ms</span>
             </>}
       </div>
       {result.assertions.map((a, i) => <AssertionRow key={i} result={a} />)}
@@ -171,11 +172,11 @@ export function TestsRoute() {
 
   if (suites.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center h-full" style={{ background: "#0A0A0A" }}>
+      <div className="flex flex-1 items-center justify-center h-full" style={{ background: "var(--color-bg)" }}>
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-[14px] font-medium text-[#71717A]">No test suites found</p>
-          <p className="text-[12px] text-[#3F3F46] max-w-xs">
-            Load a collections folder and add <code className="text-[#A855F7]">tests:</code> assertions to your YAML requests.
+          <p className="text-[14px] font-medium" style={{ color: "var(--color-fg-3)" }}>No test suites found</p>
+          <p className="text-[12px] max-w-xs" style={{ color: "var(--color-fg-4)" }}>
+            Load a collections folder and add <code style={{ color: "var(--color-accent)" }}>tests:</code> assertions to your YAML requests.
           </p>
         </div>
       </div>
@@ -185,10 +186,10 @@ export function TestsRoute() {
   return (
     <div className="flex flex-1 h-full overflow-hidden">
       {/* Sidebar */}
-      <aside className="flex flex-col shrink-0 h-full" style={{ width: 240, background: "#0F0F0F", borderRight: "1px solid #27272A" }}>
-        <div className="flex items-center gap-2 px-3 shrink-0" style={{ height: 44, borderBottom: "1px solid #27272A" }}>
-          <span className="flex-1 text-[12px] font-medium text-[#A1A1AA]">Test Suites</span>
-          <span className="text-[11px] text-[#52525B]">{suites.length}</span>
+      <aside className="flex flex-col shrink-0 h-full" style={{ width: 240, background: "var(--color-sidebar)", borderRight: "1px solid var(--color-border)" }}>
+        <div className="flex items-center gap-2 px-3 shrink-0" style={{ height: 44, borderBottom: "1px solid var(--color-border)" }}>
+          <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--color-fg-2)" }}>Test Suites</span>
+          <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>{suites.length}</span>
         </div>
         <div className="flex-1 overflow-y-auto py-1">
           {suites.map(s => (
@@ -204,15 +205,15 @@ export function TestsRoute() {
       </aside>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#0A0A0A" }}>
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--color-bg)" }}>
         {activeCollection && (
           <>
-            <div className="flex items-center gap-3 shrink-0 px-6" style={{ height: 56, borderBottom: "1px solid #27272A" }}>
+            <div className="flex items-center gap-3 shrink-0 px-6" style={{ height: 56, borderBottom: "1px solid var(--color-border)" }}>
               <div className="flex flex-col gap-0.5 flex-1">
-                <h2 className="text-[16px] font-semibold text-white" style={{ fontFamily: "Geist, Inter, sans-serif" }}>
+                <h2 className="text-[16px] font-semibold" style={{ fontFamily: "Geist, Inter, sans-serif", color: "var(--color-fg)" }}>
                   {activeCollection.name}
                 </h2>
-                <span className="text-[12px] text-[#71717A]">
+                <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>
                   {activeCollection.requests.filter(r => r.tests?.length).length} requests with tests
                   {activeResults && ` · ${totalTests} assertions`}
                 </span>
@@ -235,7 +236,7 @@ export function TestsRoute() {
                 onClick={() => activeId && runSuite(activeId)}
                 disabled={isRunning}
                 className="flex items-center gap-1.5 px-4 rounded-md text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0"
-                style={{ height: 32, background: "#A855F7" }}>
+                style={{ height: 32, background: "var(--color-accent)" }}>
                 {isRunning
                   ? <><Loader2 size={13} className="animate-spin" /> Running...</>
                   : <><Play size={12} fill="white" /> Run All</>}
@@ -245,13 +246,13 @@ export function TestsRoute() {
             <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
               {!activeResults && !isRunning && (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                  <p className="text-[13px] text-[#71717A]">Press Run All to execute the test suite</p>
+                  <p className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>Press Run All to execute the test suite</p>
                 </div>
               )}
               {isRunning && (
                 <div className="flex items-center justify-center h-full gap-2">
-                  <Loader2 size={18} className="animate-spin text-[#A855F7]" />
-                  <span className="text-[13px] text-[#71717A]">Running tests...</span>
+                  <Loader2 size={18} className="animate-spin" style={{ color: "var(--color-accent)" }} />
+                  <span className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>Running tests...</span>
                 </div>
               )}
               {activeResults && !isRunning && activeResults.map(r => (

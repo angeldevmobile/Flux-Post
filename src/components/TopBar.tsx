@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, Bell, Settings, Check, Plus } from "lucide-react";
 import { FluxLogoMark } from "@/components/FluxLogo";
 import { useEnvironmentStore } from "@/stores/environment";
+import { CommandPalette } from "@/components/CommandPalette";
 import type { Route } from "@/components/NavRail";
 
 interface TopBarProps {
@@ -11,105 +12,171 @@ interface TopBarProps {
 export function TopBar({ onNavigate }: TopBarProps) {
   const { environments, activeId, setActive, addEnvironment } = useEnvironmentStore();
   const active = environments.find(e => e.id === activeId);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [envOpen, setEnvOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const envRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLDivElement>(null);
 
+  // Close env dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (envRef.current && !envRef.current.contains(e.target as Node)) setEnvOpen(false);
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Ctrl+K to open search
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(v => !v);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   function createNew() {
     const id = `env-${Date.now()}`;
     addEnvironment({ id, name: "New Environment", variables: {} });
     setActive(id);
-    setOpen(false);
+    setEnvOpen(false);
     onNavigate("environments");
   }
 
   return (
-    <header className="flex items-center shrink-0 gap-3"
-      style={{ height: 48, padding: "0 16px", background: "#111111", borderBottom: "1px solid #27272A" }}>
+    <>
+      <header className="flex items-center shrink-0 gap-3"
+        style={{
+          height: 48,
+          padding: "0 16px",
+          background: "var(--color-topbar)",
+          borderBottom: "1px solid var(--color-border)",
+        }}>
 
-      {/* Logo */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center justify-center rounded-lg"
-          style={{ width: 26, height: 26, background: "linear-gradient(135deg, #A855F730, #7C3AED18)", border: "1px solid #A855F750" }}>
-          <FluxLogoMark size={14} />
-        </div>
-        <span className="text-[15px] font-semibold text-white"
-          style={{ fontFamily: "Geist, Inter, sans-serif", letterSpacing: "-0.3px" }}>
-          Flux
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div style={{ width: 1, height: 20, background: "#27272A" }} />
-
-      {/* Env selector */}
-      <div ref={ref} className="relative">
-        <button
-          onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
-          style={{ background: "#1A1A1A", border: "1px solid #27272A", borderRadius: 6, height: 28, padding: "0 10px" }}>
-          <span style={{ width: 6, height: 6, borderRadius: 3, background: active ? "#22C55E" : "#71717A", flexShrink: 0 }} />
-          <span className="text-[12px] text-[#A1A1AA]">{active?.name ?? "No environment"}</span>
-          <ChevronDown size={12} className="text-[#71717A]"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }} />
-        </button>
-
-        {open && (
-          <div className="absolute top-full left-0 mt-1 z-50 rounded-lg overflow-hidden py-1"
-            style={{ background: "#1A1A1A", border: "1px solid #27272A", minWidth: 200, boxShadow: "0 8px 24px #00000060" }}>
-            {environments.length === 0 && (
-              <p className="text-[12px] text-[#52525B] px-3 py-2">No environments</p>
-            )}
-            {environments.map(env => (
-              <button key={env.id}
-                onClick={() => { setActive(env.id); setOpen(false); }}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#27272A] transition-colors text-left">
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
-                <span className="flex-1 text-[13px] text-[#A1A1AA]">{env.name}</span>
-                {env.id === activeId && <Check size={13} className="text-[#A855F7] shrink-0" />}
-              </button>
-            ))}
-            <div style={{ height: 1, background: "#27272A", margin: "4px 0" }} />
-            <button onClick={createNew}
-              className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#27272A] transition-colors">
-              <Plus size={13} className="text-[#71717A]" />
-              <span className="text-[13px] text-[#71717A]">New environment</span>
-            </button>
+        {/* Logo */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center justify-center rounded-lg"
+            style={{ width: 26, height: 26, background: "linear-gradient(135deg, var(--color-accent-20), var(--color-accent-10))", border: "1px solid var(--color-accent-50)" }}>
+            <FluxLogoMark size={14} />
           </div>
-        )}
+          <span className="text-[15px] font-semibold"
+            style={{ fontFamily: "Geist, Inter, sans-serif", letterSpacing: "-0.3px", color: "var(--color-fg)" }}>
+            Flux
+          </span>
+        </div>
+
+        {/* Divider */}
+        <div style={{ width: 1, height: 20, background: "var(--color-border)" }} />
+
+        {/* Env selector */}
+        <div ref={envRef} className="relative">
+          <button
+            onClick={() => setEnvOpen(v => !v)}
+            className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
+            style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 6, height: 28, padding: "0 10px" }}>
+            <span style={{ width: 6, height: 6, borderRadius: 3, background: active ? "#22C55E" : "var(--color-fg-3)", flexShrink: 0 }} />
+            <span className="text-[12px]" style={{ color: "var(--color-fg-2)" }}>{active?.name ?? "No environment"}</span>
+            <ChevronDown size={12} style={{ color: "var(--color-fg-3)", transform: envOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }} />
+          </button>
+
+          {envOpen && (
+            <div className="absolute top-full left-0 mt-1 z-50 rounded-lg overflow-hidden py-1"
+              style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", minWidth: 200, boxShadow: "0 8px 24px #00000060" }}>
+              {environments.length === 0 && (
+                <p className="text-[12px] px-3 py-2" style={{ color: "var(--color-fg-4)" }}>No environments</p>
+              )}
+              {environments.map(env => (
+                <button key={env.id}
+                  onClick={() => { setActive(env.id); setEnvOpen(false); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 transition-colors text-left"
+                  style={{ background: "transparent" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
+                  <span className="flex-1 text-[13px]" style={{ color: "var(--color-fg-2)" }}>{env.name}</span>
+                  {env.id === activeId && <Check size={13} style={{ color: "var(--color-accent)", flexShrink: 0 }} />}
+                </button>
+              ))}
+              <div style={{ height: 1, background: "var(--color-border)", margin: "4px 0" }} />
+              <button onClick={createNew}
+                className="flex items-center gap-2 w-full px-3 py-2 transition-colors"
+                style={{ background: "transparent" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                <Plus size={13} style={{ color: "var(--color-fg-3)" }} />
+                <span className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>New environment</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Right controls */}
+        <div className="flex items-center gap-1">
+          {/* Search */}
+          <IconBtn title="Search (Ctrl+K)" onClick={() => setSearchOpen(true)}>
+            <Search size={16} />
+          </IconBtn>
+
+          {/* Notifications */}
+          <div ref={bellRef} className="relative">
+            <IconBtn title="Notifications" onClick={() => setBellOpen(v => !v)}>
+              <Bell size={16} />
+            </IconBtn>
+            {bellOpen && <NotificationsDropdown onClose={() => setBellOpen(false)} />}
+          </div>
+
+          <IconBtn title="Settings" onClick={() => onNavigate("settings")}>
+            <Settings size={16} />
+          </IconBtn>
+
+          <button
+            className="flex items-center justify-center rounded-full font-semibold text-white ml-1 hover:opacity-80 transition-opacity"
+            style={{ width: 28, height: 28, background: "var(--color-accent)", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
+            M
+          </button>
+        </div>
+      </header>
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
+  );
+}
+
+function NotificationsDropdown({ onClose }: { onClose: () => void }) {
+  void onClose;
+  return (
+    <div className="absolute top-full right-0 mt-1 z-50 rounded-lg overflow-hidden"
+      style={{ width: 280, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000060" }}>
+      <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid var(--color-border)" }}>
+        <span className="text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>Notifications</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+          style={{ background: "var(--color-border)", color: "var(--color-fg-3)" }}>0 new</span>
       </div>
-
-      <div className="flex-1" />
-
-      {/* Right controls */}
-      <div className="flex items-center gap-1">
-        <IconBtn title="Search"><Search size={16} /></IconBtn>
-        <IconBtn title="Notifications"><Bell size={16} /></IconBtn>
-        <IconBtn title="Settings" onClick={() => onNavigate("settings")}><Settings size={16} /></IconBtn>
-
-        {/* Avatar with initial */}
-        <button
-          className="flex items-center justify-center rounded-full font-semibold text-white ml-1 hover:opacity-80 transition-opacity"
-          style={{ width: 28, height: 28, background: "#A855F7", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
-          M
-        </button>
+      <div className="flex flex-col items-center gap-2 py-8 px-4">
+        <Bell size={22} style={{ color: "var(--color-fg-4)" }} />
+        <p className="text-[12px] text-center" style={{ color: "var(--color-fg-3)" }}>No notifications yet</p>
+        <p className="text-[11px] text-center" style={{ color: "var(--color-fg-4)" }}>
+          Request errors and AI results will appear here.
+        </p>
       </div>
-    </header>
+    </div>
   );
 }
 
 function IconBtn({ children, title, onClick }: { children: React.ReactNode; title?: string; onClick?: () => void }) {
   return (
     <button title={title} onClick={onClick}
-      className="flex items-center justify-center rounded-md transition-colors hover:bg-[#1A1A1A] text-[#71717A] hover:text-[#A1A1AA]"
-      style={{ width: 32, height: 32 }}>
+      className="flex items-center justify-center rounded-md transition-colors"
+      style={{ width: 32, height: 32, color: "var(--color-fg-3)", background: "transparent" }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "var(--color-card)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--color-fg-2)"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--color-fg-3)"; }}>
       {children}
     </button>
   );

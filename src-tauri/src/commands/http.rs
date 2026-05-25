@@ -1,4 +1,4 @@
-use reqwest::{header::{HeaderMap, HeaderName, HeaderValue}, Client, Method};
+use reqwest::{header::{HeaderMap, HeaderName, HeaderValue}, Client, Method, Proxy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -13,6 +13,9 @@ pub struct HttpRequest {
     pub timeout_ms: Option<u64>,
     pub follow_redirects: Option<bool>,
     pub ssl_verify: Option<bool>,
+    pub proxy_http: Option<String>,
+    pub proxy_https: Option<String>,
+    pub no_proxy: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -36,11 +39,35 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
         reqwest::redirect::Policy::none()
     };
 
-    let client = Client::builder()
+    let mut builder = Client::builder()
         .danger_accept_invalid_certs(!ssl_verify)
-        .redirect(redirect_policy)
-        .build()
-        .map_err(|e| e.to_string())?;
+        .redirect(redirect_policy);
+
+    if let Some(ref proxy_url) = request.proxy_http {
+        if !proxy_url.is_empty() {
+            let mut proxy = Proxy::http(proxy_url).map_err(|e| e.to_string())?;
+            if let Some(ref no_proxy) = request.no_proxy {
+                if !no_proxy.is_empty() {
+                    proxy = proxy.no_proxy(reqwest::NoProxy::from_string(no_proxy));
+                }
+            }
+            builder = builder.proxy(proxy);
+        }
+    }
+
+    if let Some(ref proxy_url) = request.proxy_https {
+        if !proxy_url.is_empty() {
+            let mut proxy = Proxy::https(proxy_url).map_err(|e| e.to_string())?;
+            if let Some(ref no_proxy) = request.no_proxy {
+                if !no_proxy.is_empty() {
+                    proxy = proxy.no_proxy(reqwest::NoProxy::from_string(no_proxy));
+                }
+            }
+            builder = builder.proxy(proxy);
+        }
+    }
+
+    let client = builder.build().map_err(|e| e.to_string())?;
 
     let method = Method::from_str(&request.method).map_err(|e| e.to_string())?;
 
