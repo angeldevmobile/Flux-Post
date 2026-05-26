@@ -31,6 +31,7 @@ pub fn run() {
             commands::history::save_history,
             commands::history::get_history,
             commands::history::clear_history,
+            commands::history::restore_history,
             commands::history::save_session,
             commands::history::load_session,
             commands::history::clear_session,

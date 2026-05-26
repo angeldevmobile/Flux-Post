@@ -31,6 +31,9 @@ pub struct HttpRequest {
     pub proxy_http: Option<String>,
     pub proxy_https: Option<String>,
     pub no_proxy: Option<String>,
+    pub proxy_ssl_verify: Option<bool>,
+    pub client_cert_pem: Option<String>,
+    pub client_key_pem: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -49,6 +52,13 @@ pub struct HttpResponse {
 pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> {
     let ssl_verify = request.ssl_verify.unwrap_or(true);
     let follow_redirects = request.follow_redirects.unwrap_or(true);
+    let proxy_ssl_verify = request.proxy_ssl_verify.unwrap_or(true);
+
+    let has_proxy = request.proxy_http.as_ref().map(|s| !s.is_empty()).unwrap_or(false)
+        || request.proxy_https.as_ref().map(|s| !s.is_empty()).unwrap_or(false);
+
+    // When a proxy is in use, also consider proxy_ssl_verify for cert validation
+    let effective_ssl_verify = ssl_verify && (!has_proxy || proxy_ssl_verify);
 
     let redirect_policy = if follow_redirects {
         reqwest::redirect::Policy::default()
@@ -57,7 +67,7 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
     };
 
     let mut builder = Client::builder()
-        .danger_accept_invalid_certs(!ssl_verify)
+        .danger_accept_invalid_certs(!effective_ssl_verify)
         .redirect(redirect_policy);
 
     if let Some(ref proxy_url) = request.proxy_http {
@@ -81,6 +91,21 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
                 }
             }
             builder = builder.proxy(proxy);
+        }
+    }
+
+    // Client certificate for mutual TLS (mTLS)
+    if let Some(ref cert_pem) = request.client_cert_pem {
+        if !cert_pem.is_empty() {
+            let key_pem = request.client_key_pem.as_deref().unwrap_or("");
+            let mut combined = cert_pem.clone();
+            if !key_pem.is_empty() {
+                combined.push('\n');
+                combined.push_str(key_pem);
+            }
+            let identity = reqwest::Identity::from_pem(combined.as_bytes())
+                .map_err(|e| format!("Invalid client certificate: {e}"))?;
+            builder = builder.identity(identity);
         }
     }
 

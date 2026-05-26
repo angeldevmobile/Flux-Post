@@ -13,7 +13,10 @@ import { CompareRoute } from "@/routes/compare";
 import { WebSocketRoute } from "@/routes/websocket";
 import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
+import { useSettingsStore } from "@/stores/settings";
 import { loadSession, saveSession, clearSessionDb } from "@/lib/tauri";
+import { initCrashReporting, trackEvent } from "@/lib/analytics";
+import { syncOnLogin, stopSettingsSync } from "@/lib/sync";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
 
@@ -46,11 +49,25 @@ export default function App() {
   const { setSession, clearSession } = useUserStore();
 
   useEffect(() => {
+    initCrashReporting();
+    trackEvent("app_open");
+
     async function restoreSession() {
+      const { rememberMe } = useSettingsStore.getState();
+
+      // If "remember me" is off, always start at login — no session restore
+      if (!rememberMe) {
+        await clearSessionDb().catch(() => {});
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        setScreen("login");
+        return;
+      }
+
       // 1. Check if Supabase already has a valid session (from its own storage)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setSession(session);
+        syncOnLogin(session.user.id).catch(() => {});
         setScreen("app");
         return;
       }
@@ -65,7 +82,6 @@ export default function App() {
           });
           if (!error && data.session) {
             setSession(data.session);
-            // update backup with refreshed tokens
             await saveSession({
               accessToken: data.session.access_token,
               refreshToken: data.session.refresh_token,
@@ -75,6 +91,7 @@ export default function App() {
               userName: data.session.user.user_metadata?.full_name,
               userAvatar: data.session.user.user_metadata?.avatar_url,
             });
+            syncOnLogin(data.session.user.id).catch(() => {});
             setScreen("app");
             return;
           }
@@ -90,27 +107,49 @@ export default function App() {
 
     restoreSession();
 
+    // Lock on sleep: sign out when waking from a long absence (>2 min)
+    let hiddenAt: number | null = null;
+    function handleVisibility() {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else if (hiddenAt !== null) {
+        const awayMs = Date.now() - hiddenAt;
+        hiddenAt = null;
+        if (useSettingsStore.getState().lockOnSleep && awayMs > 120_000) {
+          supabase.auth.signOut();
+        }
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
     // Listen for auth state changes (token refresh, logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT") {
+        stopSettingsSync();
         clearSession();
         await clearSessionDb();
         setScreen("login");
       } else if (session && (event === "TOKEN_REFRESHED" || event === "SIGNED_IN")) {
         setSession(session);
-        await saveSession({
-          accessToken: session.access_token,
-          refreshToken: session.refresh_token,
-          expiresAt: session.expires_at,
-          userId: session.user.id,
-          userEmail: session.user.email,
-          userName: session.user.user_metadata?.full_name,
-          userAvatar: session.user.user_metadata?.avatar_url,
-        });
+        if (event === "SIGNED_IN") syncOnLogin(session.user.id).catch(() => {});
+        if (useSettingsStore.getState().rememberMe) {
+          await saveSession({
+            accessToken: session.access_token,
+            refreshToken: session.refresh_token,
+            expiresAt: session.expires_at,
+            userId: session.user.id,
+            userEmail: session.user.email,
+            userName: session.user.user_metadata?.full_name,
+            userAvatar: session.user.user_metadata?.avatar_url,
+          });
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   if (screen === "loading") {

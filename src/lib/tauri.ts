@@ -24,6 +24,9 @@ export interface HttpRequest {
   proxyHttp?: string;
   proxyHttps?: string;
   noProxy?: string;
+  proxySslVerify?: boolean;
+  clientCertPem?: string;
+  clientKeyPem?: string;
 }
 
 export interface HttpResponse {
@@ -56,6 +59,19 @@ export async function getHistory(): Promise<HistoryEntry[]> {
 
 export async function clearHistory(): Promise<void> {
   return invoke("clear_history");
+}
+
+export interface RestoreEntry {
+  method: string;
+  url: string;
+  status: number;
+  durationMs: number;
+  environment: string;
+  timestamp: string;
+}
+
+export async function restoreHistory(entries: RestoreEntry[]): Promise<void> {
+  return invoke("restore_history", { entries });
 }
 
 export interface SessionRow {

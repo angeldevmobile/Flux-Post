@@ -1,5 +1,5 @@
 use rusqlite::{Connection, Result as SqlResult};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
 pub struct Db(pub Mutex<Connection>);
@@ -159,5 +159,32 @@ pub fn clear_history(db: tauri::State<Db>) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM history", [])
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreEntry {
+    pub method: String,
+    pub url: String,
+    pub status: u16,
+    pub duration_ms: u64,
+    pub environment: String,
+    pub timestamp: String,
+}
+
+#[tauri::command]
+pub fn restore_history(
+    db: tauri::State<Db>,
+    entries: Vec<RestoreEntry>,
+) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    for e in entries {
+        conn.execute(
+            "INSERT OR IGNORE INTO history (method, url, status, duration_ms, environment, timestamp)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![e.method, e.url, e.status, e.duration_ms, e.environment, e.timestamp],
+        ).map_err(|e| e.to_string())?;
+    }
     Ok(())
 }

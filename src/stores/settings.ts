@@ -42,6 +42,8 @@ interface SettingsStore {
   noProxy: string;
   proxySslVerify: boolean;
   clientCerts: boolean;
+  clientCertPem: string;
+  clientKeyPem: string;
   connectionTimeoutMs: number;
   readTimeoutMs: number;
   maxResponseSizeMb: number;
@@ -105,6 +107,8 @@ export const useSettingsStore = create<SettingsStore>()(
       noProxy: "localhost,127.0.0.1",
       proxySslVerify: true,
       clientCerts: false,
+      clientCertPem: "",
+      clientKeyPem: "",
       connectionTimeoutMs: 10000,
       readTimeoutMs: 30000,
       maxResponseSizeMb: 50,

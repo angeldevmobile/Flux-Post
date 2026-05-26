@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
-  ExternalLink, Check, ClipboardPaste,
+  ExternalLink, Check, ClipboardPaste, X, FileUp,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings";
 import { clearHistory, getHistory, exportDataAsJson } from "@/lib/tauri";
@@ -487,9 +487,27 @@ function ProxySection() {
         <SettingRow label="Verify SSL certificates" description="Reject invalid or self-signed certificates">
           <Toggle checked={s.proxySslVerify} onChange={v => s.patch({ proxySslVerify: v })} />
         </SettingRow>
-        <SettingRow label="Client SSL certificates" description="Use client certs for mutual TLS" last>
+        <SettingRow label="Client SSL certificates" description="Use client certs for mutual TLS" last={!s.clientCerts}>
           <Toggle checked={s.clientCerts} onChange={v => s.patch({ clientCerts: v })} />
         </SettingRow>
+        {s.clientCerts && (
+          <div className="flex flex-col gap-3 px-4 pb-4">
+            <CertFilePicker
+              label="Certificate (.pem / .crt)"
+              value={s.clientCertPem}
+              accept=".pem,.crt,.cer"
+              onLoad={pem => s.patch({ clientCertPem: pem })}
+              onClear={() => s.patch({ clientCertPem: "" })}
+            />
+            <CertFilePicker
+              label="Private key (.pem / .key)"
+              value={s.clientKeyPem}
+              accept=".pem,.key"
+              onLoad={pem => s.patch({ clientKeyPem: pem })}
+              onClear={() => s.patch({ clientKeyPem: "" })}
+            />
+          </div>
+        )}
       </Card>
 
       <Card title="Network Timeouts">
@@ -521,6 +539,50 @@ function ProxySection() {
           </div>
         </SettingRow>
       </Card>
+    </div>
+  );
+}
+
+function CertFilePicker({ label, value, accept, onLoad, onClear }: {
+  label: string;
+  value: string;
+  accept: string;
+  onLoad: (pem: string) => void;
+  onClear: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    onLoad(text);
+    e.target.value = "";
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{label}</span>
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center px-3 rounded-md overflow-hidden"
+          style={{ height: 32, background: "var(--color-input)", border: `1px solid ${value ? "var(--color-accent-50)" : "var(--color-border)"}` }}>
+          <span className="flex-1 text-[11px] truncate" style={{ fontFamily: "Geist Mono, monospace", color: value ? "var(--color-fg)" : "var(--color-fg-4)" }}>
+            {value ? `${value.split("\n")[0].slice(0, 40)}…` : "No file loaded"}
+          </span>
+          {value && (
+            <button onClick={onClear} className="shrink-0 hover:opacity-70 transition-opacity ml-2" style={{ color: "var(--color-fg-3)" }}>
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
+        <button onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-80 shrink-0"
+          style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
+          <FileUp size={13} />
+          {value ? "Replace" : "Load"}
+        </button>
+      </div>
     </div>
   );
 }

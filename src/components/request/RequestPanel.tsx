@@ -3,6 +3,9 @@ import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X } fro
 import { useRequestStore } from "@/stores/request";
 import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
 import { sendRequest, saveHistory, saveCollection, editContent } from "@/lib/tauri";
+import { trackEvent, trackCrash, trackPerf } from "@/lib/analytics";
+import { pushHistory, pushCollection } from "@/lib/sync";
+import { useUserStore } from "@/stores/user";
 import { methodColor, methodBg } from "@/lib/methods";
 import type { HttpMethod } from "@/lib/tauri";
 import { useEnvironmentStore } from "@/stores/environment";
@@ -54,6 +57,8 @@ function SavePopover({ onClose }: { onClose: () => void }) {
       };
       await saveCollection(dir, updated);
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
+      const userId = useUserStore.getState().user?.id;
+      if (userId) pushCollection(userId, updated);
       onClose();
     } finally {
       setSaving(false);
@@ -412,25 +417,46 @@ function AuthTab() {
   );
 }
 
-function KeyValueEditor({ label }: { label: string }) {
+const COMMON_HEADERS = [
+  "Accept", "Accept-Encoding", "Accept-Language", "Authorization",
+  "Cache-Control", "Content-Type", "Content-Length", "Cookie",
+  "Host", "If-Modified-Since", "If-None-Match", "Origin",
+  "Pragma", "Referer", "User-Agent", "X-Api-Key", "X-Auth-Token",
+  "X-Correlation-Id", "X-Forwarded-For", "X-Request-Id",
+];
+
+function KeyValueEditor({ label, autocomplete }: { label: string; autocomplete?: boolean }) {
   const { headers, setHeaders, params, setParams, formFields, setFormFields } = useRequestStore();
   const items = label === "Headers" ? headers : label === "Form" ? formFields : params;
   const setItems = label === "Headers" ? setHeaders : label === "Form" ? setFormFields : setParams;
   const uid = useId();
+  const listId = `${uid}-header-list`;
 
   function addRow() { setItems([...items, { id: `${uid}-${Date.now()}`, key: "", value: "", enabled: true }]); }
   function removeRow(id: string) { setItems(items.filter(i => i.id !== id)); }
   function updateRow(id: string, field: "key" | "value", val: string) { setItems(items.map(i => i.id === id ? { ...i, [field]: val } : i)); }
   function toggleRow(id: string) { setItems(items.map(i => i.id === id ? { ...i, enabled: !i.enabled } : i)); }
 
+  const showAutocomplete = autocomplete && label === "Headers";
+
   return (
     <div className="flex flex-col gap-1.5 h-full overflow-y-auto">
+      {showAutocomplete && (
+        <datalist id={listId}>
+          {COMMON_HEADERS.map(h => <option key={h} value={h} />)}
+        </datalist>
+      )}
       {items.map(item => (
         <div key={item.id} className="flex items-center gap-2">
           <input type="checkbox" checked={item.enabled} onChange={() => toggleRow(item.id)} className="accent-accent shrink-0" />
-          <input value={item.key} onChange={e => updateRow(item.id, "key", e.target.value)} placeholder="Key"
+          <input
+            value={item.key}
+            onChange={e => updateRow(item.id, "key", e.target.value)}
+            placeholder="Key"
+            list={showAutocomplete ? listId : undefined}
             className="flex-1 h-7 px-2 rounded text-[12px]"
-            style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }} />
+            style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}
+          />
           <input value={item.value} onChange={e => updateRow(item.id, "value", e.target.value)} placeholder="Value"
             className="flex-1 h-7 px-2 rounded text-[12px]"
             style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }} />
@@ -557,7 +583,7 @@ function BinaryFilePicker() {
 export function RequestPanel() {
   const { url, setUrl, body, setBody, bodyType, setBodyType, graphqlQuery, setGraphqlQuery, graphqlVariables, setGraphqlVariables, preRequestScript, setPreRequestScript, postResponseScript, setPostResponseScript, authType, isLoading, setLoading, setResponse, setError, getRequest } = useRequestStore();
   const { resolveVariable } = useEnvironmentStore();
-  const { showLineNumbers, claudeApiKey, claudeModel } = useSettingsStore();
+  const { showLineNumbers, claudeApiKey, claudeModel, smartAutocomplete } = useSettingsStore();
 
   function makeAiEdit(content: string, lang: string) {
     if (!claudeApiKey) return undefined;
@@ -615,10 +641,13 @@ export function RequestPanel() {
       const {
         timeoutMs, followRedirects, sslVerify,
         proxyHttp, proxyHttpPort, proxyHttps, proxyHttpsPort, noProxy, useSystemProxy,
+        proxySslVerify, clientCerts, clientCertPem, clientKeyPem,
       } = useSettingsStore.getState();
 
       const proxyHttpUrl = !useSystemProxy && proxyHttp ? `${proxyHttp}:${proxyHttpPort}` : undefined;
       const proxyHttpsUrl = !useSystemProxy && proxyHttps ? `${proxyHttps}:${proxyHttpsPort}` : undefined;
+
+      trackEvent("request_send", { method: resolved.method, url: resolved.url });
 
       const resp = await sendRequest({
         ...resolved,
@@ -628,8 +657,12 @@ export function RequestPanel() {
         proxyHttp: proxyHttpUrl,
         proxyHttps: proxyHttpsUrl,
         noProxy: noProxy || undefined,
+        proxySslVerify,
+        clientCertPem: clientCerts && clientCertPem ? clientCertPem : undefined,
+        clientKeyPem: clientCerts && clientKeyPem ? clientKeyPem : undefined,
       });
       setResponse(resp);
+      trackPerf(resolved.url, resolved.method, resp.durationMs, resp.status);
 
       if (postResponseScript.trim()) {
         const { environments, activeId, updateEnvironment } = useEnvironmentStore.getState();
@@ -649,9 +682,20 @@ export function RequestPanel() {
 
       const { environments: envs, activeId: envActiveId } = useEnvironmentStore.getState();
       const envName = envs.find(e => e.id === envActiveId)?.name ?? "";
+      const timestamp = new Date().toISOString();
       await saveHistory(resolved.method, resolved.url, resp.status, resp.durationMs, envName);
+      const userId = useUserStore.getState().user?.id;
+      if (userId) {
+        pushHistory(userId, {
+          method: resolved.method, url: resolved.url,
+          status: resp.status, durationMs: resp.durationMs,
+          environment: envName, timestamp,
+        });
+      }
     } catch (e) {
-      setError(String(e));
+      const msg = String(e);
+      setError(msg);
+      trackCrash(msg);
     } finally {
       setLoading(false);
     }
@@ -814,7 +858,7 @@ export function RequestPanel() {
             )}
           </div>
         )}
-        {(tab === "Headers" || tab === "Params") && <KeyValueEditor label={tab} />}
+        {(tab === "Headers" || tab === "Params") && <KeyValueEditor label={tab} autocomplete={smartAutocomplete} />}
         {tab === "Auth" && <AuthTab />}
         {tab === "Pre-req" && (
           <div className="flex flex-col h-full gap-2">
