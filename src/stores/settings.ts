@@ -56,13 +56,17 @@ interface SettingsStore {
   lockOnSleep: boolean;
   historyRetentionDays: number;
 
+  // Onboarding
+  tourSeen: boolean;
+
   // Actions
   setTimeoutMs: (v: number) => void;
   setFollowRedirects: (v: boolean) => void;
   setSslVerify: (v: boolean) => void;
   setClaudeApiKey: (v: string) => void;
   setClaudeModel: (v: string) => void;
-  patch: (partial: Partial<Omit<SettingsStore, "patch" | "trackUsage" | "setTimeoutMs" | "setFollowRedirects" | "setSslVerify" | "setClaudeApiKey" | "setClaudeModel">>) => void;
+  setTourSeen: (v: boolean) => void;
+  patch: (partial: Partial<Omit<SettingsStore, "patch" | "trackUsage" | "setTimeoutMs" | "setFollowRedirects" | "setSslVerify" | "setClaudeApiKey" | "setClaudeModel" | "setTourSeen">>) => void;
   trackUsage: (type: "tests" | "debugs", tokens?: number) => void;
 }
 
@@ -121,6 +125,9 @@ export const useSettingsStore = create<SettingsStore>()(
       lockOnSleep: false,
       historyRetentionDays: 30,
 
+      // Onboarding
+      tourSeen: false,
+
       // Actions
       setTimeoutMs: (timeoutMs) => set({ timeoutMs }),
       setFollowRedirects: (followRedirects) => set({ followRedirects }),
@@ -130,6 +137,7 @@ export const useSettingsStore = create<SettingsStore>()(
         set({ claudeApiKey });
       },
       setClaudeModel: (claudeModel) => set({ claudeModel }),
+      setTourSeen: (tourSeen) => set({ tourSeen }),
       patch: (partial) => set(partial as any),
       trackUsage: (type, tokens = 500) => {
         const s = get();

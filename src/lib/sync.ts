@@ -1,13 +1,15 @@
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useSettingsStore } from "@/stores/settings";
 import { useCollectionsStore, type Collection } from "@/stores/collections";
+import { useEnvironmentStore, type Environment } from "@/stores/environment";
 
 // Keys that should never leave the device
 const DEVICE_ONLY_KEYS = ["claudeApiKey", "clientCertPem", "clientKeyPem"];
 
-// ─────────────────────────────────────────
+//                                          
 // HISTORY
-// ─────────────────────────────────────────
+//                                          
 
 export function pushHistory(userId: string, entry: {
   method: string;
@@ -25,7 +27,7 @@ export function pushHistory(userId: string, entry: {
     duration_ms: entry.durationMs,
     environment: entry.environment,
     created_at: entry.timestamp,
-  }).then(() => {}).catch(() => {});
+  }).then(() => {}, () => {});
 }
 
 async function pullHistory(userId: string) {
@@ -60,9 +62,9 @@ async function pullHistory(userId: string) {
   }
 }
 
-// ─────────────────────────────────────────
+//                                          
 // COLLECTIONS
-// ─────────────────────────────────────────
+//                                          
 
 export function pushCollection(userId: string, collection: Collection) {
   supabase.from("flux_collections").upsert({
@@ -70,7 +72,7 @@ export function pushCollection(userId: string, collection: Collection) {
     user_id: userId,
     data: collection,
     updated_at: new Date().toISOString(),
-  }).then(() => {}).catch(() => {});
+  }).then(() => {}, () => {});
 }
 
 async function pullCollections(userId: string) {
@@ -85,9 +87,9 @@ async function pullCollections(userId: string) {
   }
 }
 
-// ─────────────────────────────────────────
+//                                          
 // SETTINGS
-// ─────────────────────────────────────────
+//                                          
 
 let settingsTimer: ReturnType<typeof setTimeout> | null = null;
 let _syncingUserId: string | null = null;
@@ -108,13 +110,14 @@ async function pushSettings(userId: string) {
         syncable[k] = v;
       }
     }
-    await supabase.from("flux_settings").upsert({
+    const { error } = await supabase.from("flux_settings").upsert({
       user_id: userId,
       data: syncable,
       updated_at: new Date().toISOString(),
     });
+    if (error) toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
   } catch {
-    // silent — sync is best-effort
+    toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
   }
 }
 
@@ -123,7 +126,7 @@ async function pullSettings(userId: string) {
     .from("flux_settings")
     .select("data")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (!data?.data) return;
 
@@ -136,9 +139,69 @@ async function pullSettings(userId: string) {
   useSettingsStore.getState().patch(patch as any);
 }
 
-// ─────────────────────────────────────────
+//
+// ENVIRONMENTS
+//
+
+let environmentsTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function pushEnvironmentsDebounced(userId: string) {
+  if (environmentsTimer) clearTimeout(environmentsTimer);
+  environmentsTimer = setTimeout(() => pushEnvironments(userId), 1500);
+}
+
+async function pushEnvironments(userId: string) {
+  try {
+    const { environments, globalVariables, globalSecretKeys } = useEnvironmentStore.getState();
+    const syncable = environments.filter((e) => e.id !== "default");
+    const results = await Promise.allSettled([
+      ...syncable.map((env) =>
+        supabase.from("flux_environments").upsert({
+          id: env.id,
+          user_id: userId,
+          data: env,
+          updated_at: new Date().toISOString(),
+        })
+      ),
+      supabase.from("flux_environments").upsert({
+        id: "__globals__",
+        user_id: userId,
+        data: { globalVariables, globalSecretKeys },
+        updated_at: new Date().toISOString(),
+      }),
+    ]);
+    const anyFailed = results.some(r => r.status === "rejected" || (r.status === "fulfilled" && (r.value as { error: unknown }).error));
+    if (anyFailed) toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+  } catch {
+    toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+  }
+}
+
+async function pullEnvironments(userId: string) {
+  const { data } = await supabase
+    .from("flux_environments")
+    .select("id, data")
+    .eq("user_id", userId);
+
+  if (!data || data.length === 0) return;
+
+  const store = useEnvironmentStore.getState();
+  for (const row of data) {
+    if (row.id === "__globals__") {
+      const { globalVariables, globalSecretKeys } = row.data as {
+        globalVariables: Record<string, string>;
+        globalSecretKeys: string[];
+      };
+      store.loadGlobals(globalVariables ?? {}, globalSecretKeys ?? []);
+    } else {
+      store.loadEnvironment(row.data as Environment);
+    }
+  }
+}
+
+//
 // SUBSCRIPTION — settings auto-push
-// ─────────────────────────────────────────
+//
 
 let settingsUnsubscribe: (() => void) | null = null;
 
@@ -158,16 +221,37 @@ export function stopSettingsSync() {
   settingsTimer = null;
 }
 
-// ─────────────────────────────────────────
+let environmentsUnsubscribe: (() => void) | null = null;
+let _envSyncUserId: string | null = null;
+
+export function startEnvironmentsSync(userId: string) {
+  _envSyncUserId = userId;
+  if (environmentsUnsubscribe) environmentsUnsubscribe();
+  environmentsUnsubscribe = useEnvironmentStore.subscribe(() => {
+    if (_envSyncUserId) pushEnvironmentsDebounced(_envSyncUserId);
+  });
+}
+
+export function stopEnvironmentsSync() {
+  _envSyncUserId = null;
+  environmentsUnsubscribe?.();
+  environmentsUnsubscribe = null;
+  if (environmentsTimer) clearTimeout(environmentsTimer);
+  environmentsTimer = null;
+}
+
+//                                          
 // ON LOGIN — pull everything
-// ─────────────────────────────────────────
+//                                          
 
 export async function syncOnLogin(userId: string) {
-  // Pull first, then start subscription (avoids echoing pulled data back immediately)
+  // Pull first, then start subscriptions (avoids echoing pulled data back immediately)
   await Promise.allSettled([
     pullSettings(userId),
     pullCollections(userId),
     pullHistory(userId),
+    pullEnvironments(userId),
   ]);
   startSettingsSync(userId);
+  startEnvironmentsSync(userId);
 }

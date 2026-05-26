@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Play, ChevronDown, Loader2, Sparkles, X } from "lucide-react";
+import { Play, ChevronDown, Loader2, Sparkles, X, FlaskConical } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
 import { sendRequest, analyzeTestFailures } from "@/lib/tauri";
@@ -198,11 +198,19 @@ export function TestsRoute() {
   if (suites.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center h-full" style={{ background: "var(--color-bg)" }}>
-        <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-[14px] font-medium" style={{ color: "var(--color-fg-3)" }}>No test suites found</p>
-          <p className="text-[12px] max-w-xs" style={{ color: "var(--color-fg-4)" }}>
-            Load a collections folder and add <code style={{ color: "var(--color-accent)" }}>tests:</code> assertions to your YAML requests.
-          </p>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex items-center justify-center rounded-full"
+            style={{ width: 48, height: 48, background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+            <FlaskConical size={22} style={{ color: "var(--color-fg-4)" }} />
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <p className="text-[14px] font-semibold" style={{ color: "var(--color-fg-2)" }}>No test suites yet</p>
+            <p className="text-[12px] max-w-65" style={{ color: "var(--color-fg-4)", lineHeight: 1.6 }}>
+              Load a collections folder and add{" "}
+              <code style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>tests:</code>{" "}
+              assertions to your requests. Each collection with tests becomes a suite here.
+            </p>
+          </div>
         </div>
       </div>
     );

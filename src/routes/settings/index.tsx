@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
-  ExternalLink, Check, ClipboardPaste, X, FileUp,
+  ExternalLink, Check, ClipboardPaste, X, FileUp, Play,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings";
 import { clearHistory, getHistory, exportDataAsJson } from "@/lib/tauri";
@@ -110,6 +110,18 @@ function GeneralSection() {
         </SettingRow>
         <SettingRow label="SSL Verification" description="Verify SSL certificates on requests" last>
           <Toggle checked={s.sslVerify} onChange={s.setSslVerify} />
+        </SettingRow>
+      </Card>
+      <Card title="Onboarding">
+        <SettingRow label="Launch Tour" description="Replay the getting-started walkthrough" last>
+          <button
+            onClick={() => s.setTourSeen(false)}
+            className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-medium transition-opacity hover:opacity-80"
+            style={{ height: 32, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)", color: "var(--color-accent)" }}
+          >
+            <Play size={12} />
+            Launch Tour
+          </button>
         </SettingRow>
       </Card>
     </div>

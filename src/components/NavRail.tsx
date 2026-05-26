@@ -1,6 +1,6 @@
-import { Send, FolderOpen, Globe, FlaskConical, Clock, Settings, Columns2, Wifi } from "lucide-react";
+import { Send, FolderOpen, Globe, FlaskConical, Clock, Settings, Columns2, Wifi, Radio } from "lucide-react";
 
-export type Route = "requests" | "collections" | "environments" | "tests" | "history" | "compare" | "websocket" | "settings";
+export type Route = "requests" | "collections" | "environments" | "tests" | "history" | "compare" | "websocket" | "sse" | "settings";
 
 const NAV_ITEMS: { id: Route; icon: React.ElementType; label: string }[] = [
   { id: "requests",     icon: Send,         label: "Requests"     },
@@ -10,6 +10,7 @@ const NAV_ITEMS: { id: Route; icon: React.ElementType; label: string }[] = [
   { id: "history",      icon: Clock,        label: "History"      },
   { id: "compare",      icon: Columns2,     label: "Compare"      },
   { id: "websocket",    icon: Wifi,         label: "WebSocket"    },
+  { id: "sse",          icon: Radio,        label: "SSE"          },
 ];
 
 interface NavRailProps {
@@ -20,6 +21,7 @@ interface NavRailProps {
 export function NavRail({ active, onChange }: NavRailProps) {
   return (
     <nav
+      data-tour="navrail"
       className="flex flex-col items-center shrink-0"
       style={{
         width: 56,

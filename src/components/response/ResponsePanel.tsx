@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, Copy, Check, Timer, Bug, ImageIcon, Terminal, Trash2, Wrench, Loader2 } from "lucide-react";
+import { Sparkles, Copy, Check, Timer, Bug, ImageIcon, Terminal, Trash2, Wrench, Loader2, Zap } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import { useSettingsStore } from "@/stores/settings";
 import { generateTests, debugAssist, fixAssertion, type AssertionFix } from "@/lib/tauri";
@@ -7,6 +7,12 @@ import { CodeEditor } from "@/components/CodeEditor";
 import { useConsoleStore } from "@/stores/console";
 import type { LogLevel } from "@/stores/console";
 import { useTestResultsStore } from "@/stores/testResults";
+
+const EXAMPLE_REQUESTS = [
+  { method: "GET", url: "https://jsonplaceholder.typicode.com/posts/1" },
+  { method: "GET", url: "https://api.github.com/users/octocat" },
+  { method: "GET", url: "https://httpbin.org/get" },
+] as const;
 
 const STATUS_COLOR = (s: number) =>
   s >= 200 && s < 300 ? "#22C55E" : s >= 300 && s < 400 ? "#F59E0B" : "#EF4444";
@@ -87,7 +93,7 @@ function ConsolePanel() {
 }
 
 export function ResponsePanel() {
-  const { response, error, isLoading, getRequest } = useRequestStore();
+  const { response, error, isLoading, getRequest, setMethod, setUrl } = useRequestStore();
   const {
     claudeApiKey, claudeModel,
     autoGenerateTests, aiDebugAssist: debugAssistEnabled,
@@ -183,7 +189,7 @@ export function ResponsePanel() {
   const TABS: RespTab[] = ["Body", "Headers", "Cookies", "Tests", "Console"];
 
   return (
-    <div className="flex flex-col shrink-0 h-full overflow-hidden" style={{ width: 420, background: "var(--color-bg)" }}>
+    <div data-tour="response-panel" className="flex flex-col shrink-0 h-full overflow-hidden" style={{ width: 420, background: "var(--color-bg)" }}>
 
       {/* Response header */}
       <div className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
@@ -214,9 +220,6 @@ export function ResponsePanel() {
         )}
 
         {isLoading && <span className="text-[12px] animate-pulse" style={{ color: "var(--color-fg-3)" }}>Sending...</span>}
-        {!response && !isLoading && !error && (
-          <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Send a request to see the response</span>
-        )}
       </div>
 
       {/* Tabs */}
@@ -282,7 +285,42 @@ export function ResponsePanel() {
 
           {/* Empty body tab */}
           {tab === "Body" && !response && !isLoading && !error && (
-            <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Send a request to see the response</p>
+            <div className="flex flex-col items-center justify-center h-full gap-4 py-8">
+              <div className="flex items-center justify-center rounded-full"
+                style={{ width: 48, height: 48, background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+                <Zap size={22} style={{ color: "var(--color-accent)" }} />
+              </div>
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-[14px] font-semibold" style={{ color: "var(--color-fg-2)" }}>No response yet</span>
+                <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Enter a URL and press Send — or try an example:</span>
+              </div>
+              <div className="flex flex-col gap-1.5 w-full max-w-70">
+                {EXAMPLE_REQUESTS.map(ex => (
+                  <button
+                    key={ex.url}
+                    onClick={() => { setMethod(ex.method); setUrl(ex.url); }}
+                    className="flex items-center gap-2 px-3 rounded-lg text-left transition-colors w-full"
+                    style={{ height: 34, background: "var(--color-card)", border: "1px solid var(--color-border)" }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--color-accent-50)")}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--color-border)")}>
+                    <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: "#22C55E18", color: "#22C55E", fontFamily: "Geist Mono, monospace" }}>
+                      {ex.method}
+                    </span>
+                    <span className="truncate text-[11px]"
+                      style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-3)" }}>
+                      {ex.url}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+                Press <kbd className="px-1.5 py-0.5 rounded text-[10px]"
+                  style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>
+                  Ctrl+Enter
+                </kbd> to send
+              </span>
+            </div>
           )}
 
           {/* Headers tab */}
@@ -366,7 +404,7 @@ export function ResponsePanel() {
 
       {/* AI Panel */}
       {showAiPanel && (
-        <div className="shrink-0 flex flex-col gap-2 p-3"
+        <div data-tour="ai-panel" className="shrink-0 flex flex-col gap-2 p-3"
           style={{ background: isError ? "rgba(239,68,68,0.06)" : "var(--color-accent-10)", borderTop: "1px solid var(--color-border)" }}>
           <div className="flex items-center gap-1.5">
             {isError

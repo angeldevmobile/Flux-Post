@@ -1,4 +1,5 @@
 import { useState, useId, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
@@ -59,6 +60,7 @@ function SavePopover({ onClose }: { onClose: () => void }) {
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
       const userId = useUserStore.getState().user?.id;
       if (userId) pushCollection(userId, updated);
+      toast.success(`Saved to ${col.name}`);
       onClose();
     } finally {
       setSaving(false);
@@ -389,7 +391,7 @@ function AuthTab() {
                 <span className="flex-1 px-3 py-1.5 text-[11px] truncate" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-3)" }}>
                   {authOAuthToken.slice(0, 40)}…
                 </span>
-                <button onClick={() => navigator.clipboard.writeText(authOAuthToken)}
+                <button onClick={() => { navigator.clipboard.writeText(authOAuthToken); toast.success("Token copied", { duration: 1500 }); }}
                   className="px-2 shrink-0 text-[11px] transition-opacity hover:opacity-80"
                   style={{ color: "var(--color-fg-3)" }}>
                   Copy
@@ -696,6 +698,7 @@ export function RequestPanel() {
       const msg = String(e);
       setError(msg);
       trackCrash(msg);
+      toast.error("Request failed — " + (msg.includes("timed out") ? "timed out" : msg.includes("dns") || msg.includes("connect") ? "could not connect" : "network error"), { duration: 4000 });
     } finally {
       setLoading(false);
     }
@@ -724,7 +727,7 @@ export function RequestPanel() {
   return (
     <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)", borderRight: "1px solid var(--color-border)" }}>
       {/* URL Bar */}
-      <div className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
+      <div data-tour="request-builder" className="flex items-center gap-2 shrink-0 px-4" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
         <MethodSelector />
         <div className="flex-1 flex items-center px-3 rounded-md" style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
           <input

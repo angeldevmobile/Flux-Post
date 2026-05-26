@@ -262,6 +262,17 @@ export async function analyzeTestFailures(
   return invoke("analyze_test_failures", { failuresJson, apiKey, model: model ?? null });
 }
 
+export async function sseConnect(
+  url: string,
+  headers: Record<string, string> = {}
+): Promise<string> {
+  return invoke("sse_connect", { url, headers });
+}
+
+export async function sseDisconnect(connectionId: string): Promise<void> {
+  return invoke("sse_disconnect", { connectionId });
+}
+
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

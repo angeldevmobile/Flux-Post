@@ -171,9 +171,16 @@ export function WebSocketRoute() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5">
         {messages.length === 0 && (
-          <p className="text-[12px] text-center mt-8" style={{ color: "var(--color-fg-4)" }}>
-            Connect to a WebSocket server to start receiving messages
-          </p>
+          <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: "var(--color-fg-4)" }}>
+            <Wifi size={28} style={{ opacity: 0.3 }} />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <span className="text-[13px] font-medium" style={{ color: "var(--color-fg-3)" }}>Not connected</span>
+              <span className="text-[12px]">Enter a URL above and click Connect</span>
+              <span className="text-[11px] mt-1" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
+                Try: wss://echo.websocket.org
+              </span>
+            </div>
+          </div>
         )}
         {messages.map(msg => (
           <div key={msg.id} className="flex items-start gap-3">

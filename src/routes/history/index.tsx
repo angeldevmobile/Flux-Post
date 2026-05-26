@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, RotateCcw, Download } from "lucide-react";
+import { Search, RotateCcw, Download, Clock } from "lucide-react";
 import { getHistory, clearHistory, exportDataAsJson, type HistoryEntry } from "@/lib/tauri";
 import { useRequestStore } from "@/stores/request";
 import { methodColor, methodBg } from "@/lib/methods";
@@ -163,9 +163,19 @@ export function HistoryRoute() {
           );
         })}
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center flex-1 h-full gap-2">
-            <p className="text-[14px] font-medium" style={{ color: "var(--color-fg-3)" }}>No hay historial aún</p>
-            <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Los requests que envíes aparecerán aquí.</p>
+          <div className="flex flex-col items-center justify-center flex-1 h-full gap-3">
+            <div className="flex items-center justify-center rounded-full"
+              style={{ width: 44, height: 44, background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+              <Clock size={20} style={{ color: "var(--color-fg-4)" }} />
+            </div>
+            <div className="flex flex-col items-center gap-1 text-center">
+              <p className="text-[14px] font-medium" style={{ color: "var(--color-fg-3)" }}>
+                {search ? "No matching requests" : "No history yet"}
+              </p>
+              <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>
+                {search ? "Try a different search term." : "Requests you send will appear here."}
+              </p>
+            </div>
           </div>
         )}
       </div>

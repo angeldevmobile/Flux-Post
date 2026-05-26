@@ -1,21 +1,74 @@
 # Flux
 
-> The modern API client for developers. Local-first, git-native, AI-powered.
+> Modern desktop API client. Local-first, AI-powered, cloud-synced.
 
-Flux is a lightweight desktop API client built with Tauri + React. Your collections live in your repo as plain files, the app uses under 30MB of RAM, and Claude AI generates tests from your responses automatically.
+Flux is a lightweight desktop app for testing and exploring APIs. Built with Tauri + React — under 30 MB RAM, native performance, no Electron.
 
 ---
 
 ## Why Flux
 
-| Problem | Postman / Insomnia | Flux |
+| | Postman / Insomnia | Flux |
 |---|---|---|
 | RAM usage | 200–400 MB | < 30 MB |
-| Collections storage | Vendor cloud | Local files in your repo |
-| Git workflow | Manual export | Native — commit alongside code |
-| AI features | None | Test generation, debug assist |
-| Requires account | Yes | No — offline first |
 | Binary size | ~150 MB | ~5 MB |
+| Requires account | Yes | No — offline first |
+| AI features | None / paid | Test gen, debug assist, script editing |
+| WebSocket | Basic | Full duplex viewer |
+| SSE / EventStream | No | Yes — streaming event viewer |
+| Cloud sync | Vendor cloud | Optional, your own Supabase |
+
+---
+
+## Features
+
+### HTTP Requests
+- All methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+- Body types: JSON, form, multipart, binary, raw, GraphQL
+- Auth: Bearer, API Key, Basic, OAuth 2.0 (auth code + client credentials), AWS SigV4
+- Headers, query params, environment variable interpolation `{{VAR}}`
+- Pre-request scripts and post-response scripts (`pm` API — set/get env vars, add headers)
+- Proxy support (HTTP/HTTPS), SSL verification toggle, client certificates (mTLS)
+
+### Collections
+- Import from Postman v2.1, OpenAPI 3.x, cURL
+- Folder structure with nested requests
+- Per-request test assertions
+- Collection runner — run all requests in sequence with assertion reporting
+- Cloud sync per user via Supabase
+
+### Environments
+- Multiple named environments with key/value variables
+- Global variables shared across all environments
+- Secret keys — masked in UI, never logged
+- Environment variable resolution at send time
+- Cloud sync per user
+
+### Tests
+- Assertion syntax: `status == 200`, `body.token != null`, `duration < 500`
+- AI-generated assertions from Claude — one click after any response
+- AI fix suggestion on failing assertions
+- Batch test runner across collection requests with pass/fail report
+- Post-response scripts: `pm.test(...)` + `pm.expect(...)` Chai-style API
+
+### Real-time Protocols
+- **WebSocket** — connect, send/receive messages, full duplex log
+- **SSE / Server-Sent Events** — streaming viewer with event type, data, id display, JSON pretty-print
+
+### AI (Claude API — your key)
+- Generate test assertions from any response
+- Debug assist on 4xx/5xx errors
+- AI script editor — edit pre/post scripts with natural language
+- Fix failing assertions with one click
+- Analyze batch test failures
+
+### Other
+- Request history (local SQLite + cloud sync)
+- Response comparison between two requests
+- Command palette
+- Monaco-based code editor with syntax highlighting (JSON, GraphQL, JavaScript)
+- Light / dark / system theme, custom accent color, compact mode
+- Cloud auth (email + password via Supabase)
 
 ---
 
@@ -26,62 +79,44 @@ Flux is a lightweight desktop API client built with Tauri + React. Your collecti
 │                        FLUX DESKTOP                         │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │                 UI Layer (React + TS)                │   │
+│  │               UI Layer (React + TypeScript)          │   │
 │  │                                                      │   │
-│  │   Request Builder  │  Response Viewer  │  Settings   │   │
-│  │   Collection Tree  │  Test Runner      │  Env Mgr    │   │
-│  └───────────────────────────┬──────────────────────────┘   │
-│                              │ Tauri IPC (commands)          │
-│  ┌───────────────────────────▼──────────────────────────┐   │
-│  │                  Core (Rust / Tauri)                 │   │
+│  │  Request Builder · Response Viewer · Collections     │   │
+│  │  Environments · Tests · History · WS · SSE · Compare │   │
+│  └────────────────────────┬─────────────────────────────┘   │
+│                           │ Tauri IPC                        │
+│  ┌────────────────────────▼─────────────────────────────┐   │
+│  │               Core (Rust / Tauri 2.0)                │   │
 │  │                                                      │   │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌────────────┐  │   │
-│  │  │ HTTP Engine │  │  File System │  │  SQLite    │  │   │
-│  │  │  (reqwest)  │  │  (collections│  │  (history) │  │   │
-│  │  │             │  │   .yaml)     │  │            │  │   │
-│  │  └─────────────┘  └──────────────┘  └────────────┘  │   │
-│  │                                                      │   │
-│  │  ┌─────────────────────────────────────────────────┐ │   │
-│  │  │            Claude API Client (AI)               │ │   │
-│  │  └─────────────────────────────────────────────────┘ │   │
+│  │   HTTP (reqwest) · WebSocket · SSE streaming         │   │
+│  │   OAuth flows · AWS SigV4 · mTLS                     │   │
+│  │   SQLite (history, session) · YAML collections       │   │
+│  │   Claude API client (AI features)                    │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
-          │                    │                  │
-    .yaml files           SQLite DB          Claude API
-    (your repo)          (local only)       (anthropic.com)
+         │                    │                  │
+   Local SQLite          .yaml files        Supabase
+   (history)            (collections)       (sync + auth)
 ```
-
-### Layer responsibilities
-
-**UI Layer — React + TypeScript**
-Renders the interface only. No networking, no file I/O. All side effects go through Tauri IPC commands to the Rust core.
-
-**Core — Rust via Tauri 2.0**
-Owns all sensitive operations: HTTP requests, file system access, database reads/writes, and API calls to Claude. This is what keeps the binary small and RAM low — no Chromium bundled, no Node.js runtime.
-
-**Storage — Local files + SQLite**
-- Collections → `.yaml` files inside your project directory. Committable, diffable, reviewable in PRs.
-- Request history → SQLite database, stored locally, never leaves the machine.
-
-**AI — Claude API (Anthropic)**
-The Rust core calls Claude with the raw request + response as context. Claude returns generated test assertions. No data is stored by Anthropic beyond the standard API usage terms.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology | Reason |
-|---|---|---|
-| Desktop shell | Tauri 2.0 | Uses OS WebView — no bundled Chromium |
-| Frontend | React 18 + TypeScript | Familiar DX, strong ecosystem |
-| Build tool | Vite | Fast HMR during development |
-| UI components | Tailwind CSS v4 | Utility-first, zero runtime overhead |
-| State management | Zustand | Minimal, no boilerplate |
-| HTTP engine | reqwest (Rust) | Native TLS, async, battle-tested |
-| Local database | SQLite via rusqlite (Rust) | Zero-config, embedded, bundled |
-| Collections format | YAML | Human-readable, git-friendly |
-| AI | Claude API — Sonnet 4.6 | Best balance of speed and capability |
-| Auth | GitHub OAuth + email/password | Covers both developer personas |
+| Layer | Technology |
+|---|---|
+| Desktop shell | Tauri 2.0 |
+| Frontend | React 18 + TypeScript |
+| Build | Vite |
+| Styling | Tailwind CSS v4 |
+| State | Zustand |
+| Code editor | Monaco Editor |
+| HTTP engine | reqwest (Rust) |
+| WebSocket | tokio-tungstenite (Rust) |
+| Local DB | SQLite via rusqlite (Rust) |
+| Collections format | YAML |
+| Auth + sync | Supabase |
+| AI | Claude API (Sonnet 4.6) |
 
 ---
 
@@ -89,196 +124,155 @@ The Rust core calls Claude with the raw request + response as context. Claude re
 
 ```
 flux/
-├── src-tauri/                  # Rust core (Tauri backend)
-│   ├── src/
-│   │   ├── main.rs             # Tauri app entry point
-│   │   ├── commands/           # IPC command handlers
-│   │   │   ├── http.rs         # Send HTTP requests
-│   │   │   ├── collections.rs  # Read/write .yaml collections
-│   │   │   ├── history.rs      # SQLite request history
-│   │   │   └── ai.rs           # Claude API integration
-│   │   ├── engine/             # HTTP engine (reqwest)
-│   │   │   ├── client.rs       # Request builder + sender
-│   │   │   ├── auth.rs         # Auth schemes (Bearer, API Key, Basic)
-│   │   │   └── proxy.rs        # Proxy + SSL configuration
-│   │   └── db/                 # SQLite layer (sqlx)
-│   │       ├── migrations/
-│   │       └── models.rs
-│   └── Cargo.toml
+├── src-tauri/
+│   └── src/
+│       ├── lib.rs                  # Tauri app entry, state registration
+│       └── commands/
+│           ├── http.rs             # HTTP request engine
+│           ├── websocket.rs        # WebSocket connections
+│           ├── sse.rs              # SSE streaming
+│           ├── history.rs          # SQLite history + session
+│           ├── collections.rs      # YAML collection I/O
+│           ├── ai.rs               # Claude API calls
+│           └── oauth.rs            # OAuth 2.0 flows
 │
-├── src/                        # React frontend
-│   ├── app/
-│   │   ├── layout.tsx          # Root layout with nav rail
-│   │   └── routes/
-│   │       ├── requests/       # Main request builder screen
-│   │       ├── environments/   # Environment variables manager
-│   │       ├── tests/          # AI-generated test runner
-│   │       ├── history/        # Request history
-│   │       └── settings/       # Settings sub-screens
+├── src/
+│   ├── routes/
+│   │   ├── requests/               # Main request builder
+│   │   ├── environments/           # Environment manager
+│   │   ├── collections/ (sidebar)  # Collection tree
+│   │   ├── tests/                  # Test runner
+│   │   ├── history/                # Request history
+│   │   ├── websocket/              # WebSocket viewer
+│   │   ├── sse/                    # SSE event viewer
+│   │   ├── compare/                # Response diff
+│   │   └── settings/               # App settings
 │   ├── components/
-│   │   ├── request/            # URL bar, method selector, body editor
-│   │   ├── response/           # Response viewer, status, AI panel
-│   │   ├── collections/        # Sidebar tree, endpoint rows
-│   │   └── ui/                 # shadcn/ui primitives
-│   ├── stores/                 # Zustand stores
-│   │   ├── request.ts          # Active request state
-│   │   ├── collections.ts      # Collection tree state
-│   │   └── environment.ts      # Active environment + variables
-│   ├── lib/
-│   │   ├── tauri.ts            # Typed Tauri command wrappers
-│   │   └── yaml.ts             # Collection serialization helpers
-│   └── main.tsx
-│
-├── collections/                # Example: your API collections live here
-│   └── my-api/
-│       ├── auth.yaml
-│       ├── users.yaml
-│       └── products.yaml
-│
-└── package.json
+│   │   ├── request/RequestPanel.tsx
+│   │   ├── response/ResponsePanel.tsx
+│   │   ├── collections/
+│   │   ├── CodeEditor.tsx
+│   │   └── CommandPalette.tsx
+│   ├── stores/                     # Zustand stores
+│   │   ├── request.ts
+│   │   ├── collections.ts
+│   │   ├── environment.ts
+│   │   ├── settings.ts
+│   │   └── user.ts
+│   └── lib/
+│       ├── tauri.ts                # Typed Tauri command wrappers
+│       ├── sync.ts                 # Supabase cloud sync
+│       ├── preRequest.ts           # pm API runtime
+│       ├── importers.ts            # Postman / OpenAPI / cURL
+│       └── awsSigV4.ts             # AWS request signing
 ```
 
 ---
 
-## Collection Format
+## Cloud Sync
 
-Collections are plain `.yaml` files that live in your project repository.
+Flux syncs to Supabase (optional). All data is scoped to the authenticated user via RLS — the anon key is safe to ship.
 
-```yaml
-# collections/auth.yaml
-name: Auth
-description: Authentication endpoints
-baseUrl: "{{BASE_URL}}"
+Tables synced on login and in real-time:
 
-requests:
-  - name: Login
-    method: POST
-    path: /auth/login
-    headers:
-      Content-Type: application/json
-    body:
-      email: "{{TEST_EMAIL}}"
-      password: "{{TEST_PASSWORD}}"
-    tests:
-      - assert: status == 200
-      - assert: body.success == true
-      - assert: body.token != null
+| Table | What |
+|---|---|
+| `flux_settings` | App preferences |
+| `flux_collections` | All collections and requests |
+| `flux_environments` | Environments, variables, global vars |
+| `flux_history` | Last 200 request history entries |
 
-  - name: Logout
-    method: POST
-    path: /auth/logout
-    headers:
-      Authorization: "Bearer {{AUTH_TOKEN}}"
-    tests:
-      - assert: status == 204
-```
-
-No vendor lock-in. Edit with any text editor. Diff in any Git client.
+The `service_role` key never leaves the server. Device-only values (`claudeApiKey`, client certificates) are excluded from sync.
 
 ---
 
-## AI Features
+## Pre/Post Request Scripts
 
-### Test Generation
-After sending a request, Flux sends the request + response to Claude with a structured prompt. Claude returns assertions in the collection format shown above. You review them, accept or discard, and they are written back to the `.yaml` file.
+Flux runs JavaScript before and after each request. Uses the `pm` API:
 
-### Debug Assist
-On a 4xx or 5xx response, the AI panel explains the likely cause and suggests fixes based on the request headers, body, and response error message.
+```js
+// Pre-request: add a header dynamically
+pm.request.headers.upsert("X-Timestamp", Date.now().toString());
 
-### Prompt structure (simplified)
-```
-Given this HTTP request and response, generate test assertions.
+// Pre-request: read an env var
+const token = pm.environment.get("ACCESS_TOKEN");
 
-Request:
-  POST /auth/login
-  Body: { "email": "...", "password": "..." }
+// Post-response: save a token from the response
+const body = pm.response.json();
+pm.environment.set("ACCESS_TOKEN", body.token);
 
-Response:
-  Status: 200
-  Body: { "success": true, "token": "eyJ...", "user": { ... } }
-
-Return YAML assertions only. No explanation.
+// Post-response: write tests
+pm.test("returns 200", () => {
+  pm.expect(pm.response.status).to.equal(200);
+});
 ```
 
 ---
 
-## Environments
+## SSE / EventStream
 
-Environments are stored as `.yaml` files alongside collections. Variables are resolved at request time by the Rust core, never exposed to the network in raw form.
+Connect to any `text/event-stream` endpoint and see events in real time:
 
-```yaml
-# environments/development.yaml
-name: Development
-variables:
-  BASE_URL: https://api.dev.myapp.com
-  API_KEY: sk-dev-xxxxxxxxxxxx
-  TIMEOUT_MS: 5000
-  DEBUG_MODE: true
-```
+- Parses `event:`, `data:`, `id:` fields per the SSE spec
+- JSON data is pretty-printed automatically
+- Custom headers (for `Authorization`, API keys, etc.)
+- Cancellable at any time
 
-Production environments can be marked as `protected: true` — Flux shows a red indicator and requires confirmation before sending requests.
+---
+
+## Status
+
+> **Pre-launch — actively working toward public release.**
+
+Core features are stable and in daily use. The items below are the remaining blockers before announcing to the community.
 
 ---
 
 ## Roadmap
 
-### v0.1 — MVP (free, open source)
-- [x] Send HTTP requests (GET, POST, PUT, PATCH, DELETE)
-- [x] Collections as local `.yaml` files
-- [x] Environment variables
-- [x] Request history (SQLite)
-- [x] AI test generation via Claude API
-- [x] Email/password login + sign up
+### Pre-launch blockers
+- [ ] Distribution — GitHub Actions pipeline for signed installers (Windows, macOS, Linux)
+- [ ] First-run onboarding tour — guided walkthrough via [driver.js](https://driverjs.com), 7 steps, triggers once on first login, re-launchable from Settings
+- [x] Empty states with prefilled examples in each route
+- [x] Error visibility — toasts for sync failures and request errors
+- [ ] Cookie jar — per-domain cookie management
+- [ ] GraphQL schema introspection + Monaco autocomplete
 
-### v0.2 — Developer Experience
-- [x] Keyboard shortcuts (Ctrl+Enter to send, Ctrl+S to save)
-- [x] Pre-request scripts (JavaScript) — `pm` API for headers and env vars
-- [ ] Response comparison between environments
-- [ ] GraphQL support
-- [ ] WebSocket support
+### Shipped
+- [x] HTTP requests — all methods, auth types, body types
+- [x] Pre/post request scripts with `pm` API
+- [x] Collections — import Postman, OpenAPI, cURL
+- [x] Collection runner with assertion reporting
+- [x] Environment variables + secrets + global vars
+- [x] Cloud sync (settings, collections, environments, history)
+- [x] WebSocket viewer
+- [x] SSE / EventStream viewer
+- [x] GraphQL body type (query + variables)
+- [x] AWS SigV4 signing
+- [x] OAuth 2.0 (auth code + client credentials)
+- [x] AI — test generation, debug assist, script editing, fix assertions
+- [x] Request history
+- [x] Response comparison
+
+### Post-launch
+- [ ] Share collections with teammates
 - [ ] gRPC support
-
-### v1.0 — Team Features (paid)
-- [ ] Collection sync across devices (Flux Cloud)
-- [ ] Shared environments for teams
-- [ ] PR-linked collection diffs
-- [ ] Team test run history
+- [ ] CLI runner for CI/CD pipelines
 
 ---
 
-## Monetization
-
-**Free forever** — individual developers.
-- All core features unlocked
-- AI test generation (uses your own Claude API key)
-- Local-only, no account required
-
-**Flux Teams — $8/user/month**
-- Collection sync via Flux Cloud
-- Shared environments with role-based access
-- Team test history and reporting
-- Priority support
-
----
-
-## Development Setup
+## Development
 
 ```bash
-# Prerequisites: Node.js 20+, Rust 1.75+, Tauri CLI
+# Prerequisites: Node.js 20+, Rust 1.75+
 
 git clone https://github.com/your-org/flux
 cd flux
 
-# Install frontend dependencies
 npm install
-
-# Install Tauri CLI
-cargo install tauri-cli
-
-# Run in development mode
 npm run tauri dev
 
-# Build for production
+# Build
 npm run tauri build
 ```
 
@@ -286,7 +280,7 @@ npm run tauri build
 
 ## License
 
-MIT — free to use, fork, and self-host.
+MIT
 
 ---
 

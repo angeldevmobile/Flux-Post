@@ -1,6 +1,7 @@
 mod commands;
 
 use commands::history::{Db, init_db};
+use commands::sse::SseConnections;
 use commands::websocket::WsConnections;
 use rusqlite::Connection;
 use std::collections::HashMap;
@@ -10,10 +11,12 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let ws = WsConnections(Mutex::new(HashMap::new()));
+    let sse = SseConnections(Mutex::new(HashMap::new()));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(ws)
+        .manage(sse)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()
                 .expect("failed to get app data dir");
@@ -45,6 +48,8 @@ pub fn run() {
             commands::websocket::ws_connect,
             commands::websocket::ws_send,
             commands::websocket::ws_disconnect,
+            commands::sse::sse_connect,
+            commands::sse::sse_disconnect,
             commands::oauth::oauth_auth_code,
             commands::oauth::oauth_client_credentials,
             commands::oauth::start_oauth_callback,

@@ -76,7 +76,7 @@ export function TopBar({ onNavigate }: TopBarProps) {
         <div style={{ width: 1, height: 20, background: "var(--color-border)" }} />
 
         {/* Env selector */}
-        <div ref={envRef} className="relative">
+        <div ref={envRef} data-tour="env-selector" className="relative">
           <button
             onClick={() => setEnvOpen(v => !v)}
             className="flex items-center gap-1.5 transition-opacity hover:opacity-80"

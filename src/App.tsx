@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { Toaster } from "sonner";
 import { NavRail, type Route } from "@/components/NavRail";
 import { useAppearance } from "@/hooks/useAppearance";
 import { TopBar } from "@/components/TopBar";
+import { ProductTour } from "@/components/ProductTour";
 import { Login } from "@/routes/auth/Login";
 import { SignUp } from "@/routes/auth/SignUp";
 import { RequestsRoute } from "@/routes/requests";
@@ -11,21 +13,41 @@ import { TestsRoute } from "@/routes/tests";
 import { SettingsRoute } from "@/routes/settings";
 import { CompareRoute } from "@/routes/compare";
 import { WebSocketRoute } from "@/routes/websocket";
+import { SseRoute } from "@/routes/sse";
 import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
 import { loadSession, saveSession, clearSessionDb } from "@/lib/tauri";
 import { initCrashReporting, trackEvent } from "@/lib/analytics";
-import { syncOnLogin, stopSettingsSync } from "@/lib/sync";
+import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
 
 function AppShell() {
   const [route, setRoute] = useState<Route>("requests");
+  const tourSeen = useSettingsStore(s => s.tourSeen);
+  const [showTour, setShowTour] = useState(() => !useSettingsStore.getState().tourSeen);
   useAppearance();
+
+  // Re-open tour when tourSeen is reset to false (e.g. "Launch Tour" from Settings)
+  useEffect(() => {
+    if (!tourSeen) setShowTour(true);
+  }, [tourSeen]);
+
+  // Navigate to requests so all tour targets are in the DOM
+  useEffect(() => {
+    if (showTour) setRoute("requests");
+  }, [showTour]);
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        toastOptions={{
+          style: { background: "#1A1A1A", border: "1px solid #27272A", color: "#FFFFFF" },
+        }}
+      />
       <TopBar onNavigate={setRoute} />
       <div className="flex flex-1 overflow-hidden">
         <NavRail active={route} onChange={setRoute} />
@@ -37,9 +59,11 @@ function AppShell() {
           {route === "history"      && <HistoryRoute />}
           {route === "compare"      && <CompareRoute />}
           {route === "websocket"    && <WebSocketRoute />}
+          {route === "sse"          && <SseRoute />}
           {route === "settings"     && <SettingsRoute />}
         </main>
       </div>
+      <ProductTour open={showTour} onDone={() => setShowTour(false)} />
     </div>
   );
 }
@@ -126,6 +150,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT") {
         stopSettingsSync();
+        stopEnvironmentsSync();
         clearSession();
         await clearSessionDb();
         setScreen("login");

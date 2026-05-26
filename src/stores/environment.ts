@@ -26,6 +26,9 @@ interface EnvironmentStore {
   toggleGlobalSecretKey: (key: string) => void;
 
   resolveVariable: (value: string) => string;
+
+  loadEnvironment: (env: Environment) => void;
+  loadGlobals: (vars: Record<string, string>, secretKeys: string[]) => void;
 }
 
 export const useEnvironmentStore = create<EnvironmentStore>()(
@@ -84,6 +87,16 @@ export const useEnvironmentStore = create<EnvironmentStore>()(
             ? s.globalSecretKeys.filter(k => k !== key)
             : [...s.globalSecretKeys, key],
         })),
+
+      loadEnvironment: (env) =>
+        set((s) => ({
+          environments: s.environments.some((e) => e.id === env.id)
+            ? s.environments.map((e) => (e.id === env.id ? env : e))
+            : [...s.environments, env],
+        })),
+
+      loadGlobals: (vars, secretKeys) =>
+        set({ globalVariables: vars, globalSecretKeys: secretKeys }),
 
       resolveVariable: (value) => {
         const { environments, activeId, globalVariables } = get();
