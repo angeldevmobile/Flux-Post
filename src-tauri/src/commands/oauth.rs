@@ -177,6 +177,24 @@ pub async fn oauth_auth_code(
     Ok(port)
 }
 
+/// Starts a local callback server on a fixed port for Supabase GitHub OAuth.
+/// Emits "supabase-oauth-code" with the code when the redirect arrives.
+#[tauri::command]
+pub async fn start_oauth_callback(app: tauri::AppHandle) -> Result<u16, String> {
+    let listener = TcpListener::bind("127.0.0.1:42813")
+        .await
+        .map_err(|e| format!("Port 42813 in use: {}", e))?;
+
+    tokio::spawn(async move {
+        match wait_for_code(listener).await {
+            Ok(code) => { let _ = app.emit("supabase-oauth-code", code); }
+            Err(e)   => { let _ = app.emit("supabase-oauth-error", e); }
+        }
+    });
+
+    Ok(42813)
+}
+
 /// Client Credentials flow — no browser needed, returns token directly.
 #[tauri::command]
 pub async fn oauth_client_credentials(

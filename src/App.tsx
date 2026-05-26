@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavRail, type Route } from "@/components/NavRail";
 import { useAppearance } from "@/hooks/useAppearance";
 import { TopBar } from "@/components/TopBar";
@@ -11,8 +11,11 @@ import { TestsRoute } from "@/routes/tests";
 import { SettingsRoute } from "@/routes/settings";
 import { CompareRoute } from "@/routes/compare";
 import { WebSocketRoute } from "@/routes/websocket";
+import { supabase } from "@/lib/supabase";
+import { useUserStore } from "@/stores/user";
+import { loadSession, saveSession, clearSessionDb } from "@/lib/tauri";
 
-type AuthScreen = "login" | "signup" | "app";
+type AuthScreen = "loading" | "login" | "signup" | "app";
 
 function AppShell() {
   const [route, setRoute] = useState<Route>("requests");
@@ -39,7 +42,84 @@ function AppShell() {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<AuthScreen>("login");
+  const [screen, setScreen] = useState<AuthScreen>("loading");
+  const { setSession, clearSession } = useUserStore();
+
+  useEffect(() => {
+    async function restoreSession() {
+      // 1. Check if Supabase already has a valid session (from its own storage)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSession(session);
+        setScreen("app");
+        return;
+      }
+
+      // 2. Fallback: try SQLite local backup
+      try {
+        const row = await loadSession();
+        if (row) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: row.accessToken,
+            refresh_token: row.refreshToken ?? "",
+          });
+          if (!error && data.session) {
+            setSession(data.session);
+            // update backup with refreshed tokens
+            await saveSession({
+              accessToken: data.session.access_token,
+              refreshToken: data.session.refresh_token,
+              expiresAt: data.session.expires_at,
+              userId: data.session.user.id,
+              userEmail: data.session.user.email,
+              userName: data.session.user.user_metadata?.full_name,
+              userAvatar: data.session.user.user_metadata?.avatar_url,
+            });
+            setScreen("app");
+            return;
+          }
+          // Token expired and couldn't refresh — clear backup
+          await clearSessionDb();
+        }
+      } catch {
+        // SQLite not ready yet (first launch), continue to login
+      }
+
+      setScreen("login");
+    }
+
+    restoreSession();
+
+    // Listen for auth state changes (token refresh, logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        clearSession();
+        await clearSessionDb();
+        setScreen("login");
+      } else if (session && (event === "TOKEN_REFRESHED" || event === "SIGNED_IN")) {
+        setSession(session);
+        await saveSession({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at,
+          userId: session.user.id,
+          userEmail: session.user.email,
+          userName: session.user.user_metadata?.full_name,
+          userAvatar: session.user.user_metadata?.avatar_url,
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (screen === "loading") {
+    return (
+      <div className="flex items-center justify-center w-full h-full" style={{ background: "#0A0A0A" }}>
+        <div className="w-6 h-6 rounded-full border-2 border-[#A855F7] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   if (screen === "login") {
     return (

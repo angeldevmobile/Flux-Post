@@ -81,6 +81,7 @@ function toMonacoLang(lang: Lang): string {
   if (lang === "json") return "json";
   if (lang === "html") return "html";
   if (lang === "xml") return "xml";
+  if (lang === "graphql") return "graphql";
   if (lang === "plaintext") return "plaintext";
   return "javascript";
 }
@@ -90,7 +91,7 @@ export function CodeEditor({
   showLineNumbers = false, readOnly = false, noBorder = false,
   onAiEdit,
 }: CodeEditorProps) {
-  const { theme } = useSettingsStore();
+  const { theme, wordWrap } = useSettingsStore();
   const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const [aiOpen, setAiOpen] = useState(false);
@@ -209,7 +210,7 @@ export function CodeEditor({
             lineNumbers: showLineNumbers ? "on" : "off",
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
-            wordWrap: "on",
+            wordWrap: wordWrap ? "on" : "off",
             tabSize: 2,
             insertSpaces: true,
             folding: readOnly,

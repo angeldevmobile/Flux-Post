@@ -58,6 +58,40 @@ export async function clearHistory(): Promise<void> {
   return invoke("clear_history");
 }
 
+export interface SessionRow {
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: number;
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
+  userAvatar?: string;
+}
+
+export async function saveSession(s: SessionRow): Promise<void> {
+  return invoke("save_session", {
+    accessToken: s.accessToken,
+    refreshToken: s.refreshToken ?? null,
+    expiresAt: s.expiresAt ?? null,
+    userId: s.userId ?? null,
+    userEmail: s.userEmail ?? null,
+    userName: s.userName ?? null,
+    userAvatar: s.userAvatar ?? null,
+  });
+}
+
+export async function loadSession(): Promise<SessionRow | null> {
+  return invoke("load_session");
+}
+
+export async function clearSessionDb(): Promise<void> {
+  return invoke("clear_session");
+}
+
+export async function startOAuthCallback(): Promise<number> {
+  return invoke("start_oauth_callback");
+}
+
 export async function saveHistory(
   method: string,
   url: string,

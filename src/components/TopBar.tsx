@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Search, Bell, Settings, Check, Plus } from "lucide-react";
+import { ChevronDown, Search, Bell, Settings, Check, Plus, LogOut } from "lucide-react";
 import { FluxLogoMark } from "@/components/FluxLogo";
 import { useEnvironmentStore } from "@/stores/environment";
 import { CommandPalette } from "@/components/CommandPalette";
 import type { Route } from "@/components/NavRail";
+import { useUserStore } from "@/stores/user";
 
 interface TopBarProps {
   onNavigate: (r: Route) => void;
@@ -11,6 +12,7 @@ interface TopBarProps {
 
 export function TopBar({ onNavigate }: TopBarProps) {
   const { environments, activeId, setActive, addEnvironment } = useEnvironmentStore();
+  const user = useUserStore(s => s.user);
   const active = environments.find(e => e.id === activeId);
   const [envOpen, setEnvOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -61,8 +63,8 @@ export function TopBar({ onNavigate }: TopBarProps) {
         {/* Logo */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center justify-center rounded-lg"
-            style={{ width: 26, height: 26, background: "linear-gradient(135deg, var(--color-accent-20), var(--color-accent-10))", border: "1px solid var(--color-accent-50)" }}>
-            <FluxLogoMark size={14} />
+            style={{ width: 26, height: 26, background: "var(--color-accent)" }}>
+            <FluxLogoMark size={14} color="white" />
           </div>
           <span className="text-[15px] font-semibold"
             style={{ fontFamily: "Geist, Inter, sans-serif", letterSpacing: "-0.3px", color: "var(--color-fg)" }}>
@@ -136,11 +138,7 @@ export function TopBar({ onNavigate }: TopBarProps) {
             <Settings size={16} />
           </IconBtn>
 
-          <button
-            className="flex items-center justify-center rounded-full font-semibold text-white ml-1 hover:opacity-80 transition-opacity"
-            style={{ width: 28, height: 28, background: "var(--color-accent)", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
-            M
-          </button>
+          <UserAvatar user={user} onNavigate={onNavigate} />
         </div>
       </header>
 
@@ -167,6 +165,83 @@ function NotificationsDropdown({ onClose }: { onClose: () => void }) {
         </p>
       </div>
     </div>
+  );
+}
+
+function UserAvatar({ user, onNavigate }: { user: import("@supabase/supabase-js").User | null; onNavigate: (r: Route) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const name: string = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "User";
+  const email: string = user?.email ?? "";
+  const initial = name.charAt(0).toUpperCase();
+
+  async function handleSignOut() {
+    const { supabase } = await import("@/lib/supabase");
+    await supabase.auth.signOut();
+    setOpen(false);
+  }
+
+  return (
+    <div ref={ref} className="relative ml-1">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-center rounded-full font-semibold text-white hover:opacity-80 transition-opacity overflow-hidden"
+        style={{ width: 28, height: 28, background: "var(--color-accent)", fontSize: 11, fontFamily: "Inter, sans-serif", flexShrink: 0 }}>
+        {avatarUrl
+          ? <img src={avatarUrl} alt={initial} style={{ width: 28, height: 28, objectFit: "cover" }} />
+          : initial}
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-1.5 z-50 rounded-xl overflow-hidden"
+          style={{ width: 220, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 32px #00000050" }}>
+
+          {/* User info */}
+          <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
+            <div className="flex items-center justify-center rounded-full font-semibold text-white shrink-0 overflow-hidden"
+              style={{ width: 34, height: 34, background: "var(--color-accent)", fontSize: 13 }}>
+              {avatarUrl
+                ? <img src={avatarUrl} alt={initial} style={{ width: 34, height: 34, objectFit: "cover" }} />
+                : initial}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[13px] font-semibold truncate" style={{ color: "var(--color-fg)" }}>{name}</span>
+              {email && <span className="text-[11px] truncate" style={{ color: "var(--color-fg-3)" }}>{email}</span>}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="py-1">
+            <MenuItem icon={<Settings size={13} />} label="Settings" onClick={() => { onNavigate("settings"); setOpen(false); }} />
+            <div style={{ height: 1, background: "var(--color-border)", margin: "4px 8px" }} />
+            <MenuItem icon={<LogOut size={13} />} label="Sign out" onClick={handleSignOut} danger />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-2.5 w-full px-3 py-2 text-[12px] transition-colors"
+      style={{ color: danger ? "#EF4444" : "var(--color-fg-2)", background: "transparent" }}
+      onMouseEnter={e => (e.currentTarget.style.background = danger ? "#EF444415" : "var(--color-border)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+      {icon}
+      {label}
+    </button>
   );
 }
 

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
+  ExternalLink, Check, ClipboardPaste,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings";
 import { clearHistory, getHistory, exportDataAsJson } from "@/lib/tauri";
@@ -116,56 +117,136 @@ function GeneralSection() {
 }
 
 const MODELS = [
-  { id: "claude-sonnet-4-6", label: "claude-sonnet-4-6", badge: "Recommended", badgeBg: "#A855F720", badgeColor: "#A855F7", activeBg: "#1A1A2E", activeBorder: "#A855F750", dotColor: "#A855F7" },
-  { id: "claude-opus-4-7",   label: "claude-opus-4-7",   badge: "Most capable", badgeBg: "var(--color-card)",   badgeColor: "var(--color-fg-4)", activeBg: "var(--color-input)",  activeBorder: "var(--color-border)",  dotColor: "var(--color-fg-4)"  },
-  { id: "claude-haiku-4-5-20251001",  label: "claude-haiku-4-5",  badge: "Fastest",      badgeBg: "var(--color-card)",   badgeColor: "var(--color-fg-4)", activeBg: "var(--color-input)",  activeBorder: "var(--color-border)",  dotColor: "var(--color-fg-4)"  },
+  { id: "claude-sonnet-4-6",       label: "claude-sonnet-4-6", badge: "Recommended", accent: true },
+  { id: "claude-opus-4-7",         label: "claude-opus-4-7",   badge: "Most capable", accent: false },
+  { id: "claude-haiku-4-5-20251001", label: "claude-haiku-4-5", badge: "Fastest",     accent: false },
 ];
 
 function AiSection() {
   const s = useSettingsStore();
   const [showKey, setShowKey] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tokenLimit = 100000;
   const tokenPct = Math.min(100, (s.tokensUsed / tokenLimit) * 100).toFixed(1);
 
+  function handleKeyChange(val: string) {
+    s.setClaudeApiKey(val);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    if (val) {
+      setSaved(true);
+      savedTimer.current = setTimeout(() => setSaved(false), 2000);
+    } else {
+      setSaved(false);
+    }
+  }
+
+  async function handlePaste() {
+    const text = await navigator.clipboard.readText();
+    if (text.startsWith("sk-ant-")) handleKeyChange(text.trim());
+  }
+
+  async function openAnthropicConsole() {
+    const { openUrl } = await import("@tauri-apps/plugin-opener");
+    await openUrl("https://console.anthropic.com/account/keys");
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Card title="API Configuration">
-        <SettingRow label="Claude API Key" description="Required for AI test generation and debug assist">
-          <div className="flex items-center gap-2 px-3 rounded-md"
-            style={{ height: 36, width: 260, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
-            <input
-              type={showKey ? "text" : "password"}
-              value={s.claudeApiKey}
-              onChange={e => s.setClaudeApiKey(e.target.value)}
-              placeholder="sk-ant-••••••••••••••••"
-              className="flex-1 text-[12px] bg-transparent"
-              style={{ color: s.claudeApiKey ? "var(--color-fg-2)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}
-            />
-            <button onClick={() => setShowKey(v => !v)}>
-              {showKey
-                ? <Eye size={13} style={{ color: "var(--color-fg-4)" }} />
-                : <EyeOff size={13} style={{ color: "var(--color-fg-4)" }} />}
+        {/* Info callout */}
+        <div className="flex items-start gap-3 mx-4 mt-4 mb-2 px-3 py-3 rounded-lg"
+          style={{ background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)" }}>
+          <Sparkles size={14} style={{ color: "var(--color-accent)", flexShrink: 0, marginTop: 1 }} />
+          <div className="flex flex-col gap-1">
+            <span className="text-[12px] font-medium" style={{ color: "var(--color-fg)" }}>
+              Your API key is stored locally on this device
+            </span>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
+              It's never sent to our servers — only directly to Anthropic to power AI features like test generation, debug assist, and body editing.
+            </span>
+            <button onClick={openAnthropicConsole}
+              className="flex items-center gap-1 mt-1 self-start transition-opacity hover:opacity-70"
+              style={{ color: "var(--color-accent)", fontSize: 11 }}>
+              <ExternalLink size={11} />
+              Get your API key at console.anthropic.com
             </button>
           </div>
-        </SettingRow>
+        </div>
+
+        {/* Key input */}
+        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <div className="flex flex-col gap-0.5 flex-1">
+            <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Claude API Key</span>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Starts with <span style={{ fontFamily: "Geist Mono, monospace" }}>sk-ant-</span></span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {saved && (
+              <div className="flex items-center gap-1 px-2 rounded"
+                style={{ height: 24, background: "#22C55E15", border: "1px solid #22C55E30" }}>
+                <Check size={11} style={{ color: "#22C55E" }} />
+                <span className="text-[11px]" style={{ color: "#22C55E" }}>Saved</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 px-3 rounded-md"
+              style={{ height: 36, width: 260, background: "var(--color-input)", border: `1px solid ${s.claudeApiKey ? "var(--color-accent-50)" : "var(--color-border)"}` }}>
+              <input
+                type={showKey ? "text" : "password"}
+                value={s.claudeApiKey}
+                onChange={e => handleKeyChange(e.target.value)}
+                placeholder="sk-ant-••••••••••••••••"
+                className="flex-1 text-[12px] bg-transparent"
+                style={{ color: s.claudeApiKey ? "var(--color-fg-2)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}
+              />
+              <button onClick={() => setShowKey(v => !v)} className="shrink-0 hover:opacity-70 transition-opacity">
+                {showKey
+                  ? <Eye size={13} style={{ color: "var(--color-fg-4)" }} />
+                  : <EyeOff size={13} style={{ color: "var(--color-fg-4)" }} />}
+              </button>
+            </div>
+            <button onClick={handlePaste} title="Paste from clipboard"
+              className="flex items-center justify-center rounded-md transition-colors hover:opacity-70"
+              style={{ width: 36, height: 36, background: "var(--color-input)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)", flexShrink: 0 }}>
+              <ClipboardPaste size={14} />
+            </button>
+          </div>
+        </div>
         <div className="flex items-start gap-4 px-4 py-4">
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Model</span>
             <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Claude model used for all AI features in Flux</span>
           </div>
           <div className="flex flex-col gap-1.5" style={{ width: 260 }}>
-            {MODELS.map(m => (
-              <button key={m.id} onClick={() => s.setClaudeModel(m.id)}
-                className="flex items-center gap-2 px-3 rounded-md transition-colors"
-                style={{ height: 36, background: s.claudeModel === m.id ? m.activeBg : "var(--color-input)", border: `1px solid ${s.claudeModel === m.id ? m.activeBorder : "var(--color-border)"}` }}>
-                <div className="shrink-0 rounded-full" style={{ width: 14, height: 14, background: s.claudeModel === m.id ? m.dotColor : "var(--color-border)", border: s.claudeModel === m.id ? "none" : "1px solid var(--color-fg-4)" }} />
-                <span className="flex-1 text-left text-[11px]" style={{ color: s.claudeModel === m.id ? "var(--color-fg)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>{m.label}</span>
-                <div className="flex items-center px-1.5 rounded" style={{ height: 18, background: m.badgeBg }}>
-                  <span className="text-[10px] font-medium" style={{ color: m.badgeColor }}>{m.badge}</span>
-                </div>
-              </button>
-            ))}
+            {MODELS.map(m => {
+              const active = s.claudeModel === m.id;
+              return (
+                <button key={m.id} onClick={() => s.setClaudeModel(m.id)}
+                  className="flex items-center gap-2 px-3 rounded-md transition-colors"
+                  style={{
+                    height: 36,
+                    background: active ? "var(--color-accent-10)" : "var(--color-input)",
+                    border: `1px solid ${active ? "var(--color-accent-50)" : "var(--color-border)"}`,
+                  }}>
+                  <div className="shrink-0 rounded-full" style={{
+                    width: 14, height: 14,
+                    background: active ? "var(--color-accent)" : "transparent",
+                    border: active ? "none" : "1px solid var(--color-fg-4)",
+                  }} />
+                  <span className="flex-1 text-left text-[11px]" style={{ color: active ? "var(--color-fg)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>
+                    {m.label}
+                  </span>
+                  <div className="flex items-center px-1.5 rounded" style={{
+                    height: 18,
+                    background: active && m.accent ? "var(--color-accent-20)" : "var(--color-border)",
+                  }}>
+                    <span className="text-[10px] font-medium" style={{ color: active && m.accent ? "var(--color-accent)" : "var(--color-fg-4)" }}>
+                      {m.badge}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </Card>

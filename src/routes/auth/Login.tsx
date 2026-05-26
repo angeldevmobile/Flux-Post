@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { FluxLogoBadge } from "@/components/FluxLogo";
+import { supabase } from "@/lib/supabase";
+import { useUserStore } from "@/stores/user";
+import { saveSession, startOAuthCallback } from "@/lib/tauri";
+import { listen } from "@tauri-apps/api/event";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 function GithubIcon() {
   return (
@@ -19,34 +24,104 @@ export function Login({ onLogin, onGoSignUp }: LoginProps) {
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const setSession = useUserStore(s => s.setSession);
+
+  async function persistSession(session: import("@supabase/supabase-js").Session) {
+    setSession(session);
+    await saveSession({
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
+      expiresAt: session.expires_at,
+      userId: session.user.id,
+      userEmail: session.user.email,
+      userName: session.user.user_metadata?.full_name ?? session.user.user_metadata?.name,
+      userAvatar: session.user.user_metadata?.avatar_url,
+    });
+  }
+
+  async function handleEmailLogin() {
+    if (!email || !password) { setError("Complete todos los campos."); return; }
+    setError(null);
+    setLoading(true);
+    try {
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) { setError(err.message); return; }
+      if (data.session) { await persistSession(data.session); onLogin(); }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGitHub() {
+    setError(null);
+    setGithubLoading(true);
+    try {
+      const port = await startOAuthCallback();
+      console.log("[OAuth] Listener started on port", port);
+
+      const { data, error: err } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: "http://127.0.0.1:42813",
+          skipBrowserRedirect: true,
+          scopes: "user:email",
+        },
+      });
+      if (err || !data.url) { setError(err?.message ?? "Error al iniciar OAuth"); setGithubLoading(false); return; }
+
+      await openUrl(data.url);
+
+      const unlisten = await listen<string>("supabase-oauth-code", async (event) => {
+        unlisten();
+        const { data: d, error: e } = await supabase.auth.exchangeCodeForSession(event.payload);
+        if (e || !d.session) { setError(e?.message ?? "Error al obtener sesión"); setGithubLoading(false); return; }
+        await persistSession(d.session);
+        setGithubLoading(false);
+        onLogin();
+      });
+
+      await listen<string>("supabase-oauth-error", (event) => {
+        setError(event.payload);
+        setGithubLoading(false);
+      });
+    } catch (e) {
+      setError(String(e));
+      setGithubLoading(false);
+    }
+  }
 
   return (
     <div className="relative flex items-center justify-center w-full h-full bg-[#0A0A0A] overflow-hidden">
-      {/* Radial glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="w-[600px] h-[600px] rounded-full"
           style={{ background: "radial-gradient(circle, #A855F715 0%, transparent 70%)" }} />
       </div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-[360px] px-4">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-2 mb-8">
           <FluxLogoBadge size={52} />
           <h1 className="text-[22px] font-semibold text-white" style={{ fontFamily: "Geist, Inter, sans-serif", letterSpacing: "-0.3px" }}>Flux</h1>
           <p className="text-[13px] text-[#71717A]">The modern API client for developers.</p>
         </div>
 
-        {/* Card */}
         <div className="w-full rounded-xl p-6 flex flex-col gap-4"
           style={{ background: "#111111", border: "1px solid #27272A" }}>
           <h2 className="text-[15px] font-semibold text-white text-center">Sign in to your account</h2>
 
-          {/* GitHub */}
-          <button onClick={onLogin}
-            className="w-full h-9 flex items-center justify-center gap-2 rounded-lg text-[13px] font-medium text-white transition-colors hover:bg-[#27272A]"
+          {error && (
+            <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: "#EF444415", border: "1px solid #EF444430", color: "#FCA5A5" }}>
+              {error}
+            </div>
+          )}
+
+          <button onClick={handleGitHub} disabled={githubLoading}
+            className="w-full h-9 flex items-center justify-center gap-2 rounded-lg text-[13px] font-medium text-white transition-colors hover:bg-[#27272A] disabled:opacity-50"
             style={{ background: "#1A1A1A", border: "1px solid #27272A" }}>
-            <GithubIcon />
-            Continue with GitHub
+            {githubLoading ? <Loader2 size={14} className="animate-spin" /> : <GithubIcon />}
+            {githubLoading ? "Waiting for browser..." : "Continue with GitHub"}
           </button>
 
           <div className="flex items-center gap-3">
@@ -55,23 +130,18 @@ export function Login({ onLogin, onGoSignUp }: LoginProps) {
             <div className="flex-1 h-px bg-[#27272A]" />
           </div>
 
-          {/* Email */}
           <div className="flex flex-col gap-1">
             <label className="text-[12px] text-[#A1A1AA]">Email</label>
             <div className="relative">
               <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A]" />
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleEmailLogin()}
                 placeholder="you@example.com"
-                className="w-full h-9 pl-9 pr-3 rounded-lg text-[13px]"
-                style={{ background: "#1A1A1A", border: "1px solid #27272A" }}
-              />
+                className="w-full h-9 pl-9 pr-3 rounded-lg text-[13px] text-white outline-none"
+                style={{ background: "#1A1A1A", border: "1px solid #27272A" }} />
             </div>
           </div>
 
-          {/* Password */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <label className="text-[12px] text-[#A1A1AA]">Password</label>
@@ -79,27 +149,23 @@ export function Login({ onLogin, onGoSignUp }: LoginProps) {
             </div>
             <div className="relative">
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A]" />
-              <input
-                type={showPass ? "text" : "password"}
-                value={password}
+              <input type={showPass ? "text" : "password"} value={password}
                 onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleEmailLogin()}
                 placeholder="••••••••••••"
-                className="w-full h-9 pl-9 pr-9 rounded-lg text-[13px]"
-                style={{ background: "#1A1A1A", border: "1px solid #27272A" }}
-              />
-              <button
-                onClick={() => setShowPass(!showPass)}
+                className="w-full h-9 pl-9 pr-9 rounded-lg text-[13px] text-white outline-none"
+                style={{ background: "#1A1A1A", border: "1px solid #27272A" }} />
+              <button onClick={() => setShowPass(!showPass)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717A] hover:text-[#A1A1AA]">
                 {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
 
-          <button
-            onClick={onLogin}
-            className="w-full h-9 rounded-lg text-[13px] font-semibold text-white transition-opacity hover:opacity-90 mt-1"
+          <button onClick={handleEmailLogin} disabled={loading}
+            className="w-full h-9 rounded-lg text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 mt-1 flex items-center justify-center gap-2"
             style={{ background: "#A855F7" }}>
-            Sign in →
+            {loading ? <><Loader2 size={13} className="animate-spin" /> Signing in...</> : "Sign in →"}
           </button>
         </div>
 
