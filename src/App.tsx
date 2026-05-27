@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { NavRail, type Route } from "@/components/NavRail";
 import { useAppearance } from "@/hooks/useAppearance";
 import { TopBar } from "@/components/TopBar";
@@ -19,6 +19,7 @@ import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
 import { loadSession, saveSession, clearSessionDb } from "@/lib/tauri";
 import { initCrashReporting, trackEvent } from "@/lib/analytics";
+import { checkForUpdates, installAndRestart } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
@@ -28,6 +29,20 @@ function AppShell() {
   const tourSeen = useSettingsStore(s => s.tourSeen);
   const [showTour, setShowTour] = useState(() => !useSettingsStore.getState().tourSeen);
   useAppearance();
+
+  // Check for updates 4s after mount — non-blocking, silent on failure
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      const update = await checkForUpdates();
+      if (!update) return;
+      toast(`v${update.version} available`, {
+        description: update.body ?? "A new version of Flux is ready.",
+        action: { label: "Update & Restart", onClick: () => installAndRestart(update) },
+        duration: Infinity,
+      });
+    }, 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   // Re-open tour when tourSeen is reset to false (e.g. "Launch Tour" from Settings)
   useEffect(() => {

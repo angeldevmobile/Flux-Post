@@ -3,6 +3,7 @@ import * as monaco from "monaco-editor";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import { registerGraphQLCompletionProvider } from "./graphqlIntrospection";
 
 self.MonacoEnvironment = {
   getWorker(_: unknown, label: string) {
@@ -48,3 +49,5 @@ monaco.languages.setMonarchTokensProvider("graphql", {
 
 // Use local monaco instead of CDN
 loader.config({ monaco });
+
+registerGraphQLCompletionProvider();

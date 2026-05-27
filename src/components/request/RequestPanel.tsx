@@ -15,6 +15,7 @@ import { runPreRequestScript, runPostResponseScript } from "@/lib/preRequest";
 import { useTestResultsStore } from "@/stores/testResults";
 import { useSettingsStore } from "@/stores/settings";
 import { CodeEditor } from "@/components/CodeEditor";
+import { fetchGraphQLSchema, setCurrentSchema } from "@/lib/graphqlIntrospection";
 
 const DIR_KEY = "flux_collections_dir";
 
@@ -594,6 +595,23 @@ export function RequestPanel() {
   }
   const [tab, setTab] = useState<Tab>("Body");
   const [showSave, setShowSave] = useState(false);
+  const [schemaStatus, setSchemaStatus] = useState<"idle" | "loading" | "loaded" | "error">("idle");
+
+  async function handleFetchSchema() {
+    const resolvedUrl = resolveVariable(url);
+    if (!resolvedUrl) return;
+    setSchemaStatus("loading");
+    try {
+      const req = getRequest();
+      const schema = await fetchGraphQLSchema(resolvedUrl, req.headers);
+      setCurrentSchema(schema);
+      setSchemaStatus("loaded");
+      toast.success("GraphQL schema loaded");
+    } catch (e) {
+      setSchemaStatus("error");
+      toast.error(`Schema fetch failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
   async function handleSend() {
     if (!url) return;
@@ -825,7 +843,24 @@ export function RequestPanel() {
             ) : bodyType === "graphql" ? (
               <div className="flex flex-col h-full gap-2">
                 <div className="flex flex-col gap-1 flex-2 min-h-0">
-                  <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-3)" }}>Query</span>
+                  <div className="flex items-center justify-between shrink-0">
+                    <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Query</span>
+                    <button
+                      onClick={handleFetchSchema}
+                      disabled={schemaStatus === "loading" || !url}
+                      className="flex items-center gap-1 px-2 rounded text-[11px] transition-colors"
+                      style={{
+                        height: 20,
+                        background: schemaStatus === "loaded" ? "#16a34a18" : "transparent",
+                        border: `1px solid ${schemaStatus === "loaded" ? "#16a34a50" : schemaStatus === "error" ? "#dc262650" : "var(--color-border)"}`,
+                        color: schemaStatus === "loaded" ? "#4ade80" : schemaStatus === "error" ? "#f87171" : schemaStatus === "loading" ? "var(--color-fg-3)" : "var(--color-fg-2)",
+                        cursor: schemaStatus === "loading" || !url ? "not-allowed" : "pointer",
+                        opacity: !url ? 0.4 : 1,
+                      }}
+                    >
+                      {schemaStatus === "loading" ? "Fetching…" : schemaStatus === "loaded" ? "✓ Schema" : schemaStatus === "error" ? "↺ Retry" : "Fetch Schema"}
+                    </button>
+                  </div>
                   <CodeEditor
                     value={graphqlQuery}
                     onChange={setGraphqlQuery}

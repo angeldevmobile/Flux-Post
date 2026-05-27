@@ -48,16 +48,6 @@ function postmanItemToRequest(item: PostmanItem, prefix: string, idx: number): C
   };
 }
 
-function postmanItemsToFolder(items: PostmanItem[], colId: string, folderIdx: number): CollectionFolder {
-  const fid = `${colId}-f${folderIdx}`;
-  return {
-    id: fid,
-    name: items[0]?.name ?? "Folder",
-    expanded: true,
-    requests: [],
-  };
-}
-
 export function importPostman(json: unknown): Collection {
   const col = json as PostmanCollection;
   const name = col.info?.name ?? "Imported Collection";

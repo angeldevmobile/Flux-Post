@@ -8,15 +8,21 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 
 ## Why Flux
 
-| | Postman / Insomnia | Flux |
+| | Postman | Flux |
 |---|---|---|
 | RAM usage | 200–400 MB | < 30 MB |
 | Binary size | ~150 MB | ~5 MB |
 | Requires account | Yes | No — offline first |
-| AI features | None / paid | Test gen, debug assist, script editing |
-| WebSocket | Basic | Full duplex viewer |
-| SSE / EventStream | No | Yes — streaming event viewer |
-| Cloud sync | Vendor cloud | Optional, your own Supabase |
+| AI test generation | Paid plan | ✅ built-in (Claude) |
+| AI debug on errors | No | ✅ 4xx/5xx auto-analysis |
+| AI script editing | No | ✅ natural language edits |
+| SSE / EventStream | No | ✅ full streaming viewer |
+| GraphQL autocomplete | Basic | ✅ schema introspection + Monaco |
+| Declarative assertions | No | ✅ `status == 200` without scripts |
+| WebSocket | Basic | ✅ full duplex log with timestamps |
+| Cloud sync | Postman servers | ✅ your own Supabase — you own the data |
+| CLI runner for CI/CD | Newman (paid) | 🔜 free, open source |
+| Mock servers | Cloud-hosted, limited free | 🔜 100% local, instant |
 
 ---
 
@@ -231,12 +237,12 @@ Core features are stable and in daily use. The items below are the remaining blo
 ## Roadmap
 
 ### Pre-launch blockers
-- [x] Distribution — GitHub Actions pipeline for signed installers (Windows, macOS, Linux)
-- [x] First-run onboarding tour — custom 7-step walkthrough, triggers once on first login, re-launchable from Settings → General
-- [x] Empty states with prefilled examples in each route
-- [x] Error visibility — toasts for sync failures and request errors
-- [ ] Cookie jar — per-domain cookie management
-- [ ] GraphQL schema introspection + Monaco autocomplete
+- [x] Distribution — auto-updater with signed installers (Windows, macOS, Linux)
+- [x] First-run onboarding tour — custom 7-step walkthrough, re-launchable from Settings
+- [x] Error visibility — toasts, React Error Boundary with crash reporting to Supabase
+- [x] Analytics + crash reporting — wired to Supabase, respects privacy settings
+- [x] Cookie jar — per-domain cookie management, toggle in Settings
+- [x] GraphQL schema introspection + Monaco autocomplete
 
 ### Shipped
 - [x] HTTP requests — all methods, auth types, body types
@@ -245,19 +251,30 @@ Core features are stable and in daily use. The items below are the remaining blo
 - [x] Collection runner with assertion reporting
 - [x] Environment variables + secrets + global vars
 - [x] Cloud sync (settings, collections, environments, history)
-- [x] WebSocket viewer
-- [x] SSE / EventStream viewer
-- [x] GraphQL body type (query + variables)
+- [x] WebSocket viewer — full duplex log with timestamps
+- [x] SSE / EventStream viewer — full spec support, JSON pretty-print
+- [x] GraphQL body type (query + variables + schema autocomplete)
 - [x] AWS SigV4 signing
 - [x] OAuth 2.0 (auth code + client credentials)
-- [x] AI — test generation, debug assist, script editing, fix assertions
-- [x] Request history
-- [x] Response comparison
+- [x] AI — test generation, debug assist, script editing, fix assertions, batch analysis
+- [x] Request history (SQLite + cloud sync)
+- [x] Environment compare — same request across multiple envs side by side
+- [x] Command palette (Ctrl+K)
+- [x] Monaco editor — JSON, GraphQL, JavaScript with syntax highlighting
 
 ### Post-launch
-- [ ] Share collections with teammates
-- [ ] gRPC support
-- [ ] CLI runner for CI/CD pipelines
+
+| Feature | Effort | Community impact | Monetization |
+|---|---|---|---|
+| CLI runner | Medium (1-2 weeks) | ⭐⭐⭐⭐⭐ — viral in CI/CD | Pro feature |
+| Local mock server | High (2-3 weeks) | ⭐⭐⭐⭐ | Pro feature |
+| gRPC support | High (3-4 weeks) | ⭐⭐⭐ | Pro feature |
+| Team workspaces | Very high | ⭐⭐⭐⭐⭐ | Core paid tier |
+
+- [ ] **CLI runner** — `flux run collection.json --env production` for CI/CD pipelines. Free alternative to Postman Newman. JUnit XML output, exit code on failures, AI failure analysis.
+- [ ] **Local mock server** — `flux mock` spins up a localhost server from any collection. 100% offline, zero latency, AI-generated response bodies.
+- [ ] **gRPC support** — `.proto` import, Monaco editor for messages, server reflection. Free unlike Postman Team plan.
+- [ ] **Team workspaces** — shared collections with real-time sync via Supabase Realtime. Your data, your infrastructure.
 
 ---
 
