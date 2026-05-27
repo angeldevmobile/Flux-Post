@@ -78,6 +78,30 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 
 ---
 
+## Installation
+
+Download the latest release from the [Releases page](https://github.com/angeldevmobile/Flux-Post/releases/latest).
+
+| Platform | File | Notes |
+|---|---|---|
+| **Windows** | `Flux_x.x.x_x64-setup.exe` | Run the installer. Flux auto-updates in the background. |
+| **macOS (Apple Silicon)** | `Flux_x.x.x_aarch64.dmg` | Drag to Applications. First launch: right-click → Open to bypass Gatekeeper. |
+| **macOS (Intel)** | `Flux_x.x.x_x86_64.dmg` | Same as above. |
+| **Linux (.deb)** | `Flux_x.x.x_amd64.deb` | `sudo dpkg -i Flux_*.deb` |
+| **Linux (AppImage)** | `Flux_x.x.x_amd64.AppImage` | `chmod +x Flux_*.AppImage && ./Flux_*.AppImage` |
+
+---
+
+## Quick Start
+
+1. **Send a request** — Type a URL in the top bar, pick a method, press `Ctrl+Enter`.
+2. **Save to a collection** — Click the `+` in the sidebar to organize requests in folders.
+3. **Use environment variables** — Go to Environments and add `{{BASE_URL}}` style variables to reuse across requests.
+4. **Enable AI features** — Add your Claude API key in Settings → AI & Claude to unlock one-click test generation and debug assist.
+5. **Import existing work** — Import a Postman collection, OpenAPI spec or cURL command from the sidebar import button.
+
+---
+
 ## Architecture
 
 ```

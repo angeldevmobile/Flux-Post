@@ -871,24 +871,209 @@ function CookiesSection() {
   );
 }
 
+const FEATURE_DOCS = [
+  {
+    icon: "⚡",
+    title: "HTTP Requests",
+    desc: "All methods (GET, POST, PUT, PATCH, DELETE…). Body types: JSON, form, multipart, GraphQL, binary. Auth: Bearer, API Key, Basic, OAuth 2.0, AWS SigV4.",
+  },
+  {
+    icon: "📁",
+    title: "Collections",
+    desc: "Organize requests in folders. Import from Postman v2.1, OpenAPI 3.x or cURL. Run all requests in sequence with the Collection Runner.",
+  },
+  {
+    icon: "🌍",
+    title: "Environments",
+    desc: "Multiple named environments with {{VAR}} interpolation. Secret keys are masked and never logged. Global vars shared across all environments.",
+  },
+  {
+    icon: "✅",
+    title: "Tests & Assertions",
+    desc: "Declarative assertions: `status == 200`, `body.token != null`, `duration < 500`. One-click AI test generation from any response.",
+  },
+  {
+    icon: "🤖",
+    title: "AI (Claude)",
+    desc: "Generate test assertions, debug 4xx/5xx errors, edit scripts with natural language, fix failing assertions. Requires your own Claude API key.",
+  },
+  {
+    icon: "🔌",
+    title: "WebSocket",
+    desc: "Full-duplex connection manager. Send and receive messages with timestamps. Supports custom headers and multiple simultaneous connections.",
+  },
+  {
+    icon: "📡",
+    title: "SSE / EventStream",
+    desc: "Connect to text/event-stream endpoints. Parses event:, data:, id: fields. JSON pretty-printed automatically. Cancellable at any time.",
+  },
+  {
+    icon: "☁️",
+    title: "Cloud Sync",
+    desc: "Optional sync via Supabase. Collections, environments, history and settings synced per user. Your data, your infrastructure.",
+  },
+];
+
+const STEPS = [
+  { n: "1", title: "Send your first request", desc: "Type a URL in the top bar, choose a method and press Send (Ctrl+Enter)." },
+  { n: "2", title: "Create a collection", desc: "Click the + button in the sidebar to save requests in organized folders." },
+  { n: "3", title: "Set up environments", desc: "Go to Environments and add variables like {{BASE_URL}} to reuse across requests." },
+  { n: "4", title: "Enable AI features", desc: "Add your Claude API key in Settings → AI & Claude to unlock test generation and debug assist." },
+  { n: "5", title: "Import existing work", desc: "Import a Postman collection, OpenAPI spec or cURL command via File → Import." },
+];
+
 function AboutSection() {
+  async function openUrl(url: string) {
+    const { openUrl: open } = await import("@tauri-apps/plugin-opener");
+    await open(url);
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <Card title="About Flux">
-        <div className="p-4 flex flex-col gap-3">
-          <p className="text-[13px]" style={{ color: "var(--color-fg-2)" }}>The modern API client for developers. Local-first, git-native, AI-powered.</p>
-          <p className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>Built with Tauri · React · Rust · Claude</p>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded"
-              style={{ background: "var(--color-accent-20)", border: "1px solid var(--color-accent-20)" }}>
-              <span className="text-[12px] font-medium" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>v0.1.0-beta</span>
+      {/* Hero */}
+      <div className="rounded-lg p-6 flex flex-col gap-4"
+        style={{ background: "var(--color-elevated)", border: "1px solid var(--color-border)" }}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-[22px] font-bold" style={{ fontFamily: "Geist, Inter, sans-serif", color: "var(--color-fg)", letterSpacing: "-0.5px" }}>
+                Flux
+              </span>
+              <div className="flex items-center px-2 py-0.5 rounded"
+                style={{ background: "var(--color-accent-20)", border: "1px solid var(--color-accent-20)" }}>
+                <span className="text-[11px] font-medium" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>v0.1.0</span>
+              </div>
             </div>
+            <p className="text-[13px]" style={{ color: "var(--color-fg-3)", maxWidth: 480, lineHeight: 1.6 }}>
+              Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM — no Electron, no account required to start.
+            </p>
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { label: "GitHub", url: "https://github.com/angeldevmobile/Flux-Post" },
+            { label: "Releases", url: "https://github.com/angeldevmobile/Flux-Post/releases" },
+            { label: "Report an issue", url: "https://github.com/angeldevmobile/Flux-Post/issues" },
+          ].map(link => (
+            <button key={link.label} onClick={() => openUrl(link.url)}
+              className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-70"
+              style={{ height: 30, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
+              <ExternalLink size={11} />
+              {link.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Getting started */}
+      <Card title="Getting Started">
+        <div className="flex flex-col">
+          {STEPS.map((step, i) => (
+            <div key={step.n} className="flex items-start gap-4 px-4 py-3.5"
+              style={{ borderBottom: i < STEPS.length - 1 ? "1px solid var(--color-border)" : "none" }}>
+              <div className="flex items-center justify-center rounded-full shrink-0 mt-0.5"
+                style={{ width: 22, height: 22, background: "var(--color-accent-20)", border: "1px solid var(--color-accent-20)" }}>
+                <span className="text-[10px] font-bold" style={{ color: "var(--color-accent)" }}>{step.n}</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>{step.title}</span>
+                <span className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.5 }}>{step.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
-      <Card title="Licenses">
-        <div className="p-4">
-          <p className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>MIT License · Open source dependencies listed in the repository.</p>
+
+      {/* Installation */}
+      <Card title="Installation">
+        <div className="flex flex-col">
+          {[
+            { platform: "Windows", file: ".msi installer", desc: "Run the installer. Flux auto-updates silently in the background." },
+            { platform: "macOS", file: ".dmg", desc: "Drag Flux to Applications. First launch: right-click → Open to bypass Gatekeeper." },
+            { platform: "Linux", file: ".AppImage / .deb", desc: "AppImage: make executable and run. .deb: install with dpkg -i." },
+          ].map((item, i, arr) => (
+            <div key={item.platform} className="flex items-start gap-4 px-4 py-3.5"
+              style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
+              <div className="flex flex-col gap-0.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>{item.platform}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--color-border)", color: "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>{item.file}</span>
+                </div>
+                <span className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.5 }}>{item.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-3 px-4 pb-4">
+          <button onClick={() => openUrl("https://github.com/angeldevmobile/Flux-Post/releases/latest")}
+            className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-medium transition-opacity hover:opacity-80"
+            style={{ height: 32, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)", color: "var(--color-accent)" }}>
+            <Download size={13} />
+            Download latest release
+          </button>
+        </div>
+      </Card>
+
+      {/* Features */}
+      <Card title="Features">
+        <div className="grid grid-cols-2 gap-px p-px" style={{ background: "var(--color-border)" }}>
+          {FEATURE_DOCS.map(f => (
+            <div key={f.title} className="flex flex-col gap-1.5 p-4" style={{ background: "var(--color-elevated)" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">{f.icon}</span>
+                <span className="text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>{f.title}</span>
+              </div>
+              <p className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.55 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Keyboard shortcuts quick reference */}
+      <Card title="Keyboard Shortcuts">
+        <div className="grid grid-cols-2 gap-px p-px" style={{ background: "var(--color-border)" }}>
+          {[
+            ["Send request",       "Ctrl+Enter"],
+            ["New tab",            "Ctrl+T"],
+            ["Command palette",    "Ctrl+K"],
+            ["Toggle sidebar",     "Ctrl+B"],
+            ["Save to collection", "Ctrl+S"],
+            ["Import",             "Ctrl+O"],
+            ["Focus URL bar",      "Ctrl+L"],
+            ["Duplicate request",  "Ctrl+D"],
+          ].map(([label, keys]) => (
+            <div key={label} className="flex items-center justify-between gap-3 px-4"
+              style={{ height: 40, background: "var(--color-elevated)" }}>
+              <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>{label}</span>
+              <div className="flex items-center gap-1">
+                {keys.split("+").map((k, i) => (
+                  <span key={i} className="flex items-center gap-1">
+                    {i > 0 && <span style={{ color: "var(--color-fg-4)", fontSize: 10 }}>+</span>}
+                    <span className="px-1.5 rounded text-[10px] font-medium"
+                      style={{ height: 20, lineHeight: "20px", background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }}>{k}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* License */}
+      <Card title="License & Credits">
+        <div className="flex flex-col gap-3 p-4">
+          <p className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.6 }}>
+            Flux is open source under the <span style={{ color: "var(--color-fg)" }}>MIT License</span>. Built with Tauri, React, Rust, and Claude.
+          </p>
+          <p className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.6 }}>
+            Full list of open source dependencies available in the repository.
+          </p>
+          <button onClick={() => openUrl("https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE")}
+            className="flex items-center gap-1.5 self-start transition-opacity hover:opacity-70 text-[12px]"
+            style={{ color: "var(--color-accent)" }}>
+            <ExternalLink size={11} />
+            View license on GitHub
+          </button>
         </div>
       </Card>
     </div>
