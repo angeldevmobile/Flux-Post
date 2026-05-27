@@ -31,6 +31,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::http::send_request,
+            commands::cookies::get_all_cookies,
+            commands::cookies::delete_cookie,
+            commands::cookies::clear_cookies,
             commands::history::save_history,
             commands::history::get_history,
             commands::history::clear_history,

@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod collections;
+pub mod cookies;
 pub mod history;
 pub mod http;
 pub mod oauth;

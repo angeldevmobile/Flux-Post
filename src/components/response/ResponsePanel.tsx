@@ -336,9 +336,43 @@ export function ResponsePanel() {
           )}
 
           {/* Cookies tab */}
-          {tab === "Cookies" && (
-            <p className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>No cookies</p>
-          )}
+          {tab === "Cookies" && (() => {
+            const rawCookies = response?.setCookies ?? [];
+            if (rawCookies.length === 0) {
+              return (
+                <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>
+                  No cookies received in this response.
+                </p>
+              );
+            }
+            return (
+              <div className="flex flex-col gap-2">
+                {rawCookies.map((raw, i) => {
+                  const parts = raw.split(";").map(s => s.trim());
+                  const [name, value] = (parts[0] ?? "").split("=");
+                  const attrs = parts.slice(1).join("  ·  ");
+                  return (
+                    <div key={i} className="rounded-lg px-3 py-2 flex flex-col gap-0.5"
+                      style={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-semibold" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>
+                          {name}
+                        </span>
+                        <span className="text-[12px] break-all flex-1" style={{ color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }}>
+                          = {value}
+                        </span>
+                      </div>
+                      {attrs && (
+                        <span className="text-[10px]" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
+                          {attrs}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Tests tab */}
           {tab === "Tests" && (

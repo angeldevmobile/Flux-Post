@@ -56,6 +56,9 @@ interface SettingsStore {
   lockOnSleep: boolean;
   historyRetentionDays: number;
 
+  // Cookie jar
+  enableCookieJar: boolean;
+
   // Onboarding
   tourSeen: boolean;
 
@@ -124,6 +127,9 @@ export const useSettingsStore = create<SettingsStore>()(
       rememberMe: true,
       lockOnSleep: false,
       historyRetentionDays: 30,
+
+      // Cookie jar
+      enableCookieJar: false,
 
       // Onboarding
       tourSeen: false,

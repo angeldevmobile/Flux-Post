@@ -643,7 +643,7 @@ export function RequestPanel() {
       const {
         timeoutMs, followRedirects, sslVerify,
         proxyHttp, proxyHttpPort, proxyHttps, proxyHttpsPort, noProxy, useSystemProxy,
-        proxySslVerify, clientCerts, clientCertPem, clientKeyPem,
+        proxySslVerify, clientCerts, clientCertPem, clientKeyPem, enableCookieJar,
       } = useSettingsStore.getState();
 
       const proxyHttpUrl = !useSystemProxy && proxyHttp ? `${proxyHttp}:${proxyHttpPort}` : undefined;
@@ -662,6 +662,7 @@ export function RequestPanel() {
         proxySslVerify,
         clientCertPem: clientCerts && clientCertPem ? clientCertPem : undefined,
         clientKeyPem: clientCerts && clientKeyPem ? clientKeyPem : undefined,
+        useCookies: enableCookieJar,
       });
       setResponse(resp);
       trackPerf(resolved.url, resolved.method, resp.durationMs, resp.status);

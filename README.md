@@ -231,8 +231,8 @@ Core features are stable and in daily use. The items below are the remaining blo
 ## Roadmap
 
 ### Pre-launch blockers
-- [ ] Distribution — GitHub Actions pipeline for signed installers (Windows, macOS, Linux)
-- [ ] First-run onboarding tour — guided walkthrough via [driver.js](https://driverjs.com), 7 steps, triggers once on first login, re-launchable from Settings
+- [x] Distribution — GitHub Actions pipeline for signed installers (Windows, macOS, Linux)
+- [x] First-run onboarding tour — custom 7-step walkthrough, triggers once on first login, re-launchable from Settings → General
 - [x] Empty states with prefilled examples in each route
 - [x] Error visibility — toasts for sync failures and request errors
 - [ ] Cookie jar — per-domain cookie management

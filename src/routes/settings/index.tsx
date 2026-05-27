@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
-  ExternalLink, Check, ClipboardPaste, X, FileUp, Play,
+  ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings";
-import { clearHistory, getHistory, exportDataAsJson } from "@/lib/tauri";
+import { clearHistory, getHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, type CookieEntry } from "@/lib/tauri";
 
-type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "privacy" | "about";
+type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "about";
 
 const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "general",    label: "General",        icon: Settings2 },
@@ -15,6 +15,7 @@ const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "appearance", label: "Appearance",      icon: Palette   },
   { id: "keyboard",   label: "Keyboard",        icon: Keyboard  },
   { id: "proxy",      label: "Proxy & Network", icon: Network   },
+  { id: "cookies",    label: "Cookie Jar",      icon: Cookie    },
   { id: "privacy",    label: "Data & Privacy",  icon: Shield    },
   { id: "about",      label: "About",           icon: Info      },
 ];
@@ -751,6 +752,125 @@ function PrivacySection() {
   );
 }
 
+function CookiesSection() {
+  const s = useSettingsStore();
+  const [cookies, setCookies] = useState<CookieEntry[]>([]);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    getAllCookies().then(setCookies).catch(() => setCookies([]));
+  }, []);
+
+  async function handleDelete(domain: string, name: string, path: string) {
+    await deleteCookie(domain, name, path);
+    setCookies(prev => prev.filter(c => !(c.domain === domain && c.name === name && c.path === path)));
+  }
+
+  async function handleClearAll() {
+    setClearing(true);
+    try {
+      await clearCookies();
+      setCookies([]);
+    } finally { setClearing(false); }
+  }
+
+  async function handleClearDomain(domain: string) {
+    await clearCookies(domain);
+    setCookies(prev => prev.filter(c => c.domain !== domain));
+  }
+
+  // Group by domain
+  const byDomain = cookies.reduce<Record<string, CookieEntry[]>>((acc, c) => {
+    (acc[c.domain] ??= []).push(c);
+    return acc;
+  }, {});
+
+  const domains = Object.keys(byDomain).sort();
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card title="Cookie Jar">
+        <SettingRow
+          label="Enable Cookie Jar"
+          description="Automatically send and receive cookies on every request"
+          last
+        >
+          <Toggle checked={s.enableCookieJar} onChange={v => s.patch({ enableCookieJar: v })} />
+        </SettingRow>
+      </Card>
+
+      <Card title="Stored Cookies">
+        {cookies.length === 0 ? (
+          <div className="flex items-center justify-center px-4" style={{ height: 64 }}>
+            <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>
+              No cookies stored. Enable the Cookie Jar and make a request.
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 px-4" style={{ height: 44, borderBottom: "1px solid var(--color-border)" }}>
+              <span className="flex-1 text-[12px]" style={{ color: "var(--color-fg-3)" }}>
+                {cookies.length} {cookies.length === 1 ? "cookie" : "cookies"} across {domains.length} {domains.length === 1 ? "domain" : "domains"}
+              </span>
+              <button
+                onClick={handleClearAll}
+                disabled={clearing}
+                className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ height: 28, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
+              >
+                <Trash2 size={12} />
+                {clearing ? "Clearing…" : "Clear all"}
+              </button>
+            </div>
+
+            {domains.map(domain => (
+              <div key={domain}>
+                <div className="flex items-center gap-2 px-4"
+                  style={{ height: 36, background: "var(--color-topbar)", borderBottom: "1px solid var(--color-border)" }}>
+                  <Cookie size={12} style={{ color: "var(--color-accent)" }} />
+                  <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }}>
+                    {domain}
+                  </span>
+                  <button
+                    onClick={() => handleClearDomain(domain)}
+                    className="text-[11px] transition-opacity hover:opacity-70"
+                    style={{ color: "var(--color-fg-4)" }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {byDomain[domain].map(c => (
+                  <div key={`${c.name}${c.path}`}
+                    className="flex items-center gap-3 px-4"
+                    style={{ height: 40, borderBottom: "1px solid var(--color-border)" }}>
+                    <span className="shrink-0 text-[12px] font-medium" style={{ color: "var(--color-fg)", fontFamily: "Geist Mono, monospace", minWidth: 120 }}>
+                      {c.name}
+                    </span>
+                    <span className="flex-1 text-[11px] truncate" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
+                      {c.value}
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {c.secure   && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#22C55E15", color: "#22C55E" }}>Secure</span>}
+                      {c.httpOnly && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#3B82F615", color: "#3B82F6" }}>HttpOnly</span>}
+                    </div>
+                    <button
+                      onClick={() => handleDelete(c.domain, c.name, c.path)}
+                      className="shrink-0 flex items-center justify-center rounded transition-opacity hover:opacity-70"
+                      style={{ width: 22, height: 22, color: "var(--color-fg-4)" }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 function AboutSection() {
   return (
     <div className="flex flex-col gap-6">
@@ -821,6 +941,7 @@ export function SettingsRoute() {
           {section === "appearance" && <AppearanceSection />}
           {section === "keyboard"   && <KeyboardSection />}
           {section === "proxy"      && <ProxySection />}
+          {section === "cookies"    && <CookiesSection />}
           {section === "privacy"    && <PrivacySection />}
           {section === "about"      && <AboutSection />}
         </div>

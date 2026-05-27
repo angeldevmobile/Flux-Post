@@ -1,9 +1,10 @@
 use base64::Engine as _;
-use reqwest::{header::{HeaderMap, HeaderName, HeaderValue}, Client, Method, Proxy};
+use reqwest::{header::{HeaderMap, HeaderName, HeaderValue, SET_COOKIE}, Client, Method, Proxy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Instant;
+use super::history::Db;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +35,7 @@ pub struct HttpRequest {
     pub proxy_ssl_verify: Option<bool>,
     pub client_cert_pem: Option<String>,
     pub client_key_pem: Option<String>,
+    pub use_cookies: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -46,10 +48,14 @@ pub struct HttpResponse {
     pub duration_ms: u64,
     pub size: usize,
     pub body_encoding: String, // "text" | "base64"
+    pub set_cookies: Vec<String>,
 }
 
 #[tauri::command]
-pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> {
+pub async fn send_request(
+    db: tauri::State<'_, Db>,
+    request: HttpRequest,
+) -> Result<HttpResponse, String> {
     let ssl_verify = request.ssl_verify.unwrap_or(true);
     let follow_redirects = request.follow_redirects.unwrap_or(true);
     let proxy_ssl_verify = request.proxy_ssl_verify.unwrap_or(true);
@@ -120,6 +126,19 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
         header_map.insert(name, value);
     }
 
+    // Inject stored cookies for this URL when cookie jar is enabled
+    if request.use_cookies.unwrap_or(false) {
+        if let Ok(conn) = db.0.lock() {
+            if let Ok(cookie_header) = super::cookies::get_cookie_header_for_url(&conn, &request.url) {
+                if !cookie_header.is_empty() && !header_map.contains_key(reqwest::header::COOKIE) {
+                    if let Ok(val) = HeaderValue::from_str(&cookie_header) {
+                        header_map.insert(reqwest::header::COOKIE, val);
+                    }
+                }
+            }
+        }
+    }
+
     let mut req = client.request(method, &request.url).headers(header_map);
 
     if let Some(fields) = request.multipart_fields {
@@ -161,12 +180,28 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
     let status = resp.status();
     let status_text = status.canonical_reason().unwrap_or("Unknown").to_string();
 
+    // Collect all Set-Cookie headers before consuming response
+    let set_cookies: Vec<String> = resp
+        .headers()
+        .get_all(SET_COOKIE)
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .collect();
+
     let mut resp_headers = HashMap::new();
     for (k, v) in resp.headers() {
         resp_headers.insert(
             k.to_string(),
             v.to_str().unwrap_or("").to_string(),
         );
+    }
+
+    // Persist cookies to SQLite when cookie jar is enabled
+    if request.use_cookies.unwrap_or(false) && !set_cookies.is_empty() {
+        if let Ok(conn) = db.0.lock() {
+            let _ = super::cookies::save_cookies_from_headers(&conn, &request.url, &set_cookies);
+        }
     }
 
     let ct = resp_headers
@@ -194,6 +229,7 @@ pub async fn send_request(request: HttpRequest) -> Result<HttpResponse, String> 
         status: status.as_u16(),
         status_text,
         headers: resp_headers,
+        set_cookies,
         body,
         duration_ms,
         size,

@@ -27,16 +27,30 @@ export interface HttpRequest {
   proxySslVerify?: boolean;
   clientCertPem?: string;
   clientKeyPem?: string;
+  useCookies?: boolean;
 }
 
 export interface HttpResponse {
   status: number;
   statusText: string;
   headers: Record<string, string>;
+  setCookies: string[];
   body: string;
   durationMs: number;
   size: number;
   bodyEncoding: "text" | "base64";
+}
+
+export interface CookieEntry {
+  domain: string;
+  path: string;
+  name: string;
+  value: string;
+  expires: number | null;
+  secure: boolean;
+  httpOnly: boolean;
+  sameSite: string;
+  hostOnly: boolean;
 }
 
 export interface HistoryEntry {
@@ -271,6 +285,18 @@ export async function sseConnect(
 
 export async function sseDisconnect(connectionId: string): Promise<void> {
   return invoke("sse_disconnect", { connectionId });
+}
+
+export async function getAllCookies(): Promise<CookieEntry[]> {
+  return invoke("get_all_cookies");
+}
+
+export async function deleteCookie(domain: string, name: string, path: string): Promise<void> {
+  return invoke("delete_cookie", { domain, name, path });
+}
+
+export async function clearCookies(domain?: string): Promise<void> {
+  return invoke("clear_cookies", { domain: domain ?? null });
 }
 
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {

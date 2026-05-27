@@ -17,6 +17,7 @@ pub struct HistoryEntry {
 }
 
 pub fn init_db(conn: &Connection) -> SqlResult<()> {
+    super::cookies::init_cookie_table(conn)?;
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS history (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
