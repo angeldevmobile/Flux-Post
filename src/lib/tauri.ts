@@ -35,6 +35,7 @@ export interface HttpResponse {
   statusText: string;
   headers: Record<string, string>;
   setCookies: string[];
+  sentCookies: string[];
   body: string;
   durationMs: number;
   size: number;

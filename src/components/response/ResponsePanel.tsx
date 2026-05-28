@@ -337,39 +337,59 @@ export function ResponsePanel() {
 
           {/* Cookies tab */}
           {tab === "Cookies" && (() => {
-            const rawCookies = response?.setCookies ?? [];
-            if (rawCookies.length === 0) {
+            const received = response?.setCookies ?? [];
+            const sent = response?.sentCookies ?? [];
+
+            function CookieRow({ raw, dim }: { raw: string; dim?: boolean }) {
+              const parts = raw.split(";").map(s => s.trim());
+              const [name, value] = (parts[0] ?? "").split("=");
+              const attrs = parts.slice(1).join("  ·  ");
+              return (
+                <div className="rounded-lg px-3 py-2 flex flex-col gap-0.5"
+                  style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", opacity: dim ? 0.7 : 1 }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-semibold" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>
+                      {name}
+                    </span>
+                    <span className="text-[12px] break-all flex-1" style={{ color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }}>
+                      = {value}
+                    </span>
+                  </div>
+                  {attrs && (
+                    <span className="text-[10px]" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
+                      {attrs}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
+            if (received.length === 0 && sent.length === 0) {
               return (
                 <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>
-                  No cookies received in this response.
+                  No cookies sent or received. Enable the Cookie Jar in Settings to send stored cookies automatically.
                 </p>
               );
             }
+
             return (
-              <div className="flex flex-col gap-2">
-                {rawCookies.map((raw, i) => {
-                  const parts = raw.split(";").map(s => s.trim());
-                  const [name, value] = (parts[0] ?? "").split("=");
-                  const attrs = parts.slice(1).join("  ·  ");
-                  return (
-                    <div key={i} className="rounded-lg px-3 py-2 flex flex-col gap-0.5"
-                      style={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[12px] font-semibold" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>
-                          {name}
-                        </span>
-                        <span className="text-[12px] break-all flex-1" style={{ color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }}>
-                          = {value}
-                        </span>
-                      </div>
-                      {attrs && (
-                        <span className="text-[10px]" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
-                          {attrs}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="flex flex-col gap-4">
+                {sent.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-fg-3)" }}>
+                      Sent with request ({sent.length})
+                    </span>
+                    {sent.map((raw, i) => <CookieRow key={i} raw={raw} dim />)}
+                  </div>
+                )}
+                {received.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-fg-3)" }}>
+                      Received in response ({received.length})
+                    </span>
+                    {received.map((raw, i) => <CookieRow key={i} raw={raw} />)}
+                  </div>
+                )}
               </div>
             );
           })()}

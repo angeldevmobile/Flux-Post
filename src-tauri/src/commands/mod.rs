@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod cli;
 pub mod collections;
 pub mod cookies;
 pub mod history;

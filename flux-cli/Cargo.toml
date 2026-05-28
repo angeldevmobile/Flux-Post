@@ -1,0 +1,16 @@
+[package]
+name = "flux-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "flux"
+path = "src/main.rs"
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "gzip"], default-features = false }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }

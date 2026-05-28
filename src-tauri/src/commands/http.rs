@@ -49,6 +49,7 @@ pub struct HttpResponse {
     pub size: usize,
     pub body_encoding: String, // "text" | "base64"
     pub set_cookies: Vec<String>,
+    pub sent_cookies: Vec<String>,
 }
 
 #[tauri::command]
@@ -66,11 +67,8 @@ pub async fn send_request(
     // When a proxy is in use, also consider proxy_ssl_verify for cert validation
     let effective_ssl_verify = ssl_verify && (!has_proxy || proxy_ssl_verify);
 
-    let redirect_policy = if follow_redirects {
-        reqwest::redirect::Policy::default()
-    } else {
-        reqwest::redirect::Policy::none()
-    };
+    // Always disable auto-redirect so we can manually follow and capture Set-Cookie from each hop
+    let redirect_policy = reqwest::redirect::Policy::none();
 
     let mut builder = Client::builder()
         .danger_accept_invalid_certs(!effective_ssl_verify)
@@ -127,6 +125,7 @@ pub async fn send_request(
     }
 
     // Inject stored cookies for this URL when cookie jar is enabled
+    let mut sent_cookies: Vec<String> = Vec::new();
     if request.use_cookies.unwrap_or(false) {
         if let Ok(conn) = db.0.lock() {
             if let Ok(cookie_header) = super::cookies::get_cookie_header_for_url(&conn, &request.url) {
@@ -135,6 +134,11 @@ pub async fn send_request(
                         header_map.insert(reqwest::header::COOKIE, val);
                     }
                 }
+                sent_cookies = cookie_header
+                    .split(';')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
             }
         }
     }
@@ -174,20 +178,49 @@ pub async fn send_request(
     }
 
     let start = Instant::now();
-    let resp = req.send().await.map_err(|e| e.to_string())?;
+    let mut resp = req.send().await.map_err(|e| e.to_string())?;
+    let mut all_set_cookies: Vec<String> = Vec::new();
+    let mut hops = 0u32;
+
+    // Manually follow redirects so we can capture Set-Cookie from each hop
+    while follow_redirects && resp.status().is_redirection() && hops < 10 {
+        for val in resp.headers().get_all(SET_COOKIE).iter() {
+            if let Ok(s) = val.to_str() {
+                all_set_cookies.push(s.to_string());
+            }
+        }
+        let location = resp
+            .headers()
+            .get(reqwest::header::LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+        match location {
+            Some(loc) => {
+                // Use the response URL to correctly resolve relative redirects
+                let next_url = resp.url().join(&loc)
+                    .map(|u| u.to_string())
+                    .unwrap_or(loc);
+                resp = client.get(&next_url).send().await.map_err(|e| e.to_string())?;
+                hops += 1;
+            }
+            None => break,
+        }
+    }
+
     let duration_ms = start.elapsed().as_millis() as u64;
 
     let status = resp.status();
     let status_text = status.canonical_reason().unwrap_or("Unknown").to_string();
 
-    // Collect all Set-Cookie headers before consuming response
-    let set_cookies: Vec<String> = resp
+    // Collect Set-Cookie from final response + captured from redirect hops
+    let mut set_cookies: Vec<String> = resp
         .headers()
         .get_all(SET_COOKIE)
         .iter()
         .filter_map(|v| v.to_str().ok())
         .map(|s| s.to_string())
         .collect();
+    set_cookies.append(&mut all_set_cookies);
 
     let mut resp_headers = HashMap::new();
     for (k, v) in resp.headers() {
@@ -230,6 +263,7 @@ pub async fn send_request(
         status_text,
         headers: resp_headers,
         set_cookies,
+        sent_cookies,
         body,
         duration_ms,
         size,

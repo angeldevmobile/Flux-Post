@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
-  ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie,
+  ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie, Terminal,
 } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settings";
 import { clearHistory, getHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, type CookieEntry } from "@/lib/tauri";
 
-type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "about";
+type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "cli" | "about";
 
 const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "general",    label: "General",        icon: Settings2 },
@@ -17,7 +18,8 @@ const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "proxy",      label: "Proxy & Network", icon: Network   },
   { id: "cookies",    label: "Cookie Jar",      icon: Cookie    },
   { id: "privacy",    label: "Data & Privacy",  icon: Shield    },
-  { id: "about",      label: "About",           icon: Info      },
+  { id: "cli",        label: "CLI Tools",        icon: Terminal  },
+  { id: "about",      label: "About",            icon: Info      },
 ];
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -208,7 +210,7 @@ function AiSection() {
                 type={showKey ? "text" : "password"}
                 value={s.claudeApiKey}
                 onChange={e => handleKeyChange(e.target.value)}
-                placeholder="sk-ant-••••••••••••••••"
+                placeholder="sk-ant-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 className="flex-1 text-[12px] bg-transparent"
                 style={{ color: s.claudeApiKey ? "var(--color-fg-2)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}
               />
@@ -355,7 +357,7 @@ function AppearanceSection() {
             style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
             <button onClick={() => s.patch({ uiFontSize: Math.max(11, s.uiFontSize - 1) })}
               className="flex items-center justify-center transition-colors hover:opacity-80"
-              style={{ width: 30, height: "100%", borderRight: "1px solid var(--color-border)", fontSize: 16, color: "var(--color-fg-3)" }}>−</button>
+              style={{ width: 30, height: "100%", borderRight: "1px solid var(--color-border)", fontSize: 16, color: "var(--color-fg-3)" }}>âˆ’</button>
             <span className="text-[12px] px-3" style={{ fontFamily: "Geist Mono, monospace", minWidth: 48, textAlign: "center", color: "var(--color-fg)" }}>{s.uiFontSize}px</span>
             <button onClick={() => s.patch({ uiFontSize: Math.min(18, s.uiFontSize + 1) })}
               className="flex items-center justify-center transition-colors hover:opacity-80"
@@ -580,7 +582,7 @@ function CertFilePicker({ label, value, accept, onLoad, onClear }: {
         <div className="flex-1 flex items-center px-3 rounded-md overflow-hidden"
           style={{ height: 32, background: "var(--color-input)", border: `1px solid ${value ? "var(--color-accent-50)" : "var(--color-border)"}` }}>
           <span className="flex-1 text-[11px] truncate" style={{ fontFamily: "Geist Mono, monospace", color: value ? "var(--color-fg)" : "var(--color-fg-4)" }}>
-            {value ? `${value.split("\n")[0].slice(0, 40)}…` : "No file loaded"}
+            {value ? `${value.split("\n")[0].slice(0, 40)}â€¦` : "No file loaded"}
           </span>
           {value && (
             <button onClick={onClear} className="shrink-0 hover:opacity-70 transition-opacity ml-2" style={{ color: "var(--color-fg-3)" }}>
@@ -663,7 +665,7 @@ function PrivacySection() {
             className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40 shrink-0"
             style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
             <Download size={13} style={{ color: "var(--color-fg-2)" }} />
-            {exporting ? "Exporting…" : "Export .json"}
+            {exporting ? "Exportingâ€¦" : "Export .json"}
           </button>
         </div>
 
@@ -671,14 +673,14 @@ function PrivacySection() {
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Request history</span>
             <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
-              {historyCount === null ? "Loading…" : `${historyCount} request${historyCount !== 1 ? "s" : ""} stored locally`}
+              {historyCount === null ? "Loadingâ€¦" : `${historyCount} request${historyCount !== 1 ? "s" : ""} stored locally`}
             </span>
           </div>
           <button onClick={handleClearHistory} disabled={clearing}
             className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40 shrink-0"
             style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
             <History size={13} style={{ color: "var(--color-fg-2)" }} />
-            {clearing ? "Clearing…" : "Clear history"}
+            {clearing ? "Clearingâ€¦" : "Clear history"}
           </button>
         </div>
 
@@ -819,7 +821,7 @@ function CookiesSection() {
                 style={{ height: 28, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
               >
                 <Trash2 size={12} />
-                {clearing ? "Clearing…" : "Clear all"}
+                {clearing ? "Clearingâ€¦" : "Clear all"}
               </button>
             </div>
 
@@ -890,10 +892,10 @@ function AboutSection() {
             </div>
           </div>
           <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 520 }}>
-            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM — no Electron, no account required to start.
+            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM â€” no Electron, no account required to start.
           </p>
           <p className="text-[12px]" style={{ color: "var(--color-fg-4)", lineHeight: 1.6 }}>
-            Built with Tauri 2 · React · Rust · Claude · MIT License
+            Built with Tauri 2 Â· React Â· Rust Â· Claude Â· MIT License
           </p>
         </div>
 
@@ -941,7 +943,7 @@ function AboutSection() {
           { label: "GitHub",         desc: "Source code, issues and contributions",      url: "https://github.com/angeldevmobile/Flux-Post" },
           { label: "Releases",       desc: "Download installers for all platforms",       url: "https://github.com/angeldevmobile/Flux-Post/releases" },
           { label: "Report an issue",desc: "Found a bug? Open an issue on GitHub",       url: "https://github.com/angeldevmobile/Flux-Post/issues" },
-          { label: "License",        desc: "MIT License — free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
+          { label: "License",        desc: "MIT License â€” free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
         ].map((link, i, arr) => (
           <button key={link.label} onClick={() => openUrl(link.url)}
             className="flex items-center gap-4 w-full px-4 transition-opacity hover:opacity-80 text-left"
@@ -959,6 +961,171 @@ function AboutSection() {
   );
 }
 
+
+function CliSection() {
+  const [status, setStatus] = useState<{ installed: boolean; path: string | null; version: string | null } | null>(null);
+  const [installing, setInstalling] = useState(false);
+  const [uninstalling, setUninstalling] = useState(false);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  useEffect(() => {
+    invoke<{ installed: boolean; path: string | null; version: string | null }>("get_cli_status")
+      .then(s => setStatus(s))
+      .catch(() => setStatus({ installed: false, path: null, version: null }));
+  }, []);
+
+  async function handleInstall() {
+    setInstalling(true);
+    setMessage(null);
+    try {
+      const result = await invoke<{ path: string; alreadyInPath: boolean }>("install_cli");
+      setStatus({ installed: true, path: result.path, version: null });
+      setMessage({
+        text: result.alreadyInPath
+          ? `Installed at ${result.path} (already in PATH)`
+          : `Installed at ${result.path} — restart your terminal to use flux`,
+        ok: true,
+      });
+    } catch (e) {
+      setMessage({ text: String(e), ok: false });
+    } finally {
+      setInstalling(false);
+    }
+  }
+
+  async function handleUninstall() {
+    setUninstalling(true);
+    setMessage(null);
+    try {
+      await invoke("uninstall_cli");
+      setStatus({ installed: false, path: null, version: null });
+      setMessage({ text: "CLI uninstalled successfully", ok: true });
+    } catch (e) {
+      setMessage({ text: String(e), ok: false });
+    } finally {
+      setUninstalling(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card title="CLI Runner">
+        <div className="flex items-start gap-3 mx-4 mt-4 mb-2 px-3 py-3 rounded-lg"
+          style={{ background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)" }}>
+          <Terminal size={14} style={{ color: "var(--color-accent)", flexShrink: 0, marginTop: 1 }} />
+          <div className="flex flex-col gap-1">
+            <span className="text-[12px] font-medium" style={{ color: "var(--color-fg)" }}>
+              Run Flux collections from your terminal or CI/CD pipeline
+            </span>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
+              The CLI runner reads the same YAML collection files as the app and returns exit code 1 on test failures — perfect for GitHub Actions, Jenkins, and local automation.
+            </span>
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center gap-4 px-4" style={{ height: 56, borderBottom: "1px solid var(--color-border)" }}>
+          <div className="flex flex-col gap-0.5 flex-1">
+            <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Status</span>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
+              {status === null
+                ? "Checking..."
+                : status.installed
+                  ? `Installed${status.version ? ` · ${status.version}` : ""}`
+                  : "Not installed"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 px-2 py-1 rounded"
+            style={{ background: status?.installed ? "#22C55E15" : "var(--color-card)", border: `1px solid ${status?.installed ? "#22C55E30" : "var(--color-border)"}` }}>
+            <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status?.installed ? "#22C55E" : "var(--color-fg-4)" }} />
+            <span className="text-[11px] font-medium" style={{ color: status?.installed ? "#22C55E" : "var(--color-fg-4)" }}>
+              {status?.installed ? "Installed" : "Not installed"}
+            </span>
+          </div>
+        </div>
+
+        {/* Install path */}
+        {status?.installed && status.path && (
+          <div className="flex items-center gap-4 px-4" style={{ height: 48, borderBottom: "1px solid var(--color-border)" }}>
+            <span className="text-[12px] font-medium shrink-0" style={{ color: "var(--color-fg-2)" }}>Path</span>
+            <span className="flex-1 text-[11px] truncate" style={{ color: "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>
+              {status.path}
+            </span>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-3 px-4" style={{ height: 60 }}>
+          <button
+            onClick={handleInstall}
+            disabled={installing}
+            className="flex items-center gap-1.5 px-4 rounded-md text-[12px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+            style={{ height: 34, background: "var(--color-accent)", color: "#fff" }}>
+            <Terminal size={13} />
+            {installing ? "Installing…" : status?.installed ? "Reinstall CLI" : "Install CLI"}
+          </button>
+          {status?.installed && (
+            <button
+              onClick={handleUninstall}
+              disabled={uninstalling}
+              className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40"
+              style={{ height: 34, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}>
+              <Trash2 size={12} />
+              {uninstalling ? "Removing…" : "Uninstall"}
+            </button>
+          )}
+        </div>
+
+        {/* Feedback message */}
+        {message && (
+          <div className="mx-4 mb-4 px-3 py-2.5 rounded-lg text-[11px]"
+            style={{
+              background: message.ok ? "#22C55E15" : "#EF444415",
+              border: `1px solid ${message.ok ? "#22C55E30" : "#EF444430"}`,
+              color: message.ok ? "#22C55E" : "#EF4444",
+              fontFamily: "Geist Mono, monospace",
+            }}>
+            {message.text}
+          </div>
+        )}
+      </Card>
+
+      {/* Usage examples */}
+      <Card title="Usage">
+        {[
+          { cmd: "flux run ./collections/",                          desc: "Run all collections in a folder" },
+          { cmd: "flux run ./api.yaml --env BASE_URL=https://...",   desc: "Override environment variables" },
+          { cmd: "flux run ./api.yaml --reporter json",              desc: "Output JSON report to stdout" },
+          { cmd: "flux run ./api.yaml --reporter json -o report.json", desc: "Save JSON report to file" },
+          { cmd: "flux run ./api.yaml --bail",                       desc: "Stop on first failure" },
+        ].map(({ cmd, desc }, i, arr) => (
+          <div key={cmd} className="flex flex-col gap-0.5 px-4 py-3"
+            style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
+            <code className="text-[11px]" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>{cmd}</code>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>{desc}</span>
+          </div>
+        ))}
+      </Card>
+
+      <Card title="CI/CD Example">
+        <div className="px-4 py-4">
+          <pre className="text-[11px] rounded-lg p-3 overflow-x-auto"
+            style={{ background: "var(--color-topbar)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)", fontFamily: "Geist Mono, monospace", lineHeight: 1.7 }}>
+{`# GitHub Actions
+- name: Run API tests
+  run: flux run ./collections/ --reporter json --output report.json
+
+- name: Upload report
+  uses: actions/upload-artifact@v3
+  with:
+    name: api-test-report
+    path: report.json`}
+          </pre>
+        </div>
+      </Card>
+    </div>
+  );
+}
 /*     ROOT     */
 
 export function SettingsRoute() {
@@ -1007,9 +1174,12 @@ export function SettingsRoute() {
           {section === "proxy"      && <ProxySection />}
           {section === "cookies"    && <CookiesSection />}
           {section === "privacy"    && <PrivacySection />}
+          {section === "cli"       && <CliSection />}
           {section === "about"      && <AboutSection />}
         </div>
       </div>
     </div>
   );
 }
+
+

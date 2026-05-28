@@ -1,4 +1,4 @@
-mod commands;
+﻿mod commands;
 
 use commands::history::{Db, init_db};
 use commands::sse::SseConnections;
@@ -58,7 +58,11 @@ pub fn run() {
             commands::oauth::oauth_auth_code,
             commands::oauth::oauth_client_credentials,
             commands::oauth::start_oauth_callback,
+            commands::cli::install_cli,
+            commands::cli::get_cli_status,
+            commands::cli::uninstall_cli,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+

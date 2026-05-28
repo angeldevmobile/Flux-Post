@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Check, X, Eye, EyeOff, Trash2, Globe } from "lucide-react";
 import { useEnvironmentStore } from "@/stores/environment";
 
@@ -82,11 +82,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 // ── Variable row ─────────────────────────────────────────────────────────────
 
 function VarRow({
-  varKey, value, isSecret, isEnabled,
+  varKey, value, isSecret, isEnabled, autoFocus,
   onKeyChange, onValChange, onToggleSecret, onToggleEnabled, onDelete,
   rowIdx,
 }: {
-  varKey: string; value: string; isSecret: boolean; isEnabled: boolean;
+  varKey: string; value: string; isSecret: boolean; isEnabled: boolean; autoFocus?: boolean;
   onKeyChange: (k: string) => void; onValChange: (v: string) => void;
   onToggleSecret: () => void; onToggleEnabled: (v: boolean) => void; onDelete: () => void;
   rowIdx: number;
@@ -98,8 +98,13 @@ function VarRow({
       style={{ height: 44, background: rowIdx % 2 === 0 ? "transparent" : "var(--color-sidebar)", borderBottom: "1px solid var(--color-card)" }}>
       {/* Key */}
       <div style={{ width: 200 }}>
-        <input defaultValue={varKey}
+        <input
+          key={varKey}
+          defaultValue={varKey}
+          autoFocus={autoFocus}
+          onFocus={e => autoFocus && e.target.select()}
           onBlur={e => onKeyChange(e.target.value)}
+          placeholder="variable_name"
           className="w-full text-[12px] bg-transparent"
           style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }} />
       </div>
@@ -162,17 +167,22 @@ function EnvContent() {
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState("");
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
+  const [lastAddedKey, setLastAddedKey] = useState<string | null>(null);
 
-  if (!env) {
-    if (environments.length === 0) {
-      const id = "development";
-      addEnvironment({ id, name: "Development", variables: DEMO_VARS });
-      setActive(id);
-    } else {
-      setActive(environments[0].id);
+  useEffect(() => {
+    if (!env) {
+      if (environments.length === 0) {
+        const id = "development";
+        addEnvironment({ id, name: "Development", variables: DEMO_VARS });
+        setActive(id);
+      } else {
+        setActive(environments[0].id);
+      }
     }
-    return null;
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!env) return null;
 
   const vars = env.variables;
   const secretKeys = env.secretKeys ?? [];
@@ -181,6 +191,7 @@ function EnvContent() {
     const key = `NEW_VAR_${Date.now()}`;
     updateEnvironment(env!.id, { variables: { ...vars, [key]: "" } });
     setEnabled(prev => ({ ...prev, [key]: true }));
+    setLastAddedKey(key);
   }
 
   function updateKey(oldKey: string, newKey: string) {
@@ -271,7 +282,8 @@ function EnvContent() {
               value={value}
               isSecret={secretKeys.includes(key)}
               isEnabled={isEnabled(key)}
-              onKeyChange={newKey => updateKey(key, newKey)}
+              autoFocus={key === lastAddedKey}
+              onKeyChange={newKey => { updateKey(key, newKey); setLastAddedKey(null); }}
               onValChange={val => updateVal(key, val)}
               onToggleSecret={() => toggleSecretKey(env.id, key)}
               onToggleEnabled={v => setEnabled(prev => ({ ...prev, [key]: v }))}
