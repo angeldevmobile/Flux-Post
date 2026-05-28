@@ -385,7 +385,8 @@ async fn main() {
                     }
                 };
 
-                let collection: YamlCollection = match serde_yaml::from_str(&content) {
+                let content = content.trim_start_matches('\u{feff}');
+                let collection: YamlCollection = match serde_yaml::from_str(content) {
                     Ok(c) => c,
                     Err(e) => {
                         eprintln!("{}Error parsing {:?}: {}{}", RED, file, e, RESET);
