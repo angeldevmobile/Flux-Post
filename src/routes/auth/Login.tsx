@@ -65,7 +65,7 @@ export function Login({ onLogin, onGoSignUp }: LoginProps) {
       const { data, error: err } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: "http://127.0.0.1:42813",
+          redirectTo: `http://127.0.0.1:${port}`,
           skipBrowserRedirect: true,
           scopes: "user:email",
         },

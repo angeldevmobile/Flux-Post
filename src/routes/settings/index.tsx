@@ -179,7 +179,7 @@ function AiSection() {
               Your API key is stored locally on this device
             </span>
             <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
-              It's never sent to our servers — only directly to Anthropic to power AI features like test generation, debug assist, and body editing.
+              It's never sent to our servers, only directly to Anthropic to power AI features like test generation, debug assist, and body editing.
             </span>
             <button onClick={openAnthropicConsole}
               className="flex items-center gap-1 mt-1 self-start transition-opacity hover:opacity-70"
@@ -913,7 +913,7 @@ const FEATURE_DOCS: FeatureDoc[] = [
     details: [
       "Multiple named environments (Development, Staging, Production…)",
       "Global variables shared across all environments",
-      "Secret keys — masked in the UI, excluded from logs and cloud sync",
+      "Secret keys, masked in the UI, excluded from logs and cloud sync",
       "Variables resolved at the moment the request is sent",
       "Switch environments instantly from the top bar",
     ],
@@ -923,10 +923,10 @@ const FEATURE_DOCS: FeatureDoc[] = [
     title: "Tests & Assertions",
     desc: "Write and run assertions against response status, body and timing.",
     details: [
-      "Declarative assertions — no code needed: status == 200, body.id != null, duration < 500",
+      "Declarative assertions, no code needed: status == 200, body.id != null, duration < 500",
       "AI-generated assertions: one click after any response generates a full test suite",
       "Post-response scripts using pm.test() and pm.expect() (Chai-style API)",
-      "AI fix suggestion when an assertion fails — explains the failure and proposes a fix",
+      "AI fix suggestion when an assertion fails, explains the failure and proposes a fix",
       "Batch test runner: run all requests in a collection and get a consolidated report",
     ],
   },
@@ -940,7 +940,7 @@ const FEATURE_DOCS: FeatureDoc[] = [
       "AI script editor: describe what your pre/post script should do in plain English",
       "Fix failing assertions: Claude reads the failure and proposes a corrected assertion",
       "Analyze batch test failures across an entire collection run",
-      "Requires your own Claude API key — added in Settings → AI & Claude",
+      "Requires your own Claude API key, added in Settings → AI & Claude",
     ],
   },
   {
@@ -964,7 +964,7 @@ const FEATURE_DOCS: FeatureDoc[] = [
       "Parses event:, data:, id: and retry: fields per the SSE spec",
       "JSON data fields are pretty-printed automatically",
       "Custom headers for Authorization, API keys and others",
-      "Cancellable stream — click Stop at any time",
+      "Cancellable stream, click Stop at any time",
     ],
   },
   {
@@ -972,11 +972,11 @@ const FEATURE_DOCS: FeatureDoc[] = [
     title: "Cloud Sync",
     desc: "Optional sync of all your data to your own Supabase project.",
     details: [
-      "Sign in with email and password — no third-party OAuth required",
+      "Sign in with email and password, no third-party OAuth required",
       "Syncs: collections, environments, request history, app settings",
       "Row-Level Security: each user sees only their own data",
       "Device-only data (Claude API key, client certificates) is never synced",
-      "Sync is optional — Flux works fully offline without an account",
+      "Sync is optional, Flux works fully offline without an account",
     ],
   },
   {
@@ -996,7 +996,7 @@ const FEATURE_DOCS: FeatureDoc[] = [
     details: [
       "Syntax highlighting for JSON, GraphQL, JavaScript and plain text",
       "GraphQL schema introspection: autocomplete fields and types from a live endpoint",
-      "Line numbers, word wrap, bracket matching — configurable in Appearance",
+      "Line numbers, word wrap, bracket matching, configurable in Appearance",
       "AI script editor overlay: edit scripts with natural language commands",
     ],
   },
@@ -1010,7 +1010,7 @@ const INSTALL_PLATFORMS = [
     steps: [
       "Download the .exe installer from the Releases page.",
       "Run the installer and follow the prompts.",
-      "Flux installs to the user folder — no administrator rights required.",
+      "Flux installs to the user folder, no administrator rights required.",
       "Auto-updates run silently in the background.",
     ],
   },
@@ -1030,8 +1030,8 @@ const INSTALL_PLATFORMS = [
     platform: "Linux",
     file: ".deb or .AppImage",
     steps: [
-      ".deb — install with: sudo dpkg -i Flux_x.x.x_amd64.deb",
-      ".AppImage — make it executable: chmod +x Flux_*.AppImage, then run it directly.",
+      ".deb, install with: sudo dpkg -i Flux_x.x.x_amd64.deb",
+      ".AppImage, make it executable: chmod +x Flux_*.AppImage, then run it directly.",
       "No installation needed for the AppImage; move it to any folder you prefer.",
     ],
   },
@@ -1041,7 +1041,7 @@ const GETTING_STARTED = [
   {
     n: "1",
     title: "Send your first request",
-    desc: "Type any URL in the top bar, select a method from the dropdown, and press Ctrl+Enter (or the Send button). The response — status, headers and body — appears in the right panel.",
+    desc: "Type any URL in the top bar, select a method from the dropdown, and press Ctrl+Enter (or the Send button). The response, status, headers and body, appears in the right panel.",
   },
   {
     n: "2",
@@ -1051,7 +1051,7 @@ const GETTING_STARTED = [
   {
     n: "3",
     title: "Use environment variables",
-    desc: "Open the Environments tab, create an environment (e.g. Development) and add a variable like BASE_URL = https://api.example.com. Reference it anywhere as {{BASE_URL}} — in URLs, headers and body.",
+    desc: "Open the Environments tab, create an environment (e.g. Development) and add a variable like BASE_URL = https://api.example.com. Reference it anywhere as {{BASE_URL}}, in URLs, headers and body.",
   },
   {
     n: "4",
@@ -1089,10 +1089,10 @@ function AboutSection() {
             </div>
           </div>
           <p className="text-[14px]" style={{ color: "var(--color-fg-2)", lineHeight: 1.7, maxWidth: 580 }}>
-            Flux is a desktop API client built for speed and simplicity. It runs natively on Windows, macOS and Linux — under 30 MB of RAM — with no Electron and no account required to get started.
+            Flux is a desktop API client built for speed and simplicity. It runs natively on Windows, macOS and Linux, under 30 MB of RAM, with no Electron and no account required to get started.
           </p>
           <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 580 }}>
-            Send HTTP requests, manage collections, write tests, connect to WebSocket and SSE endpoints, and let Claude analyze and generate tests for you — all from one interface. Your data stays local by default; cloud sync is optional and runs on your own Supabase project.
+            Send HTTP requests, manage collections, write tests, connect to WebSocket and SSE endpoints, and let Claude analyze and generate tests for you, all from one interface. Your data stays local by default; cloud sync is optional and runs on your own Supabase project.
           </p>
           <div className="flex items-center gap-2 flex-wrap pt-1">
             {[

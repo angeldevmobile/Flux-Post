@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flux — Modern API Client</title>
+  <meta name="description" content="Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM — no Electron, no account required to start." />
+  <meta property="og:title" content="Flux — Modern API Client" />
+  <meta property="og:description" content="Local-first, AI-powered desktop API client. Under 30 MB RAM, no Electron." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A0A0A;
+      --bg-card:   #111111;
+      --bg-raised: #161616;
+      --border:    #27272A;
+      --border-2:  #3F3F46;
+      --fg:        #FAFAFA;
+      --fg-2:      #E4E4E7;
+      --fg-3:      #A1A1AA;
+      --fg-4:      #71717A;
+      --accent:    #A855F7;
+      --accent-10: rgba(168,85,247,.10);
+      --accent-20: rgba(168,85,247,.20);
+      --accent-50: rgba(168,85,247,.50);
+      --mono:      "JetBrains Mono", monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 56px;
+      background: rgba(10,10,10,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 10px; }
+    .nav-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--fg); }
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600;
+      font-family: var(--mono);
+      background: var(--accent-10);
+      border: 1px solid var(--accent-20);
+      color: var(--accent);
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { font-size: 13px; color: var(--fg-3); transition: color .15s; }
+    .nav-links a:hover { color: var(--fg); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 16px; height: 34px; border-radius: 8px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      border: none; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--fg-2);
+    }
+    .btn-lg { height: 44px; padding: 0 24px; font-size: 14px; border-radius: 10px; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 100px 24px 80px;
+      overflow: hidden;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168,85,247,.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 500;
+      background: var(--accent-10);
+      border: 1px solid var(--accent-20);
+      color: var(--accent);
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 72px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.08;
+      color: var(--fg);
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 span { color: var(--accent); }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--fg-3);
+      max-width: 520px;
+      line-height: 1.75;
+      margin-bottom: 36px;
+    }
+
+    .hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+    /* stats */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin: 64px auto 0;
+      max-width: 600px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      width: 100%;
+    }
+    .stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-value {
+      font-size: 26px; font-weight: 700; letter-spacing: -1px;
+      font-family: var(--mono);
+      color: var(--accent);
+    }
+    .stat-label { font-size: 12px; color: var(--fg-4); margin-top: 4px; }
+
+    /* ── SECTIONS ── */
+    section { padding: 80px 24px; max-width: 900px; margin: 0 auto; }
+
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700; letter-spacing: -0.8px;
+      color: var(--fg); margin-bottom: 12px;
+    }
+
+    .section-desc {
+      font-size: 15px; color: var(--fg-3);
+      max-width: 560px; line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* ── WHAT IS FLUX ── */
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .what-item {
+      background: var(--bg-card);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .what-item strong { font-size: 14px; font-weight: 600; color: var(--fg); }
+    .what-item span { font-size: 13px; color: var(--fg-3); line-height: 1.6; }
+
+    /* ── GETTING STARTED ── */
+    .steps { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .step {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 20px 24px;
+      background: var(--bg-card);
+    }
+    .step-num {
+      display: flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+      font-size: 11px; font-weight: 700;
+      background: var(--accent-10); border: 1px solid var(--accent-20); color: var(--accent);
+    }
+    .step-body { display: flex; flex-direction: column; gap: 4px; }
+    .step-body strong { font-size: 14px; font-weight: 600; color: var(--fg); }
+    .step-body p { font-size: 13px; color: var(--fg-3); line-height: 1.6; }
+
+    /* ── FEATURES ── */
+    .features { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .feature {
+      background: var(--bg-card);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .feature-header { display: flex; align-items: center; gap: 12px; }
+    .feature-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      background: var(--accent-10); border: 1px solid var(--accent-20);
+    }
+    .feature-icon svg { color: var(--accent); }
+    .feature-title { display: flex; flex-direction: column; gap: 2px; }
+    .feature-title strong { font-size: 14px; font-weight: 600; color: var(--fg); }
+    .feature-title span { font-size: 12px; color: var(--fg-3); }
+    .feature ul { display: flex; flex-direction: column; gap: 6px; padding-left: 2px; list-style: none; }
+    .feature ul li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13px; color: var(--fg-3); line-height: 1.55;
+    }
+    .feature ul li::before {
+      content: "";
+      display: block; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent-50); flex-shrink: 0; margin-top: 6px;
+    }
+
+    /* ── INSTALL ── */
+    .install { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .platform {
+      background: var(--bg-card);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .platform-header { display: flex; align-items: center; gap: 10px; }
+    .platform-header svg { color: var(--accent); flex-shrink: 0; }
+    .platform-header strong { font-size: 14px; font-weight: 600; color: var(--fg); }
+    .platform-file {
+      font-size: 11px; font-family: var(--mono);
+      padding: 2px 8px; border-radius: 4px;
+      background: var(--bg-raised); border: 1px solid var(--border);
+      color: var(--fg-3);
+    }
+    .platform ol { display: flex; flex-direction: column; gap: 6px; padding-left: 2px; list-style: none; counter-reset: steps; }
+    .platform ol li {
+      display: flex; gap: 8px;
+      font-size: 13px; color: var(--fg-3); line-height: 1.6;
+      counter-increment: steps;
+    }
+    .platform ol li::before {
+      content: counter(steps) ".";
+      font-size: 11px; font-weight: 600;
+      color: var(--fg-4); flex-shrink: 0; min-width: 16px; margin-top: 1px;
+    }
+    .install-cta { padding: 16px 24px; background: var(--bg-card); display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--border); }
+
+    /* ── SHORTCUTS ── */
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .shortcut {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 0 20px; height: 44px;
+      background: var(--bg-card);
+      font-size: 13px; color: var(--fg-3);
+    }
+    .keys { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .key {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0 7px; height: 22px; border-radius: 4px;
+      font-size: 11px; font-weight: 500; font-family: var(--mono);
+      background: var(--bg-raised); border: 1px solid var(--border); color: var(--fg-2);
+    }
+    .key-sep { font-size: 10px; color: var(--fg-4); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-left { display: flex; flex-direction: column; gap: 4px; }
+    .footer-left span { font-size: 13px; color: var(--fg-4); }
+    .footer-left strong { font-size: 13px; font-weight: 600; color: var(--fg-3); }
+    .footer-links { display: flex; align-items: center; gap: 20px; }
+    .footer-links a { font-size: 12px; color: var(--fg-4); transition: color .15s; }
+    .footer-links a:hover { color: var(--fg-2); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 72px 20px 56px; }
+      .what-grid { grid-template-columns: 1fr; }
+      .shortcuts-grid { grid-template-columns: 1fr; }
+      section { padding: 56px 20px; }
+      footer { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
+      .stats { flex-direction: column; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat:last-child { border-bottom: none; }
+    }
+
+    /* SVG icon util */
+    svg { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-left">
+    <span class="nav-logo">Flux</span>
+    <span class="badge">v0.1.0</span>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#install">Installation</a>
+    <a href="#start">Getting Started</a>
+    <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">GitHub</a>
+  </div>
+  <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" class="btn btn-primary">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download
+  </a>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-eyebrow">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Open source · MIT License
+  </div>
+  <h1>The <span>modern</span> API client for developers</h1>
+  <p>Local-first, AI-powered, cloud-synced. Under 30 MB of RAM — no Electron, no account required to start.</p>
+  <div class="hero-actions">
+    <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" class="btn btn-primary btn-lg">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download for free
+    </a>
+    <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="btn btn-secondary btn-lg">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      View on GitHub
+    </a>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-value">&lt; 30 MB</span>
+      <span class="stat-label">RAM usage</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">~ 5 MB</span>
+      <span class="stat-label">Installer size</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">10+</span>
+      <span class="stat-label">Feature modules</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">MIT</span>
+      <span class="stat-label">License</span>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── WHAT IS FLUX ── -->
+<section>
+  <div class="section-label">About</div>
+  <h2 class="section-title">What is Flux?</h2>
+  <p class="section-desc">
+    Flux is a desktop API client built for speed and simplicity. It runs natively on Windows, macOS and Linux with no Electron overhead. Your data stays local by default — cloud sync is optional and runs on your own Supabase project.
+  </p>
+  <div class="what-grid">
+    <div class="what-item">
+      <strong>Local-first</strong>
+      <span>All data is stored locally on your device. No account required. Cloud sync is opt-in and uses your own Supabase project — you own your data.</span>
+    </div>
+    <div class="what-item">
+      <strong>AI-powered</strong>
+      <span>Claude generates test assertions from any response, debugs 4xx/5xx errors, edits your scripts with natural language, and fixes failing assertions.</span>
+    </div>
+    <div class="what-item">
+      <strong>Native performance</strong>
+      <span>Built with Tauri and Rust. Under 30 MB of RAM, 5 MB installer. No Electron, no Node.js runtime bundled — just a native binary.</span>
+    </div>
+    <div class="what-item">
+      <strong>Full protocol support</strong>
+      <span>HTTP, WebSocket and Server-Sent Events in one interface. GraphQL schema introspection, OAuth 2.0, AWS SigV4, mTLS — all built in.</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── FEATURES ── -->
+<section id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything you need</h2>
+  <p class="section-desc">From basic HTTP requests to AI-generated tests, WebSocket connections and cloud sync — all in one native desktop app.</p>
+
+  <div class="features">
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>HTTP Requests</strong>
+          <span>All methods, auth types and body formats</span>
+        </div>
+      </div>
+      <ul>
+        <li>All methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS</li>
+        <li>Body types: JSON, form-urlencoded, multipart/form-data, GraphQL, binary, raw</li>
+        <li>Auth: Bearer token, API Key, Basic, OAuth 2.0 (auth code + client credentials), AWS SigV4</li>
+        <li>Environment variable interpolation with {{VAR}} in URLs, headers and body</li>
+        <li>Pre-request and post-response JavaScript scripts using the pm API</li>
+        <li>Cookie Jar: automatic cookie storage and sending per domain</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>Collections</strong>
+          <span>Organize and run groups of requests</span>
+        </div>
+      </div>
+      <ul>
+        <li>Create collections and group requests in named folders</li>
+        <li>Import from Postman v2.1 JSON, OpenAPI 3.x (JSON/YAML), or cURL commands</li>
+        <li>Collection Runner: execute all requests in order with a pass/fail report</li>
+        <li>Per-request test assertions run automatically during the collection run</li>
+        <li>Optional cloud sync: collections saved to Supabase per user</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>Environments</strong>
+          <span>Variables resolved at send time</span>
+        </div>
+      </div>
+      <ul>
+        <li>Multiple named environments: Development, Staging, Production and more</li>
+        <li>Global variables shared across all environments</li>
+        <li>Secret keys — masked in the UI, excluded from logs and cloud sync</li>
+        <li>Switch environments instantly from the top bar without changing requests</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>Tests & Assertions</strong>
+          <span>Declarative — no scripting required</span>
+        </div>
+      </div>
+      <ul>
+        <li>Declarative assertions — no code needed: <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">status == 200</code>, <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">body.id != null</code>, <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">duration &lt; 500</code></li>
+        <li>AI-generated assertions: one click after any response generates a full test suite</li>
+        <li>Post-response scripts using pm.test() and pm.expect() — Chai-style API</li>
+        <li>AI fix suggestion when an assertion fails — explains the failure and proposes a fix</li>
+        <li>Batch runner: run all requests in a collection and get a consolidated report</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>AI Features</strong>
+          <span>Powered by Claude — your API key</span>
+        </div>
+      </div>
+      <ul>
+        <li>Generate test assertions from any response body with one click</li>
+        <li>Debug assist: automatic analysis of 4xx and 5xx errors with fix suggestions</li>
+        <li>AI script editor: describe what your script should do in plain English</li>
+        <li>Fix failing assertions: Claude reads the failure and proposes a corrected assertion</li>
+        <li>Analyze batch test failures across an entire collection run</li>
+        <li>Requires your own Claude API key — added in Settings, never sent to our servers</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>WebSocket</strong>
+          <span>Full-duplex client with real-time log</span>
+        </div>
+      </div>
+      <ul>
+        <li>Connect to any ws:// or wss:// endpoint with custom headers</li>
+        <li>Send text or JSON messages from a Monaco code editor</li>
+        <li>Timestamped log of all sent and received messages</li>
+        <li>Multiple simultaneous connections open in separate tabs</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>SSE / Server-Sent Events</strong>
+          <span>Stream endpoints in real time</span>
+        </div>
+      </div>
+      <ul>
+        <li>Connect to any text/event-stream endpoint</li>
+        <li>Parses event:, data:, id: and retry: fields per the SSE specification</li>
+        <li>JSON data fields are pretty-printed automatically</li>
+        <li>Custom headers for Authorization, API keys and others</li>
+        <li>Cancellable stream — click Stop at any time</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>Monaco Editor</strong>
+          <span>VS Code's editor — embedded</span>
+        </div>
+      </div>
+      <ul>
+        <li>Syntax highlighting for JSON, GraphQL, JavaScript and plain text</li>
+        <li>GraphQL schema introspection: autocomplete fields and types from a live endpoint</li>
+        <li>Line numbers, word wrap, bracket matching — all configurable</li>
+        <li>AI script editor overlay: edit scripts with natural language commands</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>Response Compare</strong>
+          <span>Same request, two environments side by side</span>
+        </div>
+      </div>
+      <ul>
+        <li>Select any two environments and send a request to both simultaneously</li>
+        <li>Side-by-side diff of status code, response time and body</li>
+        <li>Useful for verifying parity between staging and production</li>
+      </ul>
+    </div>
+
+    <div class="feature">
+      <div class="feature-header">
+        <div class="feature-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        </div>
+        <div class="feature-title">
+          <strong>Cloud Sync</strong>
+          <span>Your Supabase — you own the data</span>
+        </div>
+      </div>
+      <ul>
+        <li>Sign in with email or GitHub — no third-party OAuth lock-in</li>
+        <li>Syncs: collections, environments, request history, app settings</li>
+        <li>Row-Level Security: each user sees only their own data</li>
+        <li>Device-only data (Claude API key, client certificates) is never synced</li>
+        <li>Fully optional — Flux works offline without an account</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── GETTING STARTED ── -->
+<section id="start">
+  <div class="section-label">Getting Started</div>
+  <h2 class="section-title">Up and running in minutes</h2>
+  <p class="section-desc">Download Flux, open it, and follow these steps to make your first request and explore the features.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Send your first request</strong>
+        <p>Type any URL in the top bar, select a method from the dropdown, and press Ctrl+Enter (or the Send button). The response — status, headers and body — appears in the right panel instantly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Save requests to a collection</strong>
+        <p>Click the + button in the left sidebar to create a collection, then use Ctrl+S to save the current request into it. Organize requests in named folders by dragging them.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Use environment variables</strong>
+        <p>Open the Environments tab, create an environment (e.g. Development) and add a variable like BASE_URL = https://api.example.com. Reference it anywhere as {{BASE_URL}} — in URLs, headers and body.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Write and run tests</strong>
+        <p>In the Tests tab of any request, add assertions like status == 200 or body.id != null. After sending, each assertion shows pass or fail. Use Generate Tests with AI for a one-click suite from the response.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <strong>Enable AI features</strong>
+        <p>Go to Settings → AI & Claude, paste your Claude API key (starts with sk-ant-). This unlocks test generation, debug assist on errors, script editing and batch failure analysis.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <strong>Import existing work</strong>
+        <p>Click the import button in the Collections sidebar to paste a Postman v2.1 JSON, an OpenAPI 3.x spec, or a cURL command. Flux converts it to a collection automatically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── INSTALLATION ── -->
+<section id="install">
+  <div class="section-label">Installation</div>
+  <h2 class="section-title">Available for Windows, macOS and Linux</h2>
+  <p class="section-desc">Download the installer for your platform and run it. No dependencies, no runtime, no administrator rights required on Windows.</p>
+
+  <div class="install">
+    <div class="platform">
+      <div class="platform-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <strong>Windows</strong>
+        <span class="platform-file">Flux_x.x.x_x64-setup.exe</span>
+      </div>
+      <ol>
+        <li>Download the .exe installer from the Releases page.</li>
+        <li>Run the installer and follow the on-screen prompts.</li>
+        <li>Flux installs to the user folder — no administrator rights required.</li>
+        <li>Auto-updates run silently in the background when a new version is available.</li>
+      </ol>
+    </div>
+
+    <div class="platform">
+      <div class="platform-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        <strong>macOS</strong>
+        <span class="platform-file">Flux_x.x.x_aarch64.dmg / x86_64.dmg</span>
+      </div>
+      <ol>
+        <li>Download the .dmg that matches your chip: aarch64 for Apple Silicon (M1/M2/M3), x86_64 for Intel.</li>
+        <li>Open the .dmg and drag Flux to the Applications folder.</li>
+        <li>First launch: right-click Flux in Applications and choose Open to bypass Gatekeeper.</li>
+        <li>Future launches work normally from Spotlight or the Dock.</li>
+      </ol>
+    </div>
+
+    <div class="platform">
+      <div class="platform-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="19" r="1"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+        <strong>Linux</strong>
+        <span class="platform-file">.deb or .AppImage</span>
+      </div>
+      <ol>
+        <li>.deb — install with: <code style="font-family:var(--mono);font-size:12px;color:var(--accent)">sudo dpkg -i Flux_x.x.x_amd64.deb</code></li>
+        <li>.AppImage — make it executable: <code style="font-family:var(--mono);font-size:12px;color:var(--accent)">chmod +x Flux_*.AppImage</code>, then run it directly.</li>
+        <li>No installation needed for the AppImage — move it to any folder you prefer.</li>
+      </ol>
+    </div>
+
+    <div class="install-cta">
+      <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download latest release
+      </a>
+      <a href="https://github.com/angeldevmobile/Flux-Post/releases" target="_blank" class="btn btn-secondary" style="font-size:13px;">
+        All releases
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── KEYBOARD SHORTCUTS ── -->
+<section>
+  <div class="section-label">Keyboard Shortcuts</div>
+  <h2 class="section-title">Built for keyboard-first workflows</h2>
+  <p class="section-desc">Every common action has a shortcut. Open the command palette with Ctrl+K to search and discover all available commands.</p>
+
+  <div class="shortcuts-grid">
+    <div class="shortcut">
+      <span>Send request</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">Enter</span></div>
+    </div>
+    <div class="shortcut">
+      <span>Command palette</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">K</span></div>
+    </div>
+    <div class="shortcut">
+      <span>New tab</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">T</span></div>
+    </div>
+    <div class="shortcut">
+      <span>Toggle sidebar</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">B</span></div>
+    </div>
+    <div class="shortcut">
+      <span>Save to collection</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">S</span></div>
+    </div>
+    <div class="shortcut">
+      <span>Focus URL bar</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">L</span></div>
+    </div>
+    <div class="shortcut">
+      <span>Import collection</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">O</span></div>
+    </div>
+    <div class="shortcut">
+      <span>Duplicate request</span>
+      <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">D</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-left">
+    <strong>Flux</strong>
+    <span>Open source under the MIT License.</span>
+    <span>Built with Tauri · React · Rust · Claude</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">GitHub</a>
+    <a href="https://github.com/angeldevmobile/Flux-Post/releases" target="_blank">Releases</a>
+    <a href="https://github.com/angeldevmobile/Flux-Post/issues" target="_blank">Issues</a>
+    <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" target="_blank">License</a>
+  </div>
+</footer>
+
+</body>
+</html>
