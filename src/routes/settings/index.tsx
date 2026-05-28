@@ -3,8 +3,6 @@ import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
   ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie,
-  Zap, FolderOpen, Globe, CheckCircle, Bot, Wifi, Radio, Cloud,
-  GitCompare, Code2, MonitorDot, Apple, Monitor,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings";
 import { clearHistory, getHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, type CookieEntry } from "@/lib/tauri";
@@ -873,203 +871,6 @@ function CookiesSection() {
   );
 }
 
-type FeatureDoc = {
-  Icon: React.ElementType;
-  title: string;
-  desc: string;
-  details: string[];
-};
-
-const FEATURE_DOCS: FeatureDoc[] = [
-  {
-    Icon: Zap,
-    title: "HTTP Requests",
-    desc: "Send any type of HTTP request with full control over method, headers, body, auth and scripts.",
-    details: [
-      "All methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS",
-      "Body types: JSON, form-urlencoded, multipart/form-data, GraphQL, binary, raw",
-      "Auth: Bearer token, API Key, Basic, OAuth 2.0 (auth code + client credentials), AWS SigV4",
-      "Environment variable interpolation with {{VAR}} in URLs, headers and body",
-      "Pre-request and post-response JavaScript scripts using the pm API",
-      "Cookie Jar: automatic cookie storage and sending per domain",
-    ],
-  },
-  {
-    Icon: FolderOpen,
-    title: "Collections",
-    desc: "Organize your requests in named collections with nested folders.",
-    details: [
-      "Create collections and group requests in folders",
-      "Import from Postman v2.1 JSON, OpenAPI 3.x (JSON/YAML), or cURL commands",
-      "Collection Runner: execute all requests in order and get a pass/fail report",
-      "Per-request test assertions run automatically during the collection run",
-      "Cloud sync: collections are saved to Supabase per user (optional)",
-    ],
-  },
-  {
-    Icon: Globe,
-    title: "Environments",
-    desc: "Define variables that get interpolated into every request at send time.",
-    details: [
-      "Multiple named environments (Development, Staging, Production…)",
-      "Global variables shared across all environments",
-      "Secret keys, masked in the UI, excluded from logs and cloud sync",
-      "Variables resolved at the moment the request is sent",
-      "Switch environments instantly from the top bar",
-    ],
-  },
-  {
-    Icon: CheckCircle,
-    title: "Tests & Assertions",
-    desc: "Write and run assertions against response status, body and timing.",
-    details: [
-      "Declarative assertions, no code needed: status == 200, body.id != null, duration < 500",
-      "AI-generated assertions: one click after any response generates a full test suite",
-      "Post-response scripts using pm.test() and pm.expect() (Chai-style API)",
-      "AI fix suggestion when an assertion fails, explains the failure and proposes a fix",
-      "Batch test runner: run all requests in a collection and get a consolidated report",
-    ],
-  },
-  {
-    Icon: Bot,
-    title: "AI Features",
-    desc: "Claude-powered assistant built into the request and test workflows.",
-    details: [
-      "Generate test assertions from any response body with one click",
-      "Debug assist: automatic analysis of 4xx and 5xx errors with fix suggestions",
-      "AI script editor: describe what your pre/post script should do in plain English",
-      "Fix failing assertions: Claude reads the failure and proposes a corrected assertion",
-      "Analyze batch test failures across an entire collection run",
-      "Requires your own Claude API key, added in Settings → AI & Claude",
-    ],
-  },
-  {
-    Icon: Wifi,
-    title: "WebSocket",
-    desc: "Full-duplex WebSocket client with a real-time message log.",
-    details: [
-      "Connect to any ws:// or wss:// endpoint",
-      "Send text or JSON messages from a code editor",
-      "Timestamped log of all sent and received messages",
-      "Support for custom connection headers (Authorization, etc.)",
-      "Multiple simultaneous connections open in separate tabs",
-    ],
-  },
-  {
-    Icon: Radio,
-    title: "SSE / Server-Sent Events",
-    desc: "Stream and inspect Server-Sent Event endpoints in real time.",
-    details: [
-      "Connect to any text/event-stream endpoint",
-      "Parses event:, data:, id: and retry: fields per the SSE spec",
-      "JSON data fields are pretty-printed automatically",
-      "Custom headers for Authorization, API keys and others",
-      "Cancellable stream, click Stop at any time",
-    ],
-  },
-  {
-    Icon: Cloud,
-    title: "Cloud Sync",
-    desc: "Optional sync of all your data to your own Supabase project.",
-    details: [
-      "Sign in with email and password, no third-party OAuth required",
-      "Syncs: collections, environments, request history, app settings",
-      "Row-Level Security: each user sees only their own data",
-      "Device-only data (Claude API key, client certificates) is never synced",
-      "Sync is optional, Flux works fully offline without an account",
-    ],
-  },
-  {
-    Icon: GitCompare,
-    title: "Response Compare",
-    desc: "Run the same request against two environments side by side.",
-    details: [
-      "Select any two environments and send a request to both simultaneously",
-      "Side-by-side diff of status code, response time and body",
-      "Useful for verifying parity between staging and production",
-    ],
-  },
-  {
-    Icon: Code2,
-    title: "Monaco Editor",
-    desc: "VS Code's editor embedded in every body and script panel.",
-    details: [
-      "Syntax highlighting for JSON, GraphQL, JavaScript and plain text",
-      "GraphQL schema introspection: autocomplete fields and types from a live endpoint",
-      "Line numbers, word wrap, bracket matching, configurable in Appearance",
-      "AI script editor overlay: edit scripts with natural language commands",
-    ],
-  },
-];
-
-const INSTALL_PLATFORMS = [
-  {
-    Icon: Monitor,
-    platform: "Windows",
-    file: "Flux_x.x.x_x64-setup.exe",
-    steps: [
-      "Download the .exe installer from the Releases page.",
-      "Run the installer and follow the prompts.",
-      "Flux installs to the user folder, no administrator rights required.",
-      "Auto-updates run silently in the background.",
-    ],
-  },
-  {
-    Icon: Apple,
-    platform: "macOS",
-    file: "Flux_x.x.x_aarch64.dmg or x86_64.dmg",
-    steps: [
-      "Download the .dmg that matches your chip: aarch64 for Apple Silicon, x86_64 for Intel.",
-      "Open the .dmg and drag Flux to the Applications folder.",
-      "First launch: right-click Flux in Applications and choose Open to bypass Gatekeeper.",
-      "Future launches work normally from Spotlight or the Dock.",
-    ],
-  },
-  {
-    Icon: MonitorDot,
-    platform: "Linux",
-    file: ".deb or .AppImage",
-    steps: [
-      ".deb, install with: sudo dpkg -i Flux_x.x.x_amd64.deb",
-      ".AppImage, make it executable: chmod +x Flux_*.AppImage, then run it directly.",
-      "No installation needed for the AppImage; move it to any folder you prefer.",
-    ],
-  },
-];
-
-const GETTING_STARTED = [
-  {
-    n: "1",
-    title: "Send your first request",
-    desc: "Type any URL in the top bar, select a method from the dropdown, and press Ctrl+Enter (or the Send button). The response, status, headers and body, appears in the right panel.",
-  },
-  {
-    n: "2",
-    title: "Save requests to a collection",
-    desc: "Click the + button in the left sidebar to create a collection, then use Ctrl+S to save the current request into it. Organize requests in named folders by dragging them.",
-  },
-  {
-    n: "3",
-    title: "Use environment variables",
-    desc: "Open the Environments tab, create an environment (e.g. Development) and add a variable like BASE_URL = https://api.example.com. Reference it anywhere as {{BASE_URL}}, in URLs, headers and body.",
-  },
-  {
-    n: "4",
-    title: "Write and run tests",
-    desc: "In the Tests tab of any request, add assertions like status == 200 or body.id != null. After sending, each assertion shows pass or fail. Use Generate Tests with AI for a one-click suite from the response.",
-  },
-  {
-    n: "5",
-    title: "Enable AI features",
-    desc: "Go to Settings → AI & Claude, paste your Claude API key (starts with sk-ant-). This unlocks test generation, debug assist on errors, script editing and batch failure analysis.",
-  },
-  {
-    n: "6",
-    title: "Import existing work",
-    desc: "Click the import button in the Collections sidebar to paste a Postman v2.1 JSON, an OpenAPI 3.x spec, or a cURL command. Flux converts it to a collection automatically.",
-  },
-];
-
 function AboutSection() {
   async function openUrl(url: string) {
     const { openUrl: open } = await import("@tauri-apps/plugin-opener");
@@ -1079,7 +880,7 @@ function AboutSection() {
   return (
     <div className="flex flex-col gap-6">
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <div className="rounded-lg overflow-hidden" style={{ background: "var(--color-elevated)", border: "1px solid var(--color-border)" }}>
         <div className="p-6 flex flex-col gap-4">
           <div className="flex items-center gap-3">
@@ -1088,29 +889,14 @@ function AboutSection() {
               <span className="text-[11px] font-semibold" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>v0.1.0</span>
             </div>
           </div>
-          <p className="text-[14px]" style={{ color: "var(--color-fg-2)", lineHeight: 1.7, maxWidth: 580 }}>
-            Flux is a desktop API client built for speed and simplicity. It runs natively on Windows, macOS and Linux, under 30 MB of RAM, with no Electron and no account required to get started.
+          <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 520 }}>
+            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM — no Electron, no account required to start.
           </p>
-          <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 580 }}>
-            Send HTTP requests, manage collections, write tests, connect to WebSocket and SSE endpoints, and let Claude analyze and generate tests for you, all from one interface. Your data stays local by default; cloud sync is optional and runs on your own Supabase project.
+          <p className="text-[12px]" style={{ color: "var(--color-fg-4)", lineHeight: 1.6 }}>
+            Built with Tauri 2 · React · Rust · Claude · MIT License
           </p>
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            {[
-              { label: "View on GitHub",   url: "https://github.com/angeldevmobile/Flux-Post" },
-              { label: "Releases",         url: "https://github.com/angeldevmobile/Flux-Post/releases" },
-              { label: "Report an issue",  url: "https://github.com/angeldevmobile/Flux-Post/issues" },
-            ].map(link => (
-              <button key={link.label} onClick={() => openUrl(link.url)}
-                className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-70"
-                style={{ height: 30, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
-                <ExternalLink size={11} />
-                {link.label}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Stat strip */}
         <div className="grid grid-cols-3 border-t" style={{ borderColor: "var(--color-border)" }}>
           {[
             { value: "< 30 MB", label: "RAM usage" },
@@ -1127,131 +913,46 @@ function AboutSection() {
         </div>
       </div>
 
-      {/* ── Getting started ── */}
-      <Card title="Getting Started">
-        <div className="flex flex-col">
-          {GETTING_STARTED.map((step, i) => (
-            <div key={step.n}
-              className="flex items-start gap-4 px-4 py-4"
-              style={{ borderBottom: i < GETTING_STARTED.length - 1 ? "1px solid var(--color-border)" : "none" }}>
-              <div className="flex items-center justify-center rounded-full shrink-0 mt-0.5"
-                style={{ width: 24, height: 24, background: "var(--color-accent-20)", border: "1px solid var(--color-accent-30)", minWidth: 24 }}>
-                <span className="text-[10px] font-bold" style={{ color: "var(--color-accent)" }}>{step.n}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>{step.title}</span>
-                <span className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.6 }}>{step.desc}</span>
-              </div>
-            </div>
-          ))}
+      {/* Documentation CTA */}
+      <div className="rounded-lg p-5 flex items-center gap-4"
+        style={{ background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)" }}>
+        <div className="flex items-center justify-center rounded-lg shrink-0"
+          style={{ width: 40, height: 40, background: "var(--color-accent-20)", border: "1px solid var(--color-accent-30)" }}>
+          <Info size={18} style={{ color: "var(--color-accent)" }} />
         </div>
-      </Card>
+        <div className="flex flex-col gap-0.5 flex-1">
+          <span className="text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>Full documentation</span>
+          <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>
+            Getting started, features, installation guide and keyboard shortcuts.
+          </span>
+        </div>
+        <button onClick={() => openUrl("https://angeldevmobile.github.io/Flux-Post")}
+          className="flex items-center gap-1.5 px-4 rounded-md text-[12px] font-medium transition-opacity hover:opacity-80 shrink-0"
+          style={{ height: 34, background: "var(--color-accent)", color: "#fff" }}>
+          <ExternalLink size={12} />
+          Open docs
+        </button>
+      </div>
 
-      {/* ── Installation ── */}
-      <Card title="Installation">
-        <div className="flex flex-col gap-px" style={{ background: "var(--color-border)" }}>
-          {INSTALL_PLATFORMS.map(({ Icon: PlatIcon, platform, file, steps }) => (
-            <div key={platform} className="flex flex-col gap-3 p-4" style={{ background: "var(--color-elevated)" }}>
-              <div className="flex items-center gap-2">
-                <PlatIcon size={15} style={{ color: "var(--color-accent)" }} />
-                <span className="text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>{platform}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--color-border)", color: "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>{file}</span>
-              </div>
-              <ol className="flex flex-col gap-1 pl-1">
-                {steps.map((s, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-[11px] font-medium shrink-0 mt-0.5" style={{ color: "var(--color-fg-4)", minWidth: 14 }}>{i + 1}.</span>
-                    <span className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.55 }}>{s}</span>
-                  </li>
-                ))}
-              </ol>
+      {/* Links */}
+      <Card title="Resources">
+        {[
+          { label: "Documentation",  desc: "Full user guide, features and installation", url: "https://angeldevmobile.github.io/Flux-Post" },
+          { label: "GitHub",         desc: "Source code, issues and contributions",      url: "https://github.com/angeldevmobile/Flux-Post" },
+          { label: "Releases",       desc: "Download installers for all platforms",       url: "https://github.com/angeldevmobile/Flux-Post/releases" },
+          { label: "Report an issue",desc: "Found a bug? Open an issue on GitHub",       url: "https://github.com/angeldevmobile/Flux-Post/issues" },
+          { label: "License",        desc: "MIT License — free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
+        ].map((link, i, arr) => (
+          <button key={link.label} onClick={() => openUrl(link.url)}
+            className="flex items-center gap-4 w-full px-4 transition-opacity hover:opacity-80 text-left"
+            style={{ height: 52, borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
+            <div className="flex flex-col gap-0.5 flex-1">
+              <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>{link.label}</span>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{link.desc}</span>
             </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)" }}>
-          <button onClick={() => openUrl("https://github.com/angeldevmobile/Flux-Post/releases/latest")}
-            className="flex items-center gap-1.5 px-3 rounded-md text-[12px] font-medium transition-opacity hover:opacity-80"
-            style={{ height: 32, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)", color: "var(--color-accent)" }}>
-            <Download size={13} />
-            Download latest release
+            <ExternalLink size={13} style={{ color: "var(--color-fg-4)", flexShrink: 0 }} />
           </button>
-        </div>
-      </Card>
-
-      {/* ── Features ── */}
-      <Card title="Features">
-        <div className="flex flex-col gap-px" style={{ background: "var(--color-border)" }}>
-          {FEATURE_DOCS.map(({ Icon: FIcon, title, desc, details }) => (
-            <div key={title} className="flex flex-col gap-2.5 p-4" style={{ background: "var(--color-elevated)" }}>
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center rounded-md shrink-0"
-                  style={{ width: 28, height: 28, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)" }}>
-                  <FIcon size={14} style={{ color: "var(--color-accent)" }} />
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>{title}</span>
-                  <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{desc}</span>
-                </div>
-              </div>
-              <ul className="flex flex-col gap-1 pl-1">
-                {details.map((d, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="shrink-0 mt-1.5 rounded-full" style={{ width: 4, height: 4, minWidth: 4, background: "var(--color-accent-50)" }} />
-                    <span className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.55 }}>{d}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* ── Keyboard shortcuts ── */}
-      <Card title="Keyboard Shortcuts">
-        <div className="grid grid-cols-2 gap-px" style={{ background: "var(--color-border)" }}>
-          {[
-            ["Send request",       "Ctrl+Enter"],
-            ["New tab",            "Ctrl+T"],
-            ["Command palette",    "Ctrl+K"],
-            ["Toggle sidebar",     "Ctrl+B"],
-            ["Save to collection", "Ctrl+S"],
-            ["Import",             "Ctrl+O"],
-            ["Focus URL bar",      "Ctrl+L"],
-            ["Duplicate request",  "Ctrl+D"],
-          ].map(([label, keys]) => (
-            <div key={label} className="flex items-center justify-between gap-3 px-4"
-              style={{ height: 40, background: "var(--color-elevated)" }}>
-              <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>{label}</span>
-              <div className="flex items-center gap-1 shrink-0">
-                {keys.split("+").map((k, i) => (
-                  <span key={i} className="flex items-center gap-1">
-                    {i > 0 && <span style={{ color: "var(--color-fg-4)", fontSize: 10 }}>+</span>}
-                    <span className="px-1.5 rounded text-[10px] font-medium"
-                      style={{ height: 20, lineHeight: "20px", display: "inline-block", background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)", fontFamily: "Geist Mono, monospace" }}>{k}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* ── License ── */}
-      <Card title="License & Credits">
-        <div className="flex flex-col gap-3 p-4">
-          <p className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7 }}>
-            Flux is open source under the <span className="font-medium" style={{ color: "var(--color-fg)" }}>MIT License</span>. You are free to use, modify and distribute it.
-          </p>
-          <p className="text-[12px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7 }}>
-            Built with <span style={{ color: "var(--color-fg)" }}>Tauri 2</span>, <span style={{ color: "var(--color-fg)" }}>React</span>, <span style={{ color: "var(--color-fg)" }}>Rust</span> and <span style={{ color: "var(--color-fg)" }}>Claude</span>. Full list of open source dependencies in the repository.
-          </p>
-          <button onClick={() => openUrl("https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE")}
-            className="flex items-center gap-1.5 self-start transition-opacity hover:opacity-70 text-[12px]"
-            style={{ color: "var(--color-accent)" }}>
-            <ExternalLink size={11} />
-            View license on GitHub
-          </button>
-        </div>
+        ))}
       </Card>
 
     </div>
