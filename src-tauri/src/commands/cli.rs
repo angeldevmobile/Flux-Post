@@ -20,11 +20,16 @@ pub struct InstallResult {
 }
 
 fn find_cli_binary(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    // 1. Production: binary bundled as a Tauri resource
+    // 1. Production: bundled as flux-cli.exe to avoid colliding with the main app binary
     if let Ok(res_dir) = app.path().resource_dir() {
-        let bundled = res_dir.join(CLI_BIN);
+        let bundled = res_dir.join("flux-cli.exe");
         if bundled.exists() {
             return Ok(bundled);
+        }
+        // fallback: same name (non-Windows builds or future rename)
+        let bundled2 = res_dir.join(CLI_BIN);
+        if bundled2.exists() {
+            return Ok(bundled2);
         }
     }
 

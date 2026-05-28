@@ -45,7 +45,7 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../flux-cli/target/release/flux.exe": "flux.exe"
+      "../flux-cli/target/release/flux.exe": "flux-cli.exe"
     }
   }
 }
