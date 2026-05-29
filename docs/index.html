@@ -941,7 +941,7 @@
           <span class="stat-label">Installer size</span>
         </div>
         <div class="stat">
-          <span class="stat-value">10+</span>
+          <span class="stat-value">13+</span>
           <span class="stat-label">Feature modules</span>
         </div>
         <div class="stat">
@@ -992,8 +992,8 @@
     <section id="features">
       <div class="section-label">Features</div>
       <h2 class="section-title">Everything you need</h2>
-      <p class="section-desc">From basic HTTP requests to AI-generated tests, WebSocket connections and cloud sync, all
-        in one native desktop app.</p>
+      <p class="section-desc">From basic HTTP requests to AI-generated tests, load testing, local mock servers and cloud sync, all
+        in one native desktop app under 30 MB of RAM.</p>
 
       <div class="features">
 
@@ -1123,14 +1123,14 @@
                 <span class="ai-notice-dot-ring"></span>
                 <span class="ai-notice-dot"></span>
               </div>
-              <span class="ai-notice-badge">Important — API key required</span>
+              <span class="ai-notice-badge">Important   API key required</span>
               <svg style="margin-left:auto;flex-shrink:0;color:var(--accent)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
             </div>
             <div class="ai-notice-body">
               <p>
-                <strong>Flux does not include an API key.</strong> You must provide your own Claude API key from Anthropic. It is stored <strong>only on your local device</strong> and is never sent to Flux servers — every AI call goes <strong>directly from your machine to Anthropic's API</strong>.
+                <strong>Flux does not include an API key.</strong> You must provide your own Claude API key from Anthropic. It is stored <strong>only on your local device</strong> and is never sent to Flux servers   every AI call goes <strong>directly from your machine to Anthropic's API</strong>.
               </p>
               <div class="ai-flow">
                 <div class="ai-flow-chip">
@@ -1276,6 +1276,80 @@
           </ul>
         </div>
 
+        <div class="feature">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                <line x1="6" y1="6" x2="6.01" y2="6" />
+                <line x1="6" y1="18" x2="6.01" y2="18" />
+              </svg>
+            </div>
+            <div class="feature-title">
+              <strong>Local Mock Server</strong>
+              <span>100% offline, zero latency, AI-generated bodies</span>
+            </div>
+          </div>
+          <ul>
+            <li>Spin up a localhost HTTP server directly from the app   no Docker, no external tools</li>
+            <li>Define endpoints: method, path, status code, response body, content type and artificial delay</li>
+            <li>Wildcard path matching   <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">/api/users/*</code> matches any sub-path</li>
+            <li>Hot-reload: add or edit endpoints while the server is running, no restart needed</li>
+            <li>CORS headers injected automatically so any browser or client can connect immediately</li>
+            <li>AI button on every endpoint: Claude generates a realistic JSON body from the method and path context</li>
+          </ul>
+        </div>
+
+        <div class="feature">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <div class="feature-title">
+              <strong>Load Test</strong>
+              <span>Concurrent request runner, no external tools</span>
+            </div>
+          </div>
+          <ul>
+            <li>Run any request N times with C concurrent workers   no k6, wrk or ab needed</li>
+            <li>Configurable: total requests, concurrency level and per-request timeout</li>
+            <li>Live progress bar showing real-time req/s and average latency as the test runs</li>
+            <li>Final report: min / avg / P50 / P95 / P99 / max latency, throughput and error rate</li>
+            <li>Latency distribution histogram   see exactly where the slow tail is hiding</li>
+            <li>Pre-fills URL and method from the current request in the builder</li>
+          </ul>
+        </div>
+
+        <div class="feature">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div class="feature-title">
+              <strong>Request Timeline</strong>
+              <span>Waterfall breakdown on every response</span>
+            </div>
+          </div>
+          <ul>
+            <li>Every response includes a Timeline tab with a proportional waterfall chart</li>
+            <li><strong>Connect + Waiting (TTFB)</strong>   DNS resolution, TCP handshake, TLS, and server processing time combined</li>
+            <li><strong>Download</strong>   time to receive the full response body after headers arrive</li>
+            <li>Exact millisecond values for each phase and a summary table with size and status</li>
+            <li>Same level of detail as the Chrome DevTools Network tab, built directly into the response panel</li>
+          </ul>
+        </div>
+
       </div>
     </section>
 
@@ -1335,6 +1409,24 @@
             <strong>Import existing work</strong>
             <p>Click the import button in the Collections sidebar to paste a Postman v2.1 JSON, an OpenAPI 3.x spec, or
               a cURL command. Flux converts it to a collection automatically.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Spin up a mock server</strong>
+            <p>Open the Mock Server tab from the left nav. Add endpoints (method, path, status, body), set a port and
+              click Start. Your local server is live at <code
+                style="font-family:var(--mono);font-size:12px;color:var(--accent)">http://localhost:3001</code> instantly
+                no Docker, no config files.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">8</div>
+          <div class="step-body">
+            <strong>Run a load test</strong>
+            <p>Open the Load Test tab, set total requests and concurrency, and click Run. Watch the live progress bar and
+              see min / avg / P95 / P99 latency, throughput and error rate the moment the test finishes.</p>
           </div>
         </div>
       </div>

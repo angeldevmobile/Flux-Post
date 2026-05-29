@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
 use tokio::sync::Semaphore;
 use tauri::Emitter;
@@ -47,8 +47,6 @@ pub struct LoadTestResult {
     pub duration_secs: f64,
     pub latencies: Vec<u64>,
 }
-
-pub struct CancelToken(pub Arc<AtomicBool>);
 
 #[tauri::command]
 pub async fn run_load_test(

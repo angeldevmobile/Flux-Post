@@ -24,9 +24,11 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 | CLI runner for CI/CD | Newman (paid) | ✅ free, open source |
 | Code snippets (curl, fetch, Python…) | Manual copy | ✅ one-click, any language |
 | Auto variable extraction (JSONPath) | Paid Team plan | ✅ free, no scripts needed |
-| Mock servers | Cloud-hosted, limited free | 🔜 100% local, instant |
-| Load testing | Paid plan | 🔜 built-in, no k6 needed |
-| Request timeline (DNS → TTFB) | No | 🔜 waterfall like DevTools |
+| Mock servers | Cloud-hosted, limited free | ✅ 100% local, instant, AI-generated bodies |
+| Load testing | Paid plan | ✅ built-in, no k6 needed |
+| Request timeline (DNS → TTFB) | No | ✅ waterfall like DevTools |
+| gRPC support | Basic | 🔜 .proto import + server reflection |
+| Team workspaces | Postman servers | 🔜 your own Supabase Realtime |
 
 ---
 
@@ -67,12 +69,37 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 - **WebSocket** — connect, send/receive messages, full duplex log
 - **SSE / Server-Sent Events** — streaming viewer with event type, data, id display, JSON pretty-print
 
+### Local Mock Server
+- Spin up a localhost HTTP server directly from the app — no external tools
+- Define any number of endpoints: method, path, status code, response body, content type, and delay
+- Wildcard path matching (`/api/users/*` matches any sub-path)
+- CORS headers injected automatically — works immediately from a browser or any HTTP client
+- Hot-reload: add or edit endpoints while the server is running, no restart needed
+- **AI-generated bodies** — click the ✦ button on any endpoint and Claude writes a realistic response for you
+- 100% offline — runs inside the Tauri process on `127.0.0.1`
+
+### Load Test
+- Run any request N times with C concurrent workers — no k6, wrk, or ab needed
+- Configurable: total requests, concurrency, per-request timeout
+- Live progress bar with real-time req/s and average latency
+- Final report: min / avg / P50 / P95 / P99 / max latency, throughput (req/s), error rate
+- Latency distribution histogram — see exactly where the slow tail is
+- Pre-fills from the current request in the builder
+
+### Request Timeline
+- Every response now includes a timing waterfall in the **Timeline** tab of the response panel
+- **Connect + Waiting (TTFB)** — time from send to first response byte (DNS + TCP + TLS + server processing)
+- **Download** — time to receive the full response body after headers
+- Proportional bar chart with exact millisecond values for each phase
+- Summary table: TTFB, download, total, size, status
+
 ### AI (Claude API — your key)
 - Generate test assertions from any response
 - Debug assist on 4xx/5xx errors
 - AI script editor — edit pre/post scripts with natural language
 - Fix failing assertions with one click
 - Analyze batch test failures
+- Generate realistic mock response bodies from endpoint context
 
 ### Other
 - Request history (local SQLite + cloud sync)
@@ -105,6 +132,8 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 3. **Use environment variables** — Go to Environments and add `{{BASE_URL}}` style variables to reuse across requests.
 4. **Enable AI features** — Add your Claude API key in Settings → AI & Claude to unlock one-click test generation and debug assist.
 5. **Import existing work** — Import a Postman collection, OpenAPI spec or cURL command from the sidebar import button.
+6. **Mock an API** — Go to Mock Server, add endpoints, hit Start. Your local server is live on `http://localhost:3001`.
+7. **Stress-test an endpoint** — Go to Load Test, set total requests and concurrency, hit Run.
 
 ---
 
@@ -119,6 +148,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 │  │                                                      │   │
 │  │  Request Builder · Response Viewer · Collections     │   │
 │  │  Environments · Tests · History · WS · SSE · Compare │   │
+│  │  Load Test · Mock Server · Request Timeline          │   │
 │  └────────────────────────┬─────────────────────────────┘   │
 │                           │ Tauri IPC                        │
 │  ┌────────────────────────▼─────────────────────────────┐   │
@@ -128,6 +158,8 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 │  │   OAuth flows · AWS SigV4 · mTLS                     │   │
 │  │   SQLite (history, session) · YAML collections       │   │
 │  │   Claude API client (AI features)                    │   │
+│  │   Load test engine (tokio + semaphore)               │   │
+│  │   Mock HTTP server (axum, in-process)                │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
          │                    │                  │
@@ -149,6 +181,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 | Code editor | Monaco Editor |
 | HTTP engine | reqwest (Rust) |
 | WebSocket | tokio-tungstenite (Rust) |
+| Mock server | axum (Rust, in-process) |
 | Local DB | SQLite via rusqlite (Rust) |
 | Collections format | YAML |
 | Auth + sync | Supabase |
@@ -164,13 +197,15 @@ flux/
 │   └── src/
 │       ├── lib.rs                  # Tauri app entry, state registration
 │       └── commands/
-│           ├── http.rs             # HTTP request engine
+│           ├── http.rs             # HTTP request engine + timing waterfall
 │           ├── websocket.rs        # WebSocket connections
 │           ├── sse.rs              # SSE streaming
 │           ├── history.rs          # SQLite history + session
 │           ├── collections.rs      # YAML collection I/O
 │           ├── ai.rs               # Claude API calls
-│           └── oauth.rs            # OAuth 2.0 flows
+│           ├── oauth.rs            # OAuth 2.0 flows
+│           ├── loadtest.rs         # Concurrent load test engine
+│           └── mock.rs             # Local axum HTTP mock server
 │
 ├── src/
 │   ├── routes/
@@ -182,10 +217,12 @@ flux/
 │   │   ├── websocket/              # WebSocket viewer
 │   │   ├── sse/                    # SSE event viewer
 │   │   ├── compare/                # Response diff
+│   │   ├── loadtest/               # Load test UI + live chart
+│   │   ├── mock/                   # Mock server configuration
 │   │   └── settings/               # App settings
 │   ├── components/
 │   │   ├── request/RequestPanel.tsx
-│   │   ├── response/ResponsePanel.tsx
+│   │   ├── response/ResponsePanel.tsx  # + Timeline tab
 │   │   ├── collections/
 │   │   ├── CodeEditor.tsx
 │   │   └── CommandPalette.tsx
@@ -256,6 +293,39 @@ Connect to any `text/event-stream` endpoint and see events in real time:
 
 ---
 
+## Mock Server
+
+Define endpoints and start a local HTTP server in one click:
+
+```
+GET  /api/users        → 200  {"users": [...]}
+POST /api/users        → 201  {"id": 42, "created": true}
+GET  /api/products/*   → 200  {"product": {...}}   (wildcard path)
+GET  /api/slow         → 200  {"data": "..."}       delay: 800ms
+```
+
+The server runs on `127.0.0.1` — it never reaches the internet. Endpoints can be updated live without restarting.
+
+---
+
+## Load Test
+
+```
+URL:         https://api.example.com/users
+Method:      GET
+Total:       500 requests
+Concurrency: 25 workers
+
+Results
+────────────────────────────────────────
+Min     Avg     P95     P99     Max
+12ms    47ms    182ms   341ms   892ms
+
+Throughput: 43.2 req/s   Errors: 2 (0.4%)
+```
+
+---
+
 ## Status
 
 > **Pre-launch — actively working toward public release.**
@@ -293,6 +363,9 @@ Core features are stable and in daily use. The items below are the remaining blo
 - [x] Environment compare — same request across multiple envs side by side
 - [x] Command palette (Ctrl+K)
 - [x] Monaco editor — JSON, GraphQL, JavaScript with syntax highlighting
+- [x] **Local mock server** — axum HTTP server inside the app, AI-generated bodies, hot-reload endpoints, wildcard paths
+- [x] **Load test** — concurrent request runner, live progress, P50/P95/P99/throughput, latency histogram
+- [x] **Request timeline (waterfall)** — TTFB + download breakdown on every response, built into the response panel
 
 ### Post-launch
 
@@ -301,18 +374,18 @@ Core features are stable and in daily use. The items below are the remaining blo
 | ~~CLI runner~~ | ~~Medium (1-2 weeks)~~ | ⭐⭐⭐⭐⭐ — viral in CI/CD | ~~Pro feature~~ |
 | ~~Code snippet generator~~ | ~~Low (1-2 days)~~ | ⭐⭐⭐⭐⭐ — daily use | ~~Free~~ |
 | ~~Variable extractor (JSONPath)~~ | ~~Low-Medium (3-5 days)~~ | ⭐⭐⭐⭐⭐ — enables chaining | ~~Free (Postman charges)~~ |
-| Local mock server | High (2-3 weeks) | ⭐⭐⭐⭐ | Pro feature |
-| Load test | Medium (1 week) | ⭐⭐⭐⭐ | Pro feature |
-| Request timeline (waterfall) | Medium (1 week) | ⭐⭐⭐⭐ | Free |
+| ~~Local mock server~~ | ~~High (2-3 weeks)~~ | ⭐⭐⭐⭐ | ~~Pro feature~~ |
+| ~~Load test~~ | ~~Medium (1 week)~~ | ⭐⭐⭐⭐ | ~~Pro feature~~ |
+| ~~Request timeline (waterfall)~~ | ~~Medium (1 week)~~ | ⭐⭐⭐⭐ | ~~Free~~ |
 | gRPC support | High (3-4 weeks) | ⭐⭐⭐ | Pro feature |
 | Team workspaces | Very high | ⭐⭐⭐⭐⭐ | Core paid tier |
 
 - [x] **CLI runner** — `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines. Free alternative to Postman Newman. JSON report output, exit code 1 on failures, installable via Settings → CLI Tools.
 - [x] **Code snippet generator** — One-click copy as `curl`, `fetch`, `axios`, `Python requests`, `Go http`. Works from any request via the `</>` button next to Send.
 - [x] **Variable extractor (JSONPath)** — Define `$.data.token → {{token}}` rules in the Extract tab. Flux captures values automatically after every response and writes them to the active environment. No scripts needed — free, unlike Postman Team plan.
-- [ ] **Local mock server** — Spin up a localhost server from any collection. Define status codes, response bodies, and latency per endpoint. 100% offline, zero latency, AI-generated response bodies on request.
-- [ ] **Load test** — Run any request N times with C concurrent workers. See min / max / avg / p95 latency, error rate, and throughput in a live chart. No external tools (k6, wrk, ab) required.
-- [ ] **Request timeline (waterfall)** — DNS lookup → TCP connect → TLS handshake → TTFB → download time breakdown on every response. Same level of detail as Chrome DevTools Network tab, built directly into the response panel.
+- [x] **Local mock server** — Spin up a localhost server from the Mock Server screen. Define method, path, status, body, content type, and delay per endpoint. Wildcard paths supported. Hot-reload endpoints without restarting. AI button generates realistic response bodies via Claude. 100% offline.
+- [x] **Load test** — Run any request N times with C concurrent workers. See min / avg / P50 / P95 / P99 / max latency, error rate, and throughput in a live chart. No external tools (k6, wrk, ab) required.
+- [x] **Request timeline (waterfall)** — Connect + Waiting (TTFB) and Download phases shown as proportional bars in the Timeline tab of every response. Same detail level as Chrome DevTools Network tab, built directly into the response panel.
 - [ ] **gRPC support** — `.proto` import, Monaco editor for request messages, server reflection. Free unlike Postman Team plan.
 - [ ] **Team workspaces** — Shared collections with real-time sync via Supabase Realtime. Your data, your infrastructure.
 
