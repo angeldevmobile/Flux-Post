@@ -48,7 +48,24 @@ jobs:
 
       - uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: |
+            ./src-tauri -> target
+            ./flux-cli -> target
+
+      - name: Build flux-cli
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.args }}" ]; then
+            TARGET=$(echo "${{ matrix.args }}" | sed 's/--target //')
+            cargo build --release --target "$TARGET" --manifest-path flux-cli/Cargo.toml
+            mkdir -p flux-cli/target/release
+            cp "flux-cli/target/${TARGET}/release/flux" flux-cli/target/release/flux.exe
+          elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            cargo build --release --manifest-path flux-cli/Cargo.toml
+          else
+            cargo build --release --manifest-path flux-cli/Cargo.toml
+            cp flux-cli/target/release/flux flux-cli/target/release/flux.exe
+          fi
 
       - name: Install frontend dependencies
         run: npm ci
