@@ -4,6 +4,8 @@ pub mod collections;
 pub mod cookies;
 pub mod history;
 pub mod http;
+pub mod loadtest;
+pub mod mock;
 pub mod oauth;
 pub mod sse;
 pub mod websocket;

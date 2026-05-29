@@ -1,6 +1,6 @@
 import { useState, useId, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X } from "lucide-react";
+import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X, Code2 } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
 import { sendRequest, saveHistory, saveCollection, editContent } from "@/lib/tauri";
@@ -16,6 +16,9 @@ import { useTestResultsStore } from "@/stores/testResults";
 import { useSettingsStore } from "@/stores/settings";
 import { CodeEditor } from "@/components/CodeEditor";
 import { fetchGraphQLSchema, setCurrentSchema } from "@/lib/graphqlIntrospection";
+import { SnippetModal } from "@/components/SnippetModal";
+import { evaluatePath } from "@/lib/jsonpath";
+import type { Extractor } from "@/stores/request";
 
 const DIR_KEY = "flux_collections_dir";
 
@@ -132,7 +135,7 @@ function MethodSelector() {
   );
 }
 
-type Tab = "Params" | "Headers" | "Auth" | "Body" | "Pre-req" | "Post-req";
+type Tab = "Params" | "Headers" | "Auth" | "Body" | "Pre-req" | "Post-req" | "Extract";
 
 function AuthTab() {
   const {
@@ -584,7 +587,7 @@ function BinaryFilePicker() {
 }
 
 export function RequestPanel() {
-  const { url, setUrl, body, setBody, bodyType, setBodyType, graphqlQuery, setGraphqlQuery, graphqlVariables, setGraphqlVariables, preRequestScript, setPreRequestScript, postResponseScript, setPostResponseScript, authType, isLoading, setLoading, setResponse, setError, getRequest } = useRequestStore();
+  const { url, setUrl, body, setBody, bodyType, setBodyType, graphqlQuery, setGraphqlQuery, graphqlVariables, setGraphqlVariables, preRequestScript, setPreRequestScript, postResponseScript, setPostResponseScript, extractors, setExtractors, authType, isLoading, setLoading, setResponse, setError, getRequest } = useRequestStore();
   const { resolveVariable } = useEnvironmentStore();
   const { showLineNumbers, claudeApiKey, claudeModel, smartAutocomplete } = useSettingsStore();
 
@@ -595,6 +598,7 @@ export function RequestPanel() {
   }
   const [tab, setTab] = useState<Tab>("Body");
   const [showSave, setShowSave] = useState(false);
+  const [showSnippet, setShowSnippet] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<"idle" | "loading" | "loaded" | "error">("idle");
 
   async function handleFetchSchema() {
@@ -701,6 +705,26 @@ export function RequestPanel() {
         useTestResultsStore.getState().setResults(postMutations.testResults);
       }
 
+      const activeExtractors = useRequestStore.getState().extractors.filter(e => e.enabled && e.path && e.variable);
+      if (activeExtractors.length > 0) {
+        let parsed: unknown = null;
+        try { parsed = JSON.parse(resp.body); } catch { /* non-JSON response */ }
+        if (parsed !== null) {
+          const { environments, activeId, updateEnvironment } = useEnvironmentStore.getState();
+          const activeEnv = environments.find(e => e.id === activeId);
+          const extracted: Record<string, string> = {};
+          for (const ex of activeExtractors) {
+            const val = evaluatePath(ex.path, parsed);
+            if (val !== null) extracted[ex.variable] = val;
+          }
+          if (activeId && Object.keys(extracted).length > 0) {
+            updateEnvironment(activeId, { variables: { ...(activeEnv?.variables ?? {}), ...extracted } });
+            const count = Object.keys(extracted).length;
+            toast.success(`${count} variable${count > 1 ? "s" : ""} extracted`, { duration: 2000 });
+          }
+        }
+      }
+
       const { environments: envs, activeId: envActiveId } = useEnvironmentStore.getState();
       const envName = envs.find(e => e.id === envActiveId)?.name ?? "";
       const timestamp = new Date().toISOString();
@@ -741,7 +765,7 @@ export function RequestPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const TABS: Tab[] = ["Params", "Headers", "Auth", "Body", "Pre-req", "Post-req"];
+  const TABS: Tab[] = ["Params", "Headers", "Auth", "Body", "Pre-req", "Post-req", "Extract"];
 
   return (
     <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)", borderRight: "1px solid var(--color-border)" }}>
@@ -780,7 +804,18 @@ export function RequestPanel() {
           </button>
           {showSave && <SavePopover onClose={() => setShowSave(false)} />}
         </div>
+        <button
+          onClick={() => setShowSnippet(true)}
+          disabled={!url}
+          title="Code snippet"
+          className="flex items-center justify-center rounded-md transition-colors disabled:opacity-40 shrink-0"
+          style={{ width: 32, height: 32, border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+          <Code2 size={14} />
+        </button>
       </div>
+      {showSnippet && <SnippetModal req={getRequest()} onClose={() => setShowSnippet(false)} />}
 
       {/* Tab bar */}
       <div className="flex items-center shrink-0 px-4" style={{ height: 38, borderBottom: "1px solid var(--color-border)" }}>
@@ -793,6 +828,9 @@ export function RequestPanel() {
               <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
             )}
             {t === "Auth" && authType !== "none" && (
+              <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+            )}
+            {t === "Extract" && extractors.some(e => e.enabled && e.path && e.variable) && (
               <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
             )}
             {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "var(--color-accent)" }} />}
@@ -943,6 +981,69 @@ export function RequestPanel() {
               <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.json()</span> — parsed JSON body</span>
               <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.text()</span> — raw body string</span>
               <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.responseTime</span> — duration in ms</span>
+            </div>
+          </div>
+        )}
+        {tab === "Extract" && (
+          <div className="flex flex-col h-full gap-3">
+            <p className="text-[11px] shrink-0" style={{ color: "var(--color-fg-3)" }}>
+              Extract values from the JSON response into environment variables automatically after each request.
+            </p>
+            <div className="flex flex-col gap-1 flex-1 overflow-auto">
+              {extractors.length === 0 && (
+                <p className="text-[11px] py-4 text-center" style={{ color: "var(--color-fg-4)" }}>
+                  No extractors — click + to add one
+                </p>
+              )}
+              {extractors.map((ex: Extractor) => (
+                <div key={ex.id} className="flex items-center gap-2">
+                  <button
+                    onClick={() => setExtractors(extractors.map(e => e.id === ex.id ? { ...e, enabled: !e.enabled } : e))}
+                    className="shrink-0 w-3.5 h-3.5 rounded-sm border transition-colors"
+                    style={{
+                      background: ex.enabled ? "var(--color-accent)" : "transparent",
+                      borderColor: ex.enabled ? "var(--color-accent)" : "var(--color-border)",
+                    }}
+                  />
+                  <input
+                    value={ex.path}
+                    onChange={e => setExtractors(extractors.map(x => x.id === ex.id ? { ...x, path: e.target.value } : x))}
+                    placeholder="$.data.token"
+                    className="flex-1 px-2 rounded text-[11px] bg-transparent"
+                    style={{ height: 28, border: "1px solid var(--color-border)", fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}
+                  />
+                  <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-4)" }}>→</span>
+                  <input
+                    value={ex.variable}
+                    onChange={e => setExtractors(extractors.map(x => x.id === ex.id ? { ...x, variable: e.target.value } : x))}
+                    placeholder="token"
+                    className="flex-1 px-2 rounded text-[11px] bg-transparent"
+                    style={{ height: 28, border: "1px solid var(--color-border)", fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}
+                  />
+                  <button
+                    onClick={() => setExtractors(extractors.filter(e => e.id !== ex.id))}
+                    className="shrink-0 flex items-center justify-center rounded transition-colors"
+                    style={{ width: 24, height: 24, color: "var(--color-fg-4)" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "var(--color-fg-4)")}>
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setExtractors([...extractors, { id: Math.random().toString(36).slice(2), path: "", variable: "", enabled: true }])}
+              className="flex items-center gap-1.5 shrink-0 text-[11px] transition-colors self-start"
+              style={{ color: "var(--color-fg-3)" }}
+              onMouseEnter={e => (e.currentTarget.style.color = "var(--color-fg)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "var(--color-fg-3)")}>
+              <Plus size={12} /> Add extractor
+            </button>
+            <div className="shrink-0 flex flex-col gap-0.5" style={{ fontSize: 11, color: "var(--color-fg-4)" }}>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.token</span> — root field</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.data.user.id</span> — nested field</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.items[0].name</span> — array index</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.ids[*]</span> — all array values (joined)</span>
             </div>
           </div>
         )}

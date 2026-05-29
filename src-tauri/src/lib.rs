@@ -1,6 +1,7 @@
 ﻿mod commands;
 
 use commands::history::{Db, init_db};
+use commands::mock::MockServerState;
 use commands::sse::SseConnections;
 use commands::websocket::WsConnections;
 use rusqlite::Connection;
@@ -12,6 +13,7 @@ use tauri::Manager;
 pub fn run() {
     let ws = WsConnections(Mutex::new(HashMap::new()));
     let sse = SseConnections(Mutex::new(HashMap::new()));
+    let mock = MockServerState::new();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -19,6 +21,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(ws)
         .manage(sse)
+        .manage(mock)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()
                 .expect("failed to get app data dir");
@@ -61,6 +64,12 @@ pub fn run() {
             commands::cli::install_cli,
             commands::cli::get_cli_status,
             commands::cli::uninstall_cli,
+            commands::loadtest::run_load_test,
+            commands::mock::start_mock_server,
+            commands::mock::stop_mock_server,
+            commands::mock::set_mock_endpoints,
+            commands::mock::get_mock_endpoints,
+            commands::mock::get_mock_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

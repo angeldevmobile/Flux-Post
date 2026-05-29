@@ -32,7 +32,7 @@ function prettyBody(body: string): string {
 
 export function CompareRoute() {
   const { environments } = useEnvironmentStore();
-  const { method: storeMethod, url: storeUrl, headers, params, body, bodyType } = useRequestStore();
+  const { method: storeMethod, url: storeUrl, headers, params, body, bodyType, formFields, graphqlQuery, graphqlVariables } = useRequestStore();
 
   const [method, setMethod] = useState<HttpMethod>(storeMethod);
   const [url, setUrl] = useState(storeUrl);
@@ -54,10 +54,7 @@ export function CompareRoute() {
     setIsRunning(true);
     setResults({});
 
-    const enabledHeaders: Record<string, string> = {};
-    for (const h of headers) {
-      if (h.enabled && h.key) enabledHeaders[h.key] = h.value;
-    }
+    const rawHeaders = headers.filter(h => h.enabled && h.key).map(h => [h.key, h.value] as [string, string]);
     const enabledParams = params.filter(p => p.enabled && p.key);
 
     const runs = selectedEnvIds.map(async (envId) => {
@@ -72,13 +69,34 @@ export function CompareRoute() {
         resolvedUrl = resolvedUrl.includes("?") ? `${resolvedUrl}&${qs}` : `${resolvedUrl}?${qs}`;
       }
 
+      const resolvedHeaders: Record<string, string> = Object.fromEntries(rawHeaders.map(([k, v]) => [k, resolve(v)]));
+
+      let requestBody: string | undefined;
+      if (bodyType === "json") {
+        requestBody = resolve(body);
+        if (!resolvedHeaders["Content-Type"]) resolvedHeaders["Content-Type"] = "application/json";
+      } else if (bodyType === "form") {
+        const pairs = formFields
+          .filter(f => f.enabled && f.key)
+          .map(f => `${encodeURIComponent(resolve(f.key))}=${encodeURIComponent(resolve(f.value))}`);
+        requestBody = pairs.join("&");
+        if (!resolvedHeaders["Content-Type"]) resolvedHeaders["Content-Type"] = "application/x-www-form-urlencoded";
+      } else if (bodyType === "graphql") {
+        let variables: unknown;
+        try { variables = JSON.parse(graphqlVariables); } catch { /* omit */ }
+        requestBody = JSON.stringify({ query: graphqlQuery, ...(variables !== undefined ? { variables } : {}) });
+        if (!resolvedHeaders["Content-Type"]) resolvedHeaders["Content-Type"] = "application/json";
+      } else if (bodyType !== "none") {
+        requestBody = resolve(body);
+      }
+
       try {
         const { timeoutMs, followRedirects, sslVerify } = useSettingsStore.getState();
         const resp = await sendRequest({
           method,
           url: resolvedUrl,
-          headers: Object.fromEntries(Object.entries(enabledHeaders).map(([k, v]) => [k, resolve(v)])),
-          body: bodyType !== "none" ? resolve(body) : undefined,
+          headers: resolvedHeaders,
+          body: requestBody,
           timeoutMs, followRedirects, sslVerify,
         });
         return [envId, { status: resp.status, durationMs: resp.durationMs, body: resp.body }] as const;

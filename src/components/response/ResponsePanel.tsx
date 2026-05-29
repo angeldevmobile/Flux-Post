@@ -38,7 +38,7 @@ function detectLang(headers: Record<string, string>): ResponseLang {
   return "plaintext";
 }
 
-type RespTab = "Body" | "Headers" | "Cookies" | "Tests" | "Console";
+type RespTab = "Body" | "Headers" | "Cookies" | "Tests" | "Console" | "Timeline";
 
 const LOG_COLOR: Record<LogLevel, string> = {
   log: "var(--color-fg-2)",
@@ -186,7 +186,7 @@ export function ResponsePanel() {
   }
 
   const showAiPanel = autoGenerateTests || debugAssistEnabled;
-  const TABS: RespTab[] = ["Body", "Headers", "Cookies", "Tests", "Console"];
+  const TABS: RespTab[] = ["Body", "Headers", "Cookies", "Tests", "Console", "Timeline"];
 
   return (
     <div data-tour="response-panel" className="flex flex-col shrink-0 h-full overflow-hidden" style={{ width: 420, background: "var(--color-bg)" }}>
@@ -450,6 +450,94 @@ export function ResponsePanel() {
               )}
             </div>
           )}
+
+          {/* Timeline tab */}
+          {tab === "Timeline" && (() => {
+            if (!response) {
+              return (
+                <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>
+                  Send a request to see the timing waterfall.
+                </p>
+              );
+            }
+            const ttfb = response.ttfbMs ?? response.durationMs;
+            const download = response.downloadMs ?? 0;
+            const total = ttfb + download;
+            const ttfbPct = total > 0 ? (ttfb / total) * 100 : 100;
+            const dlPct = total > 0 ? (download / total) * 100 : 0;
+
+            const phases: { label: string; sublabel: string; ms: number; startPct: number; widthPct: number; color: string }[] = [
+              { label: "Connect + Waiting", sublabel: "DNS · TCP · TLS · TTFB", ms: ttfb, startPct: 0, widthPct: ttfbPct, color: "var(--color-accent)" },
+              { label: "Download", sublabel: "body transfer", ms: download, startPct: ttfbPct, widthPct: dlPct, color: "#22C55E" },
+            ];
+
+            return (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-fg-3)" }}>
+                    Request Waterfall
+                  </span>
+                  <span className="text-[11px]" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace" }}>
+                    total {total}ms
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {phases.map(ph => (
+                    <div key={ph.label} className="flex flex-col gap-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[12px] font-medium" style={{ color: "var(--color-fg-2)" }}>{ph.label}</span>
+                        <span className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>{ph.sublabel}</span>
+                        <span className="ml-auto text-[12px]" style={{ fontFamily: "Geist Mono, monospace", color: ph.color }}>{ph.ms}ms</span>
+                      </div>
+                      <div className="relative rounded" style={{ height: 18, background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+                        {ph.widthPct > 0 && (
+                          <div style={{
+                            position: "absolute",
+                            left: `${ph.startPct}%`,
+                            width: `${Math.max(ph.widthPct, 1)}%`,
+                            height: "100%",
+                            background: `${ph.color}60`,
+                            borderRadius: 3,
+                            borderLeft: `2px solid ${ph.color}`,
+                          }} />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Total bar */}
+                  <div className="flex flex-col gap-1" style={{ marginTop: 4 }}>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>Total</span>
+                      <span className="ml-auto text-[12px] font-semibold" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}>{total}ms</span>
+                    </div>
+                    <div className="relative rounded overflow-hidden" style={{ height: 18, background: "var(--color-card)", border: "1px solid var(--color-border)" }}>
+                      <div style={{ position: "absolute", left: 0, width: `${ttfbPct}%`, height: "100%", background: "var(--color-accent-50)" }} />
+                      <div style={{ position: "absolute", left: `${ttfbPct}%`, width: `${dlPct}%`, height: "100%", background: "#22C55E60" }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timing table */}
+                <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--color-border)" }}>
+                  {[
+                    ["Connect + Waiting (TTFB)", `${ttfb}ms`],
+                    ["Download", `${download}ms`],
+                    ["Total", `${total}ms`],
+                    ["Size", formatBytes(response.size)],
+                    ["Status", `${response.status} ${response.statusText}`],
+                  ].map(([label, value], i) => (
+                    <div key={label} className="flex items-center px-3"
+                      style={{ height: 32, borderBottom: i < 4 ? "1px solid var(--color-border)" : "none", background: i % 2 === 0 ? "var(--color-card)" : "transparent" }}>
+                      <span className="flex-1 text-[11px]" style={{ color: "var(--color-fg-3)" }}>{label}</span>
+                      <span className="text-[11px]" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)" }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Console tab */}
           {tab === "Console" && <ConsolePanel />}

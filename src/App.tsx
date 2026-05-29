@@ -14,6 +14,8 @@ import { SettingsRoute } from "@/routes/settings";
 import { CompareRoute } from "@/routes/compare";
 import { WebSocketRoute } from "@/routes/websocket";
 import { SseRoute } from "@/routes/sse";
+import { LoadTestRoute } from "@/routes/loadtest";
+import { MockRoute } from "@/routes/mock";
 import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
@@ -75,6 +77,8 @@ function AppShell() {
           {route === "compare"      && <CompareRoute />}
           {route === "websocket"    && <WebSocketRoute />}
           {route === "sse"          && <SseRoute />}
+          {route === "loadtest"     && <LoadTestRoute />}
+          {route === "mock"         && <MockRoute />}
           {route === "settings"     && <SettingsRoute />}
         </main>
       </div>

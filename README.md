@@ -21,8 +21,12 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 | Declarative assertions | No | ✅ `status == 200` without scripts |
 | WebSocket | Basic | ✅ full duplex log with timestamps |
 | Cloud sync | Postman servers | ✅ your own Supabase — you own the data |
-| CLI runner for CI/CD | Newman (paid) | 🔜 free, open source |
+| CLI runner for CI/CD | Newman (paid) | ✅ free, open source |
+| Code snippets (curl, fetch, Python…) | Manual copy | ✅ one-click, any language |
+| Auto variable extraction (JSONPath) | Paid Team plan | ✅ free, no scripts needed |
 | Mock servers | Cloud-hosted, limited free | 🔜 100% local, instant |
+| Load testing | Paid plan | 🔜 built-in, no k6 needed |
+| Request timeline (DNS → TTFB) | No | 🔜 waterfall like DevTools |
 
 ---
 
@@ -35,6 +39,7 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 - Headers, query params, environment variable interpolation `{{VAR}}`
 - Pre-request scripts and post-response scripts (`pm` API — set/get env vars, add headers)
 - Proxy support (HTTP/HTTPS), SSL verification toggle, client certificates (mTLS)
+- **Code snippet export** — one-click copy as `curl`, `fetch`, `axios`, `Python requests`, or `Go http`
 
 ### Collections
 - Import from Postman v2.1, OpenAPI 3.x, cURL
@@ -48,6 +53,7 @@ Flux is a lightweight desktop app for testing and exploring APIs. Built with Tau
 - Global variables shared across all environments
 - Secret keys — masked in UI, never logged
 - Environment variable resolution at send time
+- **Variable extractor (JSONPath)** — define `$.data.token → {{token}}` rules; values captured automatically after every request, no scripts needed
 - Cloud sync per user
 
 ### Tests
@@ -274,6 +280,8 @@ Core features are stable and in daily use. The items below are the remaining blo
 - [x] Collections — import Postman, OpenAPI, cURL
 - [x] Collection runner with assertion reporting
 - [x] Environment variables + secrets + global vars
+- [x] Variable extractor (JSONPath) — `$.data.token → {{token}}` rules, auto-applied after every response
+- [x] Code snippet export — copy any request as `curl`, `fetch`, `axios`, `Python requests`, `Go http`
 - [x] Cloud sync (settings, collections, environments, history)
 - [x] WebSocket viewer — full duplex log with timestamps
 - [x] SSE / EventStream viewer — full spec support, JSON pretty-print
@@ -290,15 +298,23 @@ Core features are stable and in daily use. The items below are the remaining blo
 
 | Feature | Effort | Community impact | Monetization |
 |---|---|---|---|
-| CLI runner | Medium (1-2 weeks) | ⭐⭐⭐⭐⭐ — viral in CI/CD | Pro feature |
+| ~~CLI runner~~ | ~~Medium (1-2 weeks)~~ | ⭐⭐⭐⭐⭐ — viral in CI/CD | ~~Pro feature~~ |
+| ~~Code snippet generator~~ | ~~Low (1-2 days)~~ | ⭐⭐⭐⭐⭐ — daily use | ~~Free~~ |
+| ~~Variable extractor (JSONPath)~~ | ~~Low-Medium (3-5 days)~~ | ⭐⭐⭐⭐⭐ — enables chaining | ~~Free (Postman charges)~~ |
 | Local mock server | High (2-3 weeks) | ⭐⭐⭐⭐ | Pro feature |
+| Load test | Medium (1 week) | ⭐⭐⭐⭐ | Pro feature |
+| Request timeline (waterfall) | Medium (1 week) | ⭐⭐⭐⭐ | Free |
 | gRPC support | High (3-4 weeks) | ⭐⭐⭐ | Pro feature |
 | Team workspaces | Very high | ⭐⭐⭐⭐⭐ | Core paid tier |
 
-- [ ] **CLI runner** — `flux run collection.json --env production` for CI/CD pipelines. Free alternative to Postman Newman. JUnit XML output, exit code on failures, AI failure analysis.
-- [ ] **Local mock server** — `flux mock` spins up a localhost server from any collection. 100% offline, zero latency, AI-generated response bodies.
-- [ ] **gRPC support** — `.proto` import, Monaco editor for messages, server reflection. Free unlike Postman Team plan.
-- [ ] **Team workspaces** — shared collections with real-time sync via Supabase Realtime. Your data, your infrastructure.
+- [x] **CLI runner** — `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines. Free alternative to Postman Newman. JSON report output, exit code 1 on failures, installable via Settings → CLI Tools.
+- [x] **Code snippet generator** — One-click copy as `curl`, `fetch`, `axios`, `Python requests`, `Go http`. Works from any request via the `</>` button next to Send.
+- [x] **Variable extractor (JSONPath)** — Define `$.data.token → {{token}}` rules in the Extract tab. Flux captures values automatically after every response and writes them to the active environment. No scripts needed — free, unlike Postman Team plan.
+- [ ] **Local mock server** — Spin up a localhost server from any collection. Define status codes, response bodies, and latency per endpoint. 100% offline, zero latency, AI-generated response bodies on request.
+- [ ] **Load test** — Run any request N times with C concurrent workers. See min / max / avg / p95 latency, error rate, and throughput in a live chart. No external tools (k6, wrk, ab) required.
+- [ ] **Request timeline (waterfall)** — DNS lookup → TCP connect → TLS handshake → TTFB → download time breakdown on every response. Same level of detail as Chrome DevTools Network tab, built directly into the response panel.
+- [ ] **gRPC support** — `.proto` import, Monaco editor for request messages, server reflection. Free unlike Postman Team plan.
+- [ ] **Team workspaces** — Shared collections with real-time sync via Supabase Realtime. Your data, your infrastructure.
 
 ---
 

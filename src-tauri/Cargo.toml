@@ -33,3 +33,5 @@ rand = "0.8"
 urlencoding = "2"
 tokio-tungstenite = { version = "0.23", features = ["rustls-tls-native-roots"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+axum = { version = "0.7", default-features = false, features = ["tokio", "http1"] }
+http = "1"

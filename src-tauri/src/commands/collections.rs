@@ -17,6 +17,8 @@ struct YamlRequest {
     headers: HashMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     body: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    body_type: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     tests: Vec<YamlTest>,
 }
@@ -56,6 +58,7 @@ pub struct RequestOut {
     pub path: String,
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
+    pub body_type: Option<String>,
     pub tests: Vec<TestAssertion>,
 }
 
@@ -87,6 +90,7 @@ fn yaml_req_to_out(r: YamlRequest, id: String) -> RequestOut {
         path: r.path,
         headers: r.headers,
         body: r.body,
+        body_type: r.body_type,
         tests: r.tests.into_iter().map(|t| TestAssertion { assert: t.assert }).collect(),
     }
 }
@@ -98,6 +102,7 @@ fn out_to_yaml_req(r: RequestOut) -> YamlRequest {
         path: r.path,
         headers: r.headers,
         body: r.body,
+        body_type: r.body_type,
         tests: r.tests.into_iter().map(|t| YamlTest { assert: t.assert }).collect(),
     }
 }

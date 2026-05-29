@@ -99,7 +99,7 @@ function RequestRow({
 
 export function CollectionsSidebar() {
   const { collections, activeRequestId, setActiveRequest, toggleCollection, toggleFolder } = useCollectionsStore();
-  const { setMethod, setUrl, setHeaders } = useRequestStore();
+  const { setMethod, setUrl, setHeaders, setBody, setBodyType } = useRequestStore();
   const [search, setSearch] = useState("");
   const [dir, setDir] = useState<string | null>(() => localStorage.getItem(DIR_KEY));
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -133,6 +133,8 @@ export function CollectionsSidebar() {
     setActiveRequest(req.id);
     setMethod(req.method as HttpMethod);
     setUrl(req.path);
+    setBodyType((req.bodyType as Parameters<typeof setBodyType>[0]) ?? "none");
+    setBody(req.body ?? "");
     if (req.headers && Object.keys(req.headers).length > 0) {
       setHeaders(
         Object.entries(req.headers).map(([key, value], i) => ({

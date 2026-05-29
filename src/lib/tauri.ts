@@ -38,6 +38,8 @@ export interface HttpResponse {
   sentCookies: string[];
   body: string;
   durationMs: number;
+  ttfbMs: number;
+  downloadMs: number;
   size: number;
   bodyEncoding: "text" | "base64";
 }
@@ -298,6 +300,85 @@ export async function deleteCookie(domain: string, name: string, path: string): 
 
 export async function clearCookies(domain?: string): Promise<void> {
   return invoke("clear_cookies", { domain: domain ?? null });
+}
+
+// ── Load Test ─────────────────────────────────────────────────────────────────
+
+export interface LoadRequest {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body?: string;
+  total: number;
+  concurrency: number;
+  timeoutMs?: number;
+}
+
+export interface LoadTestProgress {
+  completed: number;
+  errors: number;
+  total: number;
+  rps: number;
+  avgMs: number;
+}
+
+export interface LoadTestResult {
+  total: number;
+  completed: number;
+  errors: number;
+  minMs: number;
+  maxMs: number;
+  avgMs: number;
+  p50Ms: number;
+  p95Ms: number;
+  p99Ms: number;
+  throughput: number;
+  errorRate: number;
+  durationSecs: number;
+  latencies: number[];
+}
+
+export async function runLoadTest(request: LoadRequest): Promise<LoadTestResult> {
+  return invoke("run_load_test", { request });
+}
+
+// ── Mock Server ───────────────────────────────────────────────────────────────
+
+export interface MockEndpoint {
+  id: string;
+  method: string;
+  path: string;
+  status: number;
+  body: string;
+  contentType: string;
+  delayMs: number;
+  enabled: boolean;
+}
+
+export interface MockStatus {
+  running: boolean;
+  port: number;
+  endpointCount: number;
+}
+
+export async function startMockServer(port: number): Promise<void> {
+  return invoke("start_mock_server", { port });
+}
+
+export async function stopMockServer(): Promise<void> {
+  return invoke("stop_mock_server");
+}
+
+export async function setMockEndpoints(endpoints: MockEndpoint[]): Promise<void> {
+  return invoke("set_mock_endpoints", { endpoints });
+}
+
+export async function getMockEndpoints(): Promise<MockEndpoint[]> {
+  return invoke("get_mock_endpoints");
+}
+
+export async function getMockStatus(): Promise<MockStatus> {
+  return invoke("get_mock_status");
 }
 
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {

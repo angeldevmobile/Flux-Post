@@ -46,6 +46,8 @@ pub struct HttpResponse {
     pub headers: HashMap<String, String>,
     pub body: String,
     pub duration_ms: u64,
+    pub ttfb_ms: u64,
+    pub download_ms: u64,
     pub size: usize,
     pub body_encoding: String, // "text" | "base64"
     pub set_cookies: Vec<String>,
@@ -207,7 +209,8 @@ pub async fn send_request(
         }
     }
 
-    let duration_ms = start.elapsed().as_millis() as u64;
+    // Time until response headers received (DNS + TCP + TLS + upload + server wait)
+    let ttfb_ms = start.elapsed().as_millis() as u64;
 
     let status = resp.status();
     let status_text = status.canonical_reason().unwrap_or("Unknown").to_string();
@@ -258,6 +261,9 @@ pub async fn send_request(
         (text, "text".to_string(), sz)
     };
 
+    let duration_ms = start.elapsed().as_millis() as u64;
+    let download_ms = duration_ms.saturating_sub(ttfb_ms);
+
     Ok(HttpResponse {
         status: status.as_u16(),
         status_text,
@@ -266,6 +272,8 @@ pub async fn send_request(
         sent_cookies,
         body,
         duration_ms,
+        ttfb_ms,
+        download_ms,
         size,
         body_encoding,
     })

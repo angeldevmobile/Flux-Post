@@ -23,6 +23,13 @@ export type AuthType = "none" | "bearer" | "basic" | "apikey" | "oauth2" | "awss
 export type ApiKeyTarget = "header" | "query";
 export type OAuthGrantType = "authorization_code" | "client_credentials";
 
+export interface Extractor {
+  id: string;
+  path: string;      // JSONPath: $.data.token
+  variable: string;  // env var name: token
+  enabled: boolean;
+}
+
 interface RequestStore {
   method: HttpMethod;
   url: string;
@@ -39,6 +46,7 @@ interface RequestStore {
   graphqlVariables: string;
   preRequestScript: string;
   postResponseScript: string;
+  extractors: Extractor[];
   // auth
   authType: AuthType;
   authBearer: string;
@@ -79,6 +87,7 @@ interface RequestStore {
   setGraphqlVariables: (variables: string) => void;
   setPreRequestScript: (script: string) => void;
   setPostResponseScript: (script: string) => void;
+  setExtractors: (extractors: Extractor[]) => void;
   setAuthType: (type: AuthType) => void;
   setAuthBearer: (token: string) => void;
   setAuthBasicUser: (user: string) => void;
@@ -121,6 +130,7 @@ const defaultState = {
   graphqlVariables: "",
   preRequestScript: "",
   postResponseScript: "",
+  extractors: [] as Extractor[],
   authType: "none" as AuthType,
   authBearer: "",
   authBasicUser: "",
@@ -162,6 +172,7 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
   setGraphqlVariables: (graphqlVariables) => set({ graphqlVariables }),
   setPreRequestScript: (preRequestScript) => set({ preRequestScript }),
   setPostResponseScript: (postResponseScript) => set({ postResponseScript }),
+  setExtractors: (extractors) => set({ extractors }),
   setAuthType: (authType) => set({ authType }),
   setAuthBearer: (authBearer) => set({ authBearer }),
   setAuthBasicUser: (authBasicUser) => set({ authBasicUser }),
@@ -242,6 +253,9 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
       let variables: unknown;
       try { variables = JSON.parse(s.graphqlVariables); } catch { /* omit if invalid */ }
       body = JSON.stringify({ query: s.graphqlQuery, ...(variables !== undefined ? { variables } : {}) });
+      if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+    } else if (s.bodyType === "json") {
+      body = s.body;
       if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
     } else if (s.bodyType !== "none") {
       body = s.body;
