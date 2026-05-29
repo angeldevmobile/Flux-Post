@@ -162,7 +162,8 @@ export function exportGoHttp(req: SnippetReq): string {
   lines.push(`func main() {`);
 
   if (hasBody) {
-    const escaped = req.body!.replace(/\\/g, "\\\\").replace(/`/g, "` + \"`\" + `");
+    // Go raw strings can't contain backticks; split and concatenate around them
+    const escaped = req.body!.replace(/`/g, "` + \"`\" + `");
     lines.push(`\tbody := strings.NewReader(\`${escaped}\`)`);
     lines.push(`\treq, _ := http.NewRequest("${req.method}", "${req.url}", body)`);
   } else {

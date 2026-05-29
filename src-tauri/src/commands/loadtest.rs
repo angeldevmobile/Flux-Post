@@ -150,9 +150,15 @@ pub async fn run_load_test(
     let min_ms = lats.first().copied().unwrap_or(0);
     let max_ms = lats.last().copied().unwrap_or(0);
     let avg_ms = if n > 0 { lats.iter().sum::<u64>() as f64 / n as f64 } else { 0.0 };
-    let p50_ms = if n > 0 { lats[n * 50 / 100] } else { 0 };
-    let p95_ms = if n > 0 { lats[(n * 95 / 100).min(n - 1)] } else { 0 };
-    let p99_ms = if n > 0 { lats[(n * 99 / 100).min(n - 1)] } else { 0 };
+    // Nearest-rank percentile: index = ceil(p/100 * n) - 1, clamped to [0, n-1]
+    let pct = |p: usize| -> u64 {
+        if n == 0 { return 0; }
+        let idx = ((n * p + 99) / 100).saturating_sub(1).min(n - 1);
+        lats[idx]
+    };
+    let p50_ms = pct(50);
+    let p95_ms = pct(95);
+    let p99_ms = pct(99);
     let throughput = completed as f64 / duration_secs.max(0.001);
     let error_rate = errors as f64 / total as f64 * 100.0;
 

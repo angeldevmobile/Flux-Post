@@ -268,7 +268,15 @@ async fn run_request(
     }
 }
 
-//   JSON report                                 
+//   JSON report
+
+#[derive(Serialize)]
+struct JsonSuiteReport {
+    passed: usize,
+    failed: usize,
+    duration_ms: u64,
+    collections: Vec<JsonReport>,
+}
 
 #[derive(Serialize)]
 struct JsonReport {
@@ -375,6 +383,7 @@ async fn main() {
             let mut total_failed = 0usize;
             let mut any_error = false;
             let start_all = Instant::now();
+            let mut json_collections: Vec<JsonReport> = vec![];
 
             for file in &files {
                 let content = match std::fs::read_to_string(file) {
@@ -470,7 +479,7 @@ async fn main() {
                 }
 
                 if reporter == "json" {
-                    let report = JsonReport {
+                    json_collections.push(JsonReport {
                         collection: collection.name,
                         passed: suite_passed,
                         failed: suite_failed,
@@ -494,16 +503,25 @@ async fn main() {
                                 error: r.error,
                             })
                             .collect(),
-                    };
+                    });
+                }
+            }
 
-                    let json = serde_json::to_string_pretty(&report).unwrap();
-                    match &output {
-                        Some(out_path) => {
-                            std::fs::write(out_path, &json).unwrap();
-                            eprintln!("{}Report written to {}{}", DIM, out_path, RESET);
-                        }
-                        None => println!("{}", json),
+            // Emit the consolidated JSON report once, after all collections run
+            if reporter == "json" {
+                let suite = JsonSuiteReport {
+                    passed: total_passed,
+                    failed: total_failed,
+                    duration_ms: start_all.elapsed().as_millis() as u64,
+                    collections: json_collections,
+                };
+                let json = serde_json::to_string_pretty(&suite).unwrap();
+                match &output {
+                    Some(out_path) => {
+                        std::fs::write(out_path, &json).unwrap();
+                        eprintln!("{}Report written to {}{}", DIM, out_path, RESET);
                     }
+                    None => println!("{}", json),
                 }
             }
 

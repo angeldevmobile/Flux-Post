@@ -181,6 +181,10 @@ pub async fn send_request(
 
     let start = Instant::now();
     let mut resp = req.send().await.map_err(|e| e.to_string())?;
+
+    // TTFB: time to first byte of the *initial* request (before any redirect hops)
+    let ttfb_ms = start.elapsed().as_millis() as u64;
+
     let mut all_set_cookies: Vec<String> = Vec::new();
     let mut hops = 0u32;
 
@@ -208,9 +212,6 @@ pub async fn send_request(
             None => break,
         }
     }
-
-    // Time until response headers received (DNS + TCP + TLS + upload + server wait)
-    let ttfb_ms = start.elapsed().as_millis() as u64;
 
     let status = resp.status();
     let status_text = status.canonical_reason().unwrap_or("Unknown").to_string();

@@ -166,8 +166,9 @@ pub async fn get_mock_endpoints(
 }
 
 #[tauri::command]
-pub fn get_mock_status(state: tauri::State<'_, MockServerState>) -> MockStatus {
+pub async fn get_mock_status(state: tauri::State<'_, MockServerState>) -> Result<MockStatus, String> {
     let running = *state.running.lock().unwrap();
     let port = *state.port.lock().unwrap();
-    MockStatus { running, port, endpoint_count: 0 }
+    let endpoint_count = state.endpoints.read().await.len();
+    Ok(MockStatus { running, port, endpoint_count })
 }
