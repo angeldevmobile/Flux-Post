@@ -871,6 +871,94 @@
       svg {
         display: block;
       }
+
+      /* ── FAQ ── */
+      .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      .faq-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: border-color .15s;
+      }
+
+      .faq-item:hover {
+        border-color: var(--border-2);
+      }
+
+      .faq-q {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 20px;
+        background: none;
+        border: none;
+        color: var(--fg-2);
+        font-size: 14px;
+        font-weight: 600;
+        font-family: inherit;
+        text-align: left;
+        cursor: pointer;
+        line-height: 1.4;
+      }
+
+      .faq-q:hover { color: var(--fg); }
+
+      .faq-chevron {
+        flex-shrink: 0;
+        color: var(--fg-4);
+        transition: transform .2s;
+      }
+
+      .faq-item.open .faq-chevron {
+        transform: rotate(180deg);
+      }
+
+      .faq-a {
+        display: none;
+        padding: 0 20px 18px;
+        font-size: 13px;
+        color: var(--fg-3);
+        line-height: 1.7;
+        border-top: 1px solid var(--border);
+      }
+
+      .faq-item.open .faq-a {
+        display: block;
+      }
+
+      .faq-a p { margin-bottom: 10px; }
+      .faq-a p:last-child { margin-bottom: 0; }
+
+      .faq-a ul {
+        padding-left: 18px;
+        margin: 8px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .faq-tag {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--accent-10);
+        color: var(--accent);
+        border: 1px solid var(--accent-20);
+        margin-right: 4px;
+        vertical-align: middle;
+      }
     </style>
   </head>
 
@@ -885,6 +973,7 @@
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#install">Installation</a>
+        <a href="#faq">FAQ</a>
         <a href="#start">Getting Started</a>
         <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">GitHub</a>
       </div>
@@ -1561,6 +1650,76 @@
           <span>Duplicate request</span>
           <div class="keys"><span class="key">Ctrl</span><span class="key-sep">+</span><span class="key">D</span></div>
         </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ── FAQ ── -->
+    <section id="faq">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title">Common questions</h2>
+      <p class="section-desc">Quick answers to what people ask most.</p>
+
+      <div class="faq-list">
+
+        <div class="faq-item open">
+          <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
+            Why do I have to provide my own API key? Why doesn't Flux include one?
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a">
+            <p>Three reasons, each on its own makes it non-negotiable:</p>
+            <ul>
+              <li>
+                <strong>Security.</strong> If Flux shipped a built-in key, every user would share the same secret. One person decompiling the binary — or a single leaked GitHub commit — would expose it to the entire internet, immediately draining the account. Your own key belongs only to you.
+              </li>
+              <li>
+                <strong>Privacy.</strong> With your key, every AI request travels <em>directly</em> from your machine to Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing. If a shared key were used, those calls would have to route through a Flux backend — meaning a third party would process your data.
+              </li>
+              <li>
+                <strong>Cost &amp; fairness.</strong> The API is not free. Bundling a key would mean Flux pays for every AI call every user makes — which is unsustainable for a free, open-source tool. With BYOK ("bring your own key") you pay Anthropic directly, only for what you use, at the published rate. No subscription, no hidden fees.
+              </li>
+            </ul>
+            <p style="margin-top:12px;">
+              <span class="faq-tag">How to set it up</span>
+              Open <strong style="color:var(--fg-2)">Settings → AI &amp; Claude</strong>, paste your key (starts with <code style="font-family:var(--mono);color:var(--accent);font-size:12px">sk-ant-</code>), and pick a model. Get your key at <code style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/account/keys</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
+            Is my API key or request data stored in the cloud?
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a">
+            <p>Your API key is stored <strong>only on your local device</strong> using the OS secure storage. It is explicitly excluded from cloud sync — even if you sign in to sync your collections, the key never leaves your machine.</p>
+            <p>Request bodies, response bodies, and everything you send through Flux goes directly from your device to the target server (or to Anthropic when using AI features). Flux has no relay server in the middle.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
+            How much does it cost to use the AI features?
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a">
+            <p>Flux itself is free. The only cost is what Anthropic charges for the API calls you make, billed directly to your Anthropic account. In practice, typical developer use (generating tests, debugging errors) costs a few cents per month — AI calls in Flux are short, focused prompts, not long conversations.</p>
+            <p>You can monitor your exact usage at <code style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/usage</code>. The cheapest model (<strong>Haiku</strong>) is recommended for everyday use; switch to Sonnet when you need deeper reasoning.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
+            Does Flux work completely offline?
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a">
+            <p>Yes — all core features work without an internet connection: sending HTTP requests, running tests, the mock server, load testing, environment variables, code snippets, and the CLI runner. The only features that require a connection are the AI functions (which call Anthropic's API) and cloud sync (optional).</p>
+          </div>
+        </div>
+
       </div>
     </section>
 
