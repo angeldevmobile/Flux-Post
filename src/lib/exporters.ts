@@ -147,6 +147,78 @@ export function exportPythonRequests(req: SnippetReq): string {
   return lines.join("\n");
 }
 
+//   OpenAPI 3.0
+
+function inferSchema(value: unknown): Record<string, unknown> {
+  if (value === null) return { type: "string", nullable: true };
+  if (typeof value === "boolean") return { type: "boolean", example: value };
+  if (typeof value === "number") return { type: Number.isInteger(value) ? "integer" : "number", example: value };
+  if (typeof value === "string") return { type: "string", example: value };
+  if (Array.isArray(value)) return { type: "array", items: value.length > 0 ? inferSchema(value[0]) : { type: "string" } };
+  if (typeof value === "object") {
+    const properties: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) properties[k] = inferSchema(v);
+    return { type: "object", properties };
+  }
+  return { type: "string" };
+}
+
+function requestToOperation(req: CollectionRequest, tag: string): [string, Record<string, unknown>] {
+  let urlPath = req.path;
+  const queryParams: { name: string; in: string; required: boolean; schema: { type: string } }[] = [];
+
+  try {
+    const parsed = new URL(req.path.startsWith("http") ? req.path : `http://x${req.path}`);
+    urlPath = parsed.pathname;
+    parsed.searchParams.forEach((_, key) =>
+      queryParams.push({ name: key, in: "query", required: false, schema: { type: "string" } })
+    );
+  } catch { /* use path as-is */ }
+
+  const slugBase = urlPath.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+  const operation: Record<string, unknown> = {
+    summary: req.name || req.path,
+    operationId: `${req.method.toLowerCase()}_${slugBase || "root"}`,
+    tags: [tag],
+  };
+
+  if (queryParams.length > 0) operation.parameters = queryParams;
+
+  if (req.body && !["GET", "HEAD"].includes(req.method)) {
+    let schema: Record<string, unknown> = { type: "object" };
+    let example: unknown = req.body;
+    try { example = JSON.parse(req.body); schema = inferSchema(example); } catch { /* raw body */ }
+    const ct = (req.headers?.["Content-Type"] ?? req.headers?.["content-type"] ?? "application/json").split(";")[0].trim();
+    operation.requestBody = { required: true, content: { [ct]: { schema, example } } };
+  }
+
+  operation.responses = { "200": { description: "Successful response" } };
+  return [urlPath, operation];
+}
+
+export function exportOpenAPI(col: Collection): string {
+  const paths: Record<string, Record<string, unknown>> = {};
+  const tagged = [
+    ...col.requests.map(r => ({ req: r, tag: col.name })),
+    ...col.folders.flatMap(f => f.requests.map(r => ({ req: r, tag: f.name }))),
+  ];
+
+  for (const { req, tag } of tagged) {
+    const [urlPath, operation] = requestToOperation(req, tag);
+    if (!paths[urlPath]) paths[urlPath] = {};
+    paths[urlPath][req.method.toLowerCase()] = operation;
+  }
+
+  const doc: Record<string, unknown> = {
+    openapi: "3.0.3",
+    info: { title: col.name, version: "1.0.0" },
+    ...(col.baseUrl ? { servers: [{ url: col.baseUrl }] } : {}),
+    paths,
+  };
+
+  return JSON.stringify(doc, null, 2);
+}
+
 //   Go net/http
 
 export function exportGoHttp(req: SnippetReq): string {

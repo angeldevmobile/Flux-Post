@@ -4,7 +4,7 @@ import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
 import { loadCollections } from "@/lib/tauri";
 import { methodColor, methodBg } from "@/lib/methods";
-import { exportPostman } from "@/lib/exporters";
+import { exportPostman, exportOpenAPI } from "@/lib/exporters";
 import { exportDataAsJson } from "@/lib/tauri";
 import { ImportModal } from "./ImportModal";
 import { CollectionRunner } from "./CollectionRunner";
@@ -106,6 +106,7 @@ export function CollectionsSidebar() {
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [runnerOpen, setRunnerOpen] = useState(false);
+  const [exportMenuId, setExportMenuId] = useState<string | null>(null);
 
   const reload = useCallback(async (d: string) => {
     setLoading(true);
@@ -273,13 +274,38 @@ export function CollectionsSidebar() {
                     <span style={{ width: 6, height: 6, borderRadius: 3, background: "var(--color-accent)", flexShrink: 0 }} />
                     <span className="text-[12px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg)" }}>{col.name}</span>
                   </button>
-                  <button
-                    onClick={() => exportDataAsJson(JSON.parse(exportPostman(col)), `${col.id}.postman_collection.json`)}
-                    title="Export as Postman v2.1"
-                    className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
-                    style={{ width: 18, height: 18, color: "var(--color-fg-3)", flexShrink: 0 }}>
-                    <Download size={11} />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={e => { e.stopPropagation(); setExportMenuId(exportMenuId === col.id ? null : col.id); }}
+                      title="Export collection"
+                      className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
+                      style={{ width: 18, height: 18, color: "var(--color-fg-3)", flexShrink: 0 }}>
+                      <Download size={11} />
+                    </button>
+                    {exportMenuId === col.id && (
+                      <div
+                        className="absolute z-50 rounded-lg py-1 flex flex-col"
+                        style={{ top: "100%", right: 0, marginTop: 4, minWidth: 160, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000050" }}
+                        onMouseLeave={() => setExportMenuId(null)}>
+                        <button
+                          onClick={() => { exportDataAsJson(JSON.parse(exportPostman(col)), `${col.id}.postman_collection.json`); setExportMenuId(null); }}
+                          className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
+                          style={{ color: "var(--color-fg-2)" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                          Postman v2.1
+                        </button>
+                        <button
+                          onClick={() => { exportDataAsJson(JSON.parse(exportOpenAPI(col)), `${col.id}.openapi.json`); setExportMenuId(null); }}
+                          className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
+                          style={{ color: "var(--color-fg-2)" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                          OpenAPI 3.0
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <span className="text-[10px] ml-1" style={{ color: "var(--color-fg-4)" }}>{totalCount(col)}</span>
                 </div>
 

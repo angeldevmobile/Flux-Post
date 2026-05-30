@@ -818,30 +818,33 @@ export function RequestPanel() {
       {showSnippet && <SnippetModal req={getRequest()} onClose={() => setShowSnippet(false)} />}
 
       {/* Tab bar */}
-      <div className="flex items-center shrink-0 px-4" style={{ height: 38, borderBottom: "1px solid var(--color-border)" }}>
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className="relative px-3 h-full text-[12px] transition-colors flex items-center gap-1"
-            style={{ color: tab === t ? "var(--color-fg)" : "var(--color-fg-3)" }}>
-            {t}
-            {t === "Pre-req" && preRequestScript.trim() && (
-              <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
-            )}
-            {t === "Auth" && authType !== "none" && (
-              <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
-            )}
-            {t === "Extract" && extractors.some(e => e.enabled && e.path && e.variable) && (
-              <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
-            )}
-            {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "var(--color-accent)" }} />}
-          </button>
-        ))}
+      <div className="flex flex-col shrink-0" style={{ borderBottom: "1px solid var(--color-border)" }}>
+        <div className="flex items-center px-4" style={{ height: 38 }}>
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="relative px-3 h-full text-[12px] transition-colors flex items-center gap-1"
+              style={{ color: tab === t ? "var(--color-fg)" : "var(--color-fg-3)" }}>
+              {t}
+              {t === "Pre-req" && preRequestScript.trim() && (
+                <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+              )}
+              {t === "Auth" && authType !== "none" && (
+                <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+              )}
+              {t === "Extract" && extractors.some(e => e.enabled && e.path && e.variable) && (
+                <span className="w-1 h-1 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+              )}
+              {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "var(--color-accent)" }} />}
+            </button>
+          ))}
+        </div>
         {bodyType !== "none" && tab === "Body" && (
-          <div className="ml-4 flex gap-1 flex-wrap">
+          <div className="flex items-center gap-1 px-4" style={{ height: 32, borderTop: "1px solid var(--color-border)" }}>
             {(["json", "form", "multipart", "binary", "raw", "graphql"] as const).map(bt => (
               <button key={bt} onClick={() => setBodyType(bt)}
-                className="px-2 py-0.5 rounded text-[11px] transition-colors"
+                className="px-2.5 rounded text-[11px] transition-colors"
                 style={{
+                  height: 22,
                   background: bodyType === bt ? "var(--color-card)" : "transparent",
                   color: bodyType === bt ? "var(--color-accent)" : "var(--color-fg-3)",
                   border: bodyType === bt ? "1px solid var(--color-border)" : "1px solid transparent",

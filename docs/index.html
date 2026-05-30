@@ -696,30 +696,73 @@
 
       /* ── AI NOTICE ── */
       @keyframes glow-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0);     border-color: rgba(168,85,247,.25); }
-        50%       { box-shadow: 0 0 28px 4px rgba(168,85,247,.13); border-color: rgba(168,85,247,.55); }
+
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
+          border-color: rgba(168, 85, 247, .25);
+        }
+
+        50% {
+          box-shadow: 0 0 28px 4px rgba(168, 85, 247, .13);
+          border-color: rgba(168, 85, 247, .55);
+        }
       }
+
       @keyframes dot-blink {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: .25; }
+
+        0%,
+        100% {
+          opacity: 1;
+        }
+
+        50% {
+          opacity: .25;
+        }
       }
+
       @keyframes fade-up {
-        from { opacity: 0; transform: translateY(10px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
+
       @keyframes shimmer-text {
-        0%   { background-position: -200% center; }
-        100% { background-position:  200% center; }
+        0% {
+          background-position: -200% center;
+        }
+
+        100% {
+          background-position: 200% center;
+        }
       }
+
       @keyframes ping {
-        0%   { transform: scale(1);   opacity: .8; }
-        70%  { transform: scale(2.2); opacity: 0;  }
-        100% { transform: scale(2.2); opacity: 0;  }
+        0% {
+          transform: scale(1);
+          opacity: .8;
+        }
+
+        70% {
+          transform: scale(2.2);
+          opacity: 0;
+        }
+
+        100% {
+          transform: scale(2.2);
+          opacity: 0;
+        }
       }
 
       .ai-notice {
         animation: glow-pulse 3s ease-in-out infinite, fade-up .5s ease both;
-        border: 1px solid rgba(168,85,247,.25);
+        border: 1px solid rgba(168, 85, 247, .25);
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 36px;
@@ -730,8 +773,8 @@
         align-items: center;
         gap: 10px;
         padding: 13px 20px;
-        background: linear-gradient(90deg, rgba(168,85,247,.13) 0%, rgba(168,85,247,.04) 100%);
-        border-bottom: 1px solid rgba(168,85,247,.2);
+        background: linear-gradient(90deg, rgba(168, 85, 247, .13) 0%, rgba(168, 85, 247, .04) 100%);
+        border-bottom: 1px solid rgba(168, 85, 247, .2);
       }
 
       .ai-notice-dot-wrap {
@@ -754,7 +797,7 @@
         inset: 0;
         border-radius: 50%;
         background: var(--accent);
-        animation: ping 2s cubic-bezier(0,0,.2,1) infinite;
+        animation: ping 2s cubic-bezier(0, 0, .2, 1) infinite;
       }
 
       .ai-notice-badge {
@@ -778,7 +821,7 @@
         gap: 14px;
       }
 
-      .ai-notice-body > p {
+      .ai-notice-body>p {
         font-size: 14px;
         color: var(--fg-2);
         line-height: 1.75;
@@ -806,10 +849,13 @@
         font-family: var(--mono);
       }
 
-      .ai-flow-chip svg { color: var(--accent); flex-shrink: 0; }
+      .ai-flow-chip svg {
+        color: var(--accent);
+        flex-shrink: 0;
+      }
 
       .ai-flow-chip.blocked {
-        border-color: rgba(239,68,68,.3);
+        border-color: rgba(239, 68, 68, .3);
         color: var(--fg-4);
         position: relative;
       }
@@ -819,11 +865,18 @@
         position: absolute;
         inset: -1px;
         border-radius: 8px;
-        border: 1px solid rgba(239,68,68,.3);
+        border: 1px solid rgba(239, 68, 68, .3);
       }
 
-      .ai-flow-arrow { font-size: 14px; color: var(--fg-4); flex-shrink: 0; }
-      .ai-flow-arrow.blocked { color: #EF4444; }
+      .ai-flow-arrow {
+        font-size: 14px;
+        color: var(--fg-4);
+        flex-shrink: 0;
+      }
+
+      .ai-flow-arrow.blocked {
+        color: #EF4444;
+      }
 
       .ai-features-grid {
         display: grid;
@@ -853,7 +906,10 @@
         color: var(--fg);
       }
 
-      .ai-feat-label svg { color: var(--accent); flex-shrink: 0; }
+      .ai-feat-label svg {
+        color: var(--accent);
+        flex-shrink: 0;
+      }
 
       .ai-feat p {
         font-size: 12px;
@@ -863,8 +919,13 @@
       }
 
       @media (max-width: 640px) {
-        .ai-features-grid { grid-template-columns: 1fr; }
-        .ai-flow { gap: 6px; }
+        .ai-features-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .ai-flow {
+          gap: 6px;
+        }
       }
 
       /* SVG icon util */
@@ -922,13 +983,16 @@
         animation: dot-blink 1.2s ease-in-out infinite;
       }
 
-      .demo-step-sep { font-size: 14px; color: var(--fg-4); }
+      .demo-step-sep {
+        font-size: 14px;
+        color: var(--fg-4);
+      }
 
       .demo-window {
         border: 1px solid var(--border);
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 0 80px rgba(168,85,247,.06), 0 30px 60px rgba(0,0,0,.4);
+        box-shadow: 0 0 80px rgba(168, 85, 247, .06), 0 30px 60px rgba(0, 0, 0, .4);
       }
 
       .demo-chrome {
@@ -1008,7 +1072,7 @@
         padding: 7px 14px;
         font-size: 11px;
         color: var(--fg-3);
-        border-bottom: 1px solid rgba(39,39,42,.4);
+        border-bottom: 1px solid rgba(39, 39, 42, .4);
         white-space: nowrap;
         overflow: hidden;
       }
@@ -1029,9 +1093,20 @@
         flex-shrink: 0;
       }
 
-      .demo-m.get  { background: rgba(34,197,94,.15);  color: #22C55E; }
-      .demo-m.post { background: rgba(249,115,22,.15);  color: #F97316; }
-      .demo-m.del  { background: rgba(239,68,68,.15);   color: #EF4444; }
+      .demo-m.get {
+        background: rgba(34, 197, 94, .15);
+        color: #22C55E;
+      }
+
+      .demo-m.post {
+        background: rgba(249, 115, 22, .15);
+        color: #F97316;
+      }
+
+      .demo-m.del {
+        background: rgba(239, 68, 68, .15);
+        color: #EF4444;
+      }
 
       .demo-main {
         flex: 1;
@@ -1058,7 +1133,7 @@
         font-weight: 700;
         padding: 3px 10px;
         border-radius: 5px;
-        background: rgba(34,197,94,.15);
+        background: rgba(34, 197, 94, .15);
         color: #22C55E;
         flex-shrink: 0;
       }
@@ -1088,8 +1163,15 @@
       }
 
       @keyframes cursor-blink {
-        0%, 100% { opacity: 1; }
-        50%      { opacity: 0; }
+
+        0%,
+        100% {
+          opacity: 1;
+        }
+
+        50% {
+          opacity: 0;
+        }
       }
 
       .demo-send-btn {
@@ -1107,7 +1189,7 @@
 
       .demo-send-btn.pop {
         transform: scale(.9);
-        box-shadow: 0 0 16px rgba(168,85,247,.7);
+        box-shadow: 0 0 16px rgba(168, 85, 247, .7);
       }
 
       .demo-meta-row {
@@ -1121,10 +1203,24 @@
         min-height: 34px;
       }
 
-      .demo-status-ok { font-family: var(--mono); font-size: 11px; font-weight: 700; color: #22C55E; }
-      .demo-timing    { font-family: var(--mono); font-size: 10px; color: var(--fg-4); }
+      .demo-status-ok {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: #22C55E;
+      }
 
-      .demo-resp-tabs { margin-left: auto; display: flex; gap: 2px; }
+      .demo-timing {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--fg-4);
+      }
+
+      .demo-resp-tabs {
+        margin-left: auto;
+        display: flex;
+        gap: 2px;
+      }
 
       .demo-resp-tab {
         font-size: 10px;
@@ -1136,7 +1232,10 @@
         cursor: default;
       }
 
-      .demo-resp-tab.active { color: var(--accent); background: var(--accent-10); }
+      .demo-resp-tab.active {
+        color: var(--accent);
+        background: var(--accent-10);
+      }
 
       .demo-content {
         flex: 1;
@@ -1165,7 +1264,11 @@
         flex-shrink: 0;
       }
 
-      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
       .demo-jline {
         display: block;
@@ -1174,7 +1277,10 @@
         transition: opacity .18s ease, transform .18s ease;
       }
 
-      .demo-jline.on { opacity: 1; transform: translateX(0); }
+      .demo-jline.on {
+        opacity: 1;
+        transform: translateX(0);
+      }
 
       .demo-ai-bar {
         display: flex;
@@ -1187,7 +1293,9 @@
         transition: opacity .3s;
       }
 
-      .demo-ai-bar.on { opacity: 1; }
+      .demo-ai-bar.on {
+        opacity: 1;
+      }
 
       .demo-ai-btn {
         display: inline-flex;
@@ -1207,7 +1315,7 @@
 
       .demo-ai-btn.pop {
         background: var(--accent-20);
-        box-shadow: 0 0 14px rgba(168,85,247,.45);
+        box-shadow: 0 0 14px rgba(168, 85, 247, .45);
       }
 
       .demo-tline {
@@ -1215,26 +1323,51 @@
         align-items: center;
         gap: 8px;
         padding: 5px 0;
-        border-bottom: 1px solid rgba(39,39,42,.35);
+        border-bottom: 1px solid rgba(39, 39, 42, .35);
         opacity: 0;
         transform: translateY(5px);
         transition: opacity .2s ease, transform .2s ease;
       }
 
-      .demo-tline.on { opacity: 1; transform: translateY(0); }
+      .demo-tline.on {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-      .demo-tcheck { color: #22C55E; font-weight: 700; font-size: 12px; flex-shrink: 0; }
-      .demo-tname  { color: var(--fg-2); font-size: 11px; }
+      .demo-tcheck {
+        color: #22C55E;
+        font-weight: 700;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+
+      .demo-tname {
+        color: var(--fg-2);
+        font-size: 11px;
+      }
 
       @media (max-width: 768px) {
-        .demo-sidebar { display: none; }
-        .demo-body    { height: 300px; }
+        .demo-sidebar {
+          display: none;
+        }
+
+        .demo-body {
+          height: 300px;
+        }
       }
 
       @media (max-width: 640px) {
-        .demo-rail    { display: none; }
-        .demo-body    { height: 260px; }
-        .demo-section { padding: 56px 20px; }
+        .demo-rail {
+          display: none;
+        }
+
+        .demo-body {
+          height: 260px;
+        }
+
+        .demo-section {
+          padding: 56px 20px;
+        }
       }
 
       /* ── APP PREVIEW ── */
@@ -1243,17 +1376,37 @@
         max-width: 1000px;
         margin: 0 auto;
       }
-      .preview-dots { display: flex; gap: 6px; }
-      .preview-dots span { width: 10px; height: 10px; border-radius: 50%; }
-      .preview-dots span:nth-child(1) { background: #FF5F57; }
-      .preview-dots span:nth-child(2) { background: #FEBC2E; }
-      .preview-dots span:nth-child(3) { background: #28C840; }
+
+      .preview-dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .preview-dots span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .preview-dots span:nth-child(1) {
+        background: #FF5F57;
+      }
+
+      .preview-dots span:nth-child(2) {
+        background: #FEBC2E;
+      }
+
+      .preview-dots span:nth-child(3) {
+        background: #28C840;
+      }
+
       .app-screenshot {
         border: 1px solid var(--border);
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 0 120px rgba(168,85,247,.08), 0 40px 80px rgba(0,0,0,.5);
+        box-shadow: 0 0 120px rgba(168, 85, 247, .08), 0 40px 80px rgba(0, 0, 0, .5);
       }
+
       .app-screenshot-chrome {
         display: flex;
         align-items: center;
@@ -1263,12 +1416,14 @@
         background: #111;
         border-bottom: 1px solid var(--border);
       }
+
       .app-screenshot-chrome-title {
         font-size: 11px;
         color: var(--fg-4);
         font-family: var(--mono);
         margin: 0 auto;
       }
+
       .app-screenshot img {
         display: block;
         width: 100%;
@@ -1313,7 +1468,9 @@
         white-space: nowrap;
       }
 
-      .gallery-tab:hover { color: var(--fg-2); }
+      .gallery-tab:hover {
+        color: var(--fg-2);
+      }
 
       .gallery-tab.active {
         background: var(--bg-raised);
@@ -1321,17 +1478,21 @@
         color: var(--fg);
       }
 
-      .gallery-tab svg { flex-shrink: 0; }
+      .gallery-tab svg {
+        flex-shrink: 0;
+      }
 
       .gallery-panel {
         display: none;
         border: 1px solid var(--border);
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 0 80px rgba(168,85,247,.06), 0 30px 60px rgba(0,0,0,.4);
+        box-shadow: 0 0 80px rgba(168, 85, 247, .06), 0 30px 60px rgba(0, 0, 0, .4);
       }
 
-      .gallery-panel.active { display: block; }
+      .gallery-panel.active {
+        display: block;
+      }
 
       .gallery-panel-chrome {
         display: flex;
@@ -1377,10 +1538,22 @@
       }
 
       @media (max-width: 640px) {
-        .gallery-tab { font-size: 11px; padding: 7px 6px; }
-        .gallery-tab span { display: none; }
-        .preview-section { padding: 0 20px 56px; }
-        .gallery-section { padding: 56px 20px; }
+        .gallery-tab {
+          font-size: 11px;
+          padding: 7px 6px;
+        }
+
+        .gallery-tab span {
+          display: none;
+        }
+
+        .preview-section {
+          padding: 0 20px 56px;
+        }
+
+        .gallery-section {
+          padding: 56px 20px;
+        }
       }
 
       /* ── FAQ ── */
@@ -1422,7 +1595,9 @@
         line-height: 1.4;
       }
 
-      .faq-q:hover { color: var(--fg); }
+      .faq-q:hover {
+        color: var(--fg);
+      }
 
       .faq-chevron {
         flex-shrink: 0;
@@ -1447,8 +1622,13 @@
         display: block;
       }
 
-      .faq-a p { margin-bottom: 10px; }
-      .faq-a p:last-child { margin-bottom: 0; }
+      .faq-a p {
+        margin-bottom: 10px;
+      }
+
+      .faq-a p:last-child {
+        margin-bottom: 0;
+      }
 
       .faq-a ul {
         padding-left: 18px;
@@ -1599,13 +1779,22 @@
           <!-- Nav rail -->
           <div class="demo-rail">
             <div class="demo-rail-icon active">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
             </div>
             <div class="demo-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
             </div>
             <div class="demo-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
             </div>
           </div>
 
@@ -1648,27 +1837,59 @@
 
       <div class="gallery-tabs" role="tablist">
         <button class="gallery-tab active" onclick="showTab('environments')" role="tab">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
           <span>Environments</span>
         </button>
         <button class="gallery-tab" onclick="showTab('compare')" role="tab">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
+          </svg>
           <span>Compare</span>
         </button>
         <button class="gallery-tab" onclick="showTab('websocket')" role="tab">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+            <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+            <line x1="12" y1="20" x2="12.01" y2="20" />
+          </svg>
           <span>WebSocket</span>
         </button>
         <button class="gallery-tab" onclick="showTab('loadtest')" role="tab">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
           <span>Load Test</span>
         </button>
         <button class="gallery-tab" onclick="showTab('mock')" role="tab">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+          </svg>
           <span>Mock Server</span>
         </button>
         <button class="gallery-tab" onclick="showTab('cli')" role="tab">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
           <span>CLI Tools</span>
         </button>
       </div>
@@ -1678,10 +1899,13 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="gallery-panel-title">Flux — Environments</span>
         </div>
-        <img src="assets2.jpeg" alt="Environments — manage variables across dev, staging and production" loading="lazy" />
+        <img src="assets2.jpeg" alt="Environments — manage variables across dev, staging and production"
+          loading="lazy" />
         <div class="gallery-caption">
           <strong>Environments</strong>
-          <span>Multiple named environments. Use <code style="font-family:var(--mono);color:var(--accent);font-size:11px">{{BASE_URL}}</code> anywhere in URLs, headers and body. Switch instantly from the top bar.</span>
+          <span>Multiple named environments. Use <code
+              style="font-family:var(--mono);color:var(--accent);font-size:11px">{{BASE_URL}}</code> anywhere in URLs,
+            headers and body. Switch instantly from the top bar.</span>
         </div>
       </div>
 
@@ -1690,10 +1914,12 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="gallery-panel-title">Flux — Response Compare</span>
         </div>
-        <img src="assets3.jpeg" alt="Response Compare — same request across two environments side by side" loading="lazy" />
+        <img src="assets3.jpeg" alt="Response Compare — same request across two environments side by side"
+          loading="lazy" />
         <div class="gallery-caption">
           <strong>Response Compare</strong>
-          <span>Send the same request to two environments simultaneously. Side-by-side diff of status, timing and body — ideal for staging vs. production checks.</span>
+          <span>Send the same request to two environments simultaneously. Side-by-side diff of status, timing and body —
+            ideal for staging vs. production checks.</span>
         </div>
       </div>
 
@@ -1702,10 +1928,12 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="gallery-panel-title">Flux — WebSocket</span>
         </div>
-        <img src="assets4.jpeg" alt="WebSocket client — connect to wss:// endpoints with real-time message log" loading="lazy" />
+        <img src="assets4.jpeg" alt="WebSocket client — connect to wss:// endpoints with real-time message log"
+          loading="lazy" />
         <div class="gallery-caption">
           <strong>WebSocket Client</strong>
-          <span>Full-duplex WebSocket client. Connect to any ws:// or wss:// endpoint, send JSON messages from a Monaco editor, and see a live timestamped log.</span>
+          <span>Full-duplex WebSocket client. Connect to any ws:// or wss:// endpoint, send JSON messages from a Monaco
+            editor, and see a live timestamped log.</span>
         </div>
       </div>
 
@@ -1714,10 +1942,12 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="gallery-panel-title">Flux — Load Test</span>
         </div>
-        <img src="assets5.jpeg" alt="Load Test — concurrent request runner with P95/P99 latency report" loading="lazy" />
+        <img src="assets5.jpeg" alt="Load Test — concurrent request runner with P95/P99 latency report"
+          loading="lazy" />
         <div class="gallery-caption">
           <strong>Load Test</strong>
-          <span>Run any request N times with C concurrent workers. Live progress bar + final report: min / avg / P50 / P95 / P99 / max latency, throughput and error rate. No k6, no wrk needed.</span>
+          <span>Run any request N times with C concurrent workers. Live progress bar + final report: min / avg / P50 /
+            P95 / P99 / max latency, throughput and error rate. No k6, no wrk needed.</span>
         </div>
       </div>
 
@@ -1726,10 +1956,12 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="gallery-panel-title">Flux — Mock Server</span>
         </div>
-        <img src="assets6.jpeg" alt="Mock Server — localhost HTTP server with AI-generated response bodies" loading="lazy" />
+        <img src="assets6.jpeg" alt="Mock Server — localhost HTTP server with AI-generated response bodies"
+          loading="lazy" />
         <div class="gallery-caption">
           <strong>Local Mock Server</strong>
-          <span>Spin up a localhost HTTP server in one click. Define endpoints, set response bodies (AI-generated or manual), add artificial delay. No Docker, no config files.</span>
+          <span>Spin up a localhost HTTP server in one click. Define endpoints, set response bodies (AI-generated or
+            manual), add artificial delay. No Docker, no config files.</span>
         </div>
       </div>
 
@@ -1738,10 +1970,12 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="gallery-panel-title">Flux — CLI Tools</span>
         </div>
-        <img src="assets7.jpeg" alt="CLI Tools — run Flux collections from terminal and CI/CD pipelines" loading="lazy" />
+        <img src="assets7.jpeg" alt="CLI Tools — run Flux collections from terminal and CI/CD pipelines"
+          loading="lazy" />
         <div class="gallery-caption">
           <strong>CLI Runner</strong>
-          <span>Run Flux collections from your terminal or CI/CD pipeline. Returns exit code 1 on test failures — plug it directly into GitHub Actions, Jenkins or any automation tool.</span>
+          <span>Run Flux collections from your terminal or CI/CD pipeline. Returns exit code 1 on test failures — plug
+            it directly into GitHub Actions, Jenkins or any automation tool.</span>
         </div>
       </div>
     </section>
@@ -1787,7 +2021,8 @@
     <section id="features">
       <div class="section-label">Features</div>
       <h2 class="section-title">Everything you need</h2>
-      <p class="section-desc">From basic HTTP requests to AI-generated tests, load testing, local mock servers and cloud sync, all
+      <p class="section-desc">From basic HTTP requests to AI-generated tests, load testing, local mock servers and cloud
+        sync, all
         in one native desktop app under 30 MB of RAM.</p>
 
       <div class="features">
@@ -1918,39 +2153,54 @@
                 <span class="ai-notice-dot-ring"></span>
                 <span class="ai-notice-dot"></span>
               </div>
-              <span class="ai-notice-badge">Important   API key required</span>
-              <svg style="margin-left:auto;flex-shrink:0;color:var(--accent)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              <span class="ai-notice-badge">Important API key required</span>
+              <svg style="margin-left:auto;flex-shrink:0;color:var(--accent)" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
             <div class="ai-notice-body">
               <p>
-                <strong>Flux does not include an API key.</strong> You must provide your own Claude API key from Anthropic. It is stored <strong>only on your local device</strong> and is never sent to Flux servers   every AI call goes <strong>directly from your machine to Anthropic's API</strong>.
+                <strong>Flux does not include an API key.</strong> You must provide your own Claude API key from
+                Anthropic. It is stored <strong>only on your local device</strong> and is never sent to Flux servers
+                every AI call goes <strong>directly from your machine to Anthropic's API</strong>.
               </p>
               <div class="ai-flow">
                 <div class="ai-flow-chip">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
                   </svg>
                   Your device
                 </div>
                 <span class="ai-flow-arrow">→</span>
                 <div class="ai-flow-chip">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                   </svg>
                   Anthropic API
                 </div>
                 <span class="ai-flow-arrow blocked">✕</span>
                 <div class="ai-flow-chip blocked">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                   </svg>
                   Flux servers
                 </div>
               </div>
               <p style="font-size:12px;color:var(--fg-4);margin:0;">
-                To enable: open <strong style="color:var(--fg-3)">Settings → AI &amp; Claude</strong>, paste your key (starts with <code style="font-family:var(--mono);color:var(--accent)">sk-ant-</code>) and choose a model. Get your key at <code style="font-family:var(--mono);color:var(--accent)">console.anthropic.com/account/keys</code>. Usage is billed by Anthropic directly on your account.
+                To enable: open <strong style="color:var(--fg-3)">Settings → AI &amp; Claude</strong>, paste your key
+                (starts with <code style="font-family:var(--mono);color:var(--accent)">sk-ant-</code>) and choose a
+                model. Get your key at <code
+                  style="font-family:var(--mono);color:var(--accent)">console.anthropic.com/account/keys</code>. Usage
+                is billed by Anthropic directly on your account.
               </p>
             </div>
           </div>
@@ -2088,12 +2338,15 @@
             </div>
           </div>
           <ul>
-            <li>Spin up a localhost HTTP server directly from the app   no Docker, no external tools</li>
+            <li>Spin up a localhost HTTP server directly from the app no Docker, no external tools</li>
             <li>Define endpoints: method, path, status code, response body, content type and artificial delay</li>
-            <li>Wildcard path matching   <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">/api/users/*</code> matches any sub-path</li>
+            <li>Wildcard path matching <code
+                style="font-family:var(--mono);font-size:11px;color:var(--accent)">/api/users/*</code> matches any
+              sub-path</li>
             <li>Hot-reload: add or edit endpoints while the server is running, no restart needed</li>
             <li>CORS headers injected automatically so any browser or client can connect immediately</li>
-            <li>AI button on every endpoint: Claude generates a realistic JSON body from the method and path context</li>
+            <li>AI button on every endpoint: Claude generates a realistic JSON body from the method and path context
+            </li>
           </ul>
         </div>
 
@@ -2113,11 +2366,11 @@
             </div>
           </div>
           <ul>
-            <li>Run any request N times with C concurrent workers   no k6, wrk or ab needed</li>
+            <li>Run any request N times with C concurrent workers no k6, wrk or ab needed</li>
             <li>Configurable: total requests, concurrency level and per-request timeout</li>
             <li>Live progress bar showing real-time req/s and average latency as the test runs</li>
             <li>Final report: min / avg / P50 / P95 / P99 / max latency, throughput and error rate</li>
-            <li>Latency distribution histogram   see exactly where the slow tail is hiding</li>
+            <li>Latency distribution histogram see exactly where the slow tail is hiding</li>
             <li>Pre-fills URL and method from the current request in the builder</li>
           </ul>
         </div>
@@ -2138,8 +2391,9 @@
           </div>
           <ul>
             <li>Every response includes a Timeline tab with a proportional waterfall chart</li>
-            <li><strong>Connect + Waiting (TTFB)</strong>   DNS resolution, TCP handshake, TLS, and server processing time combined</li>
-            <li><strong>Download</strong>   time to receive the full response body after headers arrive</li>
+            <li><strong>Connect + Waiting (TTFB)</strong> DNS resolution, TCP handshake, TLS, and server processing time
+              combined</li>
+            <li><strong>Download</strong> time to receive the full response body after headers arrive</li>
             <li>Exact millisecond values for each phase and a summary table with size and status</li>
             <li>Same level of detail as the Chrome DevTools Network tab, built directly into the response panel</li>
           </ul>
@@ -2212,15 +2466,17 @@
             <strong>Spin up a mock server</strong>
             <p>Open the Mock Server tab from the left nav. Add endpoints (method, path, status, body), set a port and
               click Start. Your local server is live at <code
-                style="font-family:var(--mono);font-size:12px;color:var(--accent)">http://localhost:3001</code> instantly
-                no Docker, no config files.</p>
+                style="font-family:var(--mono);font-size:12px;color:var(--accent)">http://localhost:3001</code>
+              instantly
+              no Docker, no config files.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num">8</div>
           <div class="step-body">
             <strong>Run a load test</strong>
-            <p>Open the Load Test tab, set total requests and concurrency, and click Run. Watch the live progress bar and
+            <p>Open the Load Test tab, set total requests and concurrency, and click Run. Watch the live progress bar
+              and
               see min / avg / P95 / P99 latency, throughput and error rate the moment the test finishes.</p>
           </div>
         </div>
@@ -2372,24 +2628,38 @@
         <div class="faq-item open">
           <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
             Why do I have to provide my own API key? Why doesn't Flux include one?
-            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="faq-a">
             <p>Three reasons, each on its own makes it non-negotiable:</p>
             <ul>
               <li>
-                <strong>Security.</strong> If Flux shipped a built-in key, every user would share the same secret. One person decompiling the binary, or a single leaked GitHub commit, would expose it to the entire internet, immediately draining the account. Your own key belongs only to you.
+                <strong>Security.</strong> If Flux shipped a built-in key, every user would share the same secret. One
+                person decompiling the binary, or a single leaked GitHub commit, would expose it to the entire internet,
+                immediately draining the account. Your own key belongs only to you.
               </li>
               <li>
-                <strong>Privacy.</strong> With your key, every AI request travels <em>directly</em> from your machine to Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing. If a shared key were used, those calls would have to route through a Flux backend, meaning a third party would process your data.
+                <strong>Privacy.</strong> With your key, every AI request travels <em>directly</em> from your machine to
+                Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing. If a shared
+                key were used, those calls would have to route through a Flux backend, meaning a third party would
+                process your data.
               </li>
               <li>
-                <strong>Cost &amp; fairness.</strong> The API is not free. Bundling a key would mean Flux pays for every AI call every user makes, which is unsustainable for a free, open-source tool. With BYOK ("bring your own key") you pay Anthropic directly, only for what you use, at the published rate. No subscription, no hidden fees.
+                <strong>Cost &amp; fairness.</strong> The API is not free. Bundling a key would mean Flux pays for every
+                AI call every user makes, which is unsustainable for a free, open-source tool. With BYOK ("bring your
+                own key") you pay Anthropic directly, only for what you use, at the published rate. No subscription, no
+                hidden fees.
               </li>
             </ul>
             <p style="margin-top:12px;">
               <span class="faq-tag">How to set it up</span>
-              Open <strong style="color:var(--fg-2)">Settings → AI &amp; Claude</strong>, paste your key (starts with <code style="font-family:var(--mono);color:var(--accent);font-size:12px">sk-ant-</code>), and pick a model. Get your key at <code style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/account/keys</code>.
+              Open <strong style="color:var(--fg-2)">Settings → AI &amp; Claude</strong>, paste your key (starts with
+              <code style="font-family:var(--mono);color:var(--accent);font-size:12px">sk-ant-</code>), and pick a
+              model. Get your key at <code
+                style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/account/keys</code>.
             </p>
           </div>
         </div>
@@ -2397,32 +2667,51 @@
         <div class="faq-item">
           <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
             Is my API key or request data stored in the cloud?
-            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="faq-a">
-            <p>Your API key is stored <strong>only on your local device</strong> using the OS secure storage. It is explicitly excluded from cloud sync, even if you sign in to sync your collections, the key never leaves your machine.</p>
-            <p>Request bodies, response bodies, and everything you send through Flux goes directly from your device to the target server (or to Anthropic when using AI features). Flux has no relay server in the middle.</p>
+            <p>Your API key is stored <strong>only on your local device</strong> using the OS secure storage. It is
+              explicitly excluded from cloud sync, even if you sign in to sync your collections, the key never leaves
+              your machine.</p>
+            <p>Request bodies, response bodies, and everything you send through Flux goes directly from your device to
+              the target server (or to Anthropic when using AI features). Flux has no relay server in the middle.</p>
           </div>
         </div>
 
         <div class="faq-item">
           <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
             How much does it cost to use the AI features?
-            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="faq-a">
-            <p>Flux itself is free. The only cost is what Anthropic charges for the API calls you make, billed directly to your Anthropic account. In practice, typical developer use (generating tests, debugging errors) costs a few cents per month, AI calls in Flux are short, focused prompts, not long conversations.</p>
-            <p>You can monitor your exact usage at <code style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/usage</code>. The cheapest model (<strong>Haiku</strong>) is recommended for everyday use; switch to Sonnet when you need deeper reasoning.</p>
+            <p>Flux itself is free. The only cost is what Anthropic charges for the API calls you make, billed directly
+              to your Anthropic account. In practice, typical developer use (generating tests, debugging errors) costs a
+              few cents per month, AI calls in Flux are short, focused prompts, not long conversations.</p>
+            <p>You can monitor your exact usage at <code
+                style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/usage</code>.
+              The cheapest model (<strong>Haiku</strong>) is recommended for everyday use; switch to Sonnet when you
+              need deeper reasoning.</p>
           </div>
         </div>
 
         <div class="faq-item">
           <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
             Does Flux work completely offline?
-            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
           <div class="faq-a">
-            <p>Yes, all core features work without an internet connection: sending HTTP requests, running tests, the mock server, load testing, environment variables, code snippets, and the CLI runner. The only features that require a connection are the AI functions (which call Anthropic's API) and cloud sync (optional).</p>
+            <p>Yes, all core features work without an internet connection: sending HTTP requests, running tests, the
+              mock server, load testing, environment variables, code snippets, and the CLI runner. The only features
+              that require a connection are the AI functions (which call Anthropic's API) and cloud sync (optional).</p>
           </div>
         </div>
 
@@ -2465,87 +2754,87 @@
       </div>
     </footer>
 
-  <script>
-    /* ── FAQ toggle ── */
-    document.querySelectorAll('.faq-q').forEach(btn => {
-      btn.addEventListener('click', () => btn.closest('.faq-item').classList.toggle('open'));
-    });
+    <script>
+      /* ── FAQ toggle ── */
+      document.querySelectorAll('.faq-q').forEach(btn => {
+        btn.addEventListener('click', () => btn.closest('.faq-item').classList.toggle('open'));
+      });
 
-    /* ── Feature Gallery ── */
-    function showTab(id) {
-      document.querySelectorAll('.gallery-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('tab-' + id).classList.add('active');
-      event.currentTarget.classList.add('active');
-    }
-
-    /* ── Animated Demo ── */
-    (function () {
-      const URL_TEXT = 'https://api.example.com/users';
-      const JSON_LINES = [
-        `<span style="color:var(--fg-4)">[</span>`,
-        `&nbsp;&nbsp;<span style="color:var(--fg-4)">{</span>`,
-        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"id"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#86EFAC">1</span><span style="color:var(--fg-4)">,</span>`,
-        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"name"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"Alice Johnson"</span><span style="color:var(--fg-4)">,</span>`,
-        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"role"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"developer"</span><span style="color:var(--fg-4)">,</span>`,
-        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"active"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#93C5FD">true</span>`,
-        `&nbsp;&nbsp;<span style="color:var(--fg-4)">}</span>`,
-        `<span style="color:var(--fg-4)">]</span>`,
-      ];
-      const TESTS = [
-        'status == 200',
-        'body[0].id != null',
-        'body[0].name is string',
-        'body[0].active == true',
-        'duration &lt; 500',
-      ];
-
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-      function setStep(n) {
-        [1, 2, 3].forEach(i => {
-          document.getElementById('dpill-' + i).classList.toggle('active', i === n);
-        });
+      /* ── Feature Gallery ── */
+      function showTab(id) {
+        document.querySelectorAll('.gallery-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + id).classList.add('active');
+        event.currentTarget.classList.add('active');
       }
 
-      async function runDemo() {
-        const urlField = document.getElementById('d-url');
-        const sendBtn  = document.getElementById('d-send');
-        const metaRow  = document.getElementById('d-meta');
-        const content  = document.getElementById('d-content');
-        if (!urlField) return;
+      /* ── Animated Demo ── */
+      (function () {
+        const URL_TEXT = 'https://api.example.com/users';
+        const JSON_LINES = [
+          `<span style="color:var(--fg-4)">[</span>`,
+          `&nbsp;&nbsp;<span style="color:var(--fg-4)">{</span>`,
+          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"id"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#86EFAC">1</span><span style="color:var(--fg-4)">,</span>`,
+          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"name"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"Alice Johnson"</span><span style="color:var(--fg-4)">,</span>`,
+          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"role"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"developer"</span><span style="color:var(--fg-4)">,</span>`,
+          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"active"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#93C5FD">true</span>`,
+          `&nbsp;&nbsp;<span style="color:var(--fg-4)">}</span>`,
+          `<span style="color:var(--fg-4)">]</span>`,
+        ];
+        const TESTS = [
+          'status == 200',
+          'body[0].id != null',
+          'body[0].name is string',
+          'body[0].active == true',
+          'duration &lt; 500',
+        ];
 
-        /* ── reset ── */
-        const cursor = document.createElement('span');
-        cursor.className = 'demo-cursor';
-        urlField.textContent = '';
-        urlField.appendChild(cursor);
-        metaRow.innerHTML = '';
-        content.innerHTML = '';
-        setStep(1);
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        await sleep(500);
-
-        /* ── phase 1: type URL ── */
-        for (let i = 0; i < URL_TEXT.length; i++) {
-          urlField.insertBefore(document.createTextNode(URL_TEXT[i]), cursor);
-          await sleep(38 + Math.random() * 22);
+        function setStep(n) {
+          [1, 2, 3].forEach(i => {
+            document.getElementById('dpill-' + i).classList.toggle('active', i === n);
+          });
         }
 
-        await sleep(350);
+        async function runDemo() {
+          const urlField = document.getElementById('d-url');
+          const sendBtn = document.getElementById('d-send');
+          const metaRow = document.getElementById('d-meta');
+          const content = document.getElementById('d-content');
+          if (!urlField) return;
 
-        /* send click */
-        sendBtn.classList.add('pop');
-        await sleep(160);
-        sendBtn.classList.remove('pop');
+          /* ── reset ── */
+          const cursor = document.createElement('span');
+          cursor.className = 'demo-cursor';
+          urlField.textContent = '';
+          urlField.appendChild(cursor);
+          metaRow.innerHTML = '';
+          content.innerHTML = '';
+          setStep(1);
 
-        /* spinner */
-        content.innerHTML = `<div class="demo-spinner"><div class="demo-spinner-ring"></div>Sending request…</div>`;
-        await sleep(820);
+          await sleep(500);
 
-        /* ── phase 2: response ── */
-        setStep(2);
-        metaRow.innerHTML = `
+          /* ── phase 1: type URL ── */
+          for (let i = 0; i < URL_TEXT.length; i++) {
+            urlField.insertBefore(document.createTextNode(URL_TEXT[i]), cursor);
+            await sleep(38 + Math.random() * 22);
+          }
+
+          await sleep(350);
+
+          /* send click */
+          sendBtn.classList.add('pop');
+          await sleep(160);
+          sendBtn.classList.remove('pop');
+
+          /* spinner */
+          content.innerHTML = `<div class="demo-spinner"><div class="demo-spinner-ring"></div>Sending request…</div>`;
+          await sleep(820);
+
+          /* ── phase 2: response ── */
+          setStep(2);
+          metaRow.innerHTML = `
           <span class="demo-status-ok">200 OK</span>
           <span class="demo-timing">142 ms · 1.2 KB</span>
           <div class="demo-resp-tabs">
@@ -2555,26 +2844,26 @@
             <span class="demo-resp-tab">Timeline</span>
           </div>`;
 
-        content.innerHTML = JSON_LINES.map(l => `<span class="demo-jline">${l}</span>`).join('<br>');
-        for (const el of content.querySelectorAll('.demo-jline')) {
-          await sleep(70);
-          el.classList.add('on');
-        }
+          content.innerHTML = JSON_LINES.map(l => `<span class="demo-jline">${l}</span>`).join('<br>');
+          for (const el of content.querySelectorAll('.demo-jline')) {
+            await sleep(70);
+            el.classList.add('on');
+          }
 
-        await sleep(1800);
+          await sleep(1800);
 
-        /* ── phase 3: tests ── */
-        setStep(3);
+          /* ── phase 3: tests ── */
+          setStep(3);
 
-        /* activate Tests tab */
-        const ttab = document.getElementById('d-ttab');
-        if (ttab) {
-          metaRow.querySelectorAll('.demo-resp-tab').forEach(t => t.classList.remove('active'));
-          ttab.classList.add('active');
-        }
+          /* activate Tests tab */
+          const ttab = document.getElementById('d-ttab');
+          if (ttab) {
+            metaRow.querySelectorAll('.demo-resp-tab').forEach(t => t.classList.remove('active'));
+            ttab.classList.add('active');
+          }
 
-        /* show AI button + test lines */
-        content.innerHTML = `
+          /* show AI button + test lines */
+          content.innerHTML = `
           <div class="demo-ai-bar" id="d-aibar">
             <button class="demo-ai-btn" id="d-aibtn">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -2583,34 +2872,34 @@
           </div>
           ${TESTS.map(t => `<div class="demo-tline"><span class="demo-tcheck">✓</span><span class="demo-tname">${t}</span></div>`).join('')}`;
 
-        await sleep(150);
-        document.getElementById('d-aibar').classList.add('on');
+          await sleep(150);
+          document.getElementById('d-aibar').classList.add('on');
 
-        await sleep(550);
-        const aibtn = document.getElementById('d-aibtn');
-        if (aibtn) { aibtn.classList.add('pop'); await sleep(200); aibtn.classList.remove('pop'); }
+          await sleep(550);
+          const aibtn = document.getElementById('d-aibtn');
+          if (aibtn) { aibtn.classList.add('pop'); await sleep(200); aibtn.classList.remove('pop'); }
 
-        await sleep(250);
-        for (const el of content.querySelectorAll('.demo-tline')) {
-          await sleep(190);
-          el.classList.add('on');
+          await sleep(250);
+          for (const el of content.querySelectorAll('.demo-tline')) {
+            await sleep(190);
+            el.classList.add('on');
+          }
+          if (ttab) ttab.textContent = 'Tests ✓5';
+
+          /* pause then loop */
+          await sleep(3200);
+          runDemo();
         }
-        if (ttab) ttab.textContent = 'Tests ✓5';
 
-        /* pause then loop */
-        await sleep(3200);
-        runDemo();
-      }
-
-      /* start when section enters viewport */
-      const section = document.getElementById('demo');
-      if (section) {
-        new IntersectionObserver((entries, obs) => {
-          if (entries[0].isIntersecting) { obs.disconnect(); runDemo(); }
-        }, { threshold: 0.25 }).observe(section);
-      }
-    })();
-  </script>
+        /* start when section enters viewport */
+        const section = document.getElementById('demo');
+        if (section) {
+          new IntersectionObserver((entries, obs) => {
+            if (entries[0].isIntersecting) { obs.disconnect(); runDemo(); }
+          }, { threshold: 0.25 }).observe(section);
+        }
+      })();
+    </script>
 
   </body>
 
