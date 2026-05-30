@@ -872,6 +872,213 @@
         display: block;
       }
 
+      /* ── APP PREVIEW ── */
+      .preview-section {
+        padding: 0 24px 80px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+      .app-preview {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 0 120px rgba(168,85,247,.07), 0 40px 80px rgba(0,0,0,.5);
+      }
+      .preview-chrome {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        height: 36px;
+        background: #111111;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .preview-dots { display: flex; gap: 6px; }
+      .preview-dots span { width: 10px; height: 10px; border-radius: 50%; }
+      .preview-dots span:nth-child(1) { background: #FF5F57; }
+      .preview-dots span:nth-child(2) { background: #FEBC2E; }
+      .preview-dots span:nth-child(3) { background: #28C840; }
+      .preview-chrome-title {
+        font-size: 11px;
+        color: var(--fg-4);
+        font-family: var(--mono);
+        margin: 0 auto;
+      }
+      .preview-app {
+        display: flex;
+        height: 340px;
+      }
+      .preview-rail {
+        width: 52px;
+        background: #0F0F0F;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 14px 0;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .preview-rail-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .preview-rail-icon.active {
+        background: var(--accent-10);
+        border: 1px solid var(--accent-20);
+      }
+      .preview-sidebar {
+        width: 196px;
+        background: #0F0F0F;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .preview-sidebar-header {
+        padding: 10px 14px 8px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--fg-4);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .preview-sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        font-size: 11px;
+        color: var(--fg-3);
+        border-bottom: 1px solid rgba(39,39,42,.4);
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .preview-sidebar-item.active {
+        background: var(--accent-10);
+        color: var(--fg);
+        border-left: 2px solid var(--accent);
+        padding-left: 12px;
+      }
+      .preview-method {
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .preview-method.get  { background: rgba(34,197,94,.15);  color: #22C55E; }
+      .preview-method.post { background: rgba(249,115,22,.15);  color: #F97316; }
+      .preview-method.del  { background: rgba(239,68,68,.15);   color: #EF4444; }
+      .preview-main {
+        flex: 1;
+        background: #0A0A0A;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .preview-url-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--border);
+        background: #111111;
+        flex-shrink: 0;
+      }
+      .preview-method-pill {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 5px;
+        background: rgba(34,197,94,.15);
+        color: #22C55E;
+        flex-shrink: 0;
+      }
+      .preview-url-input {
+        flex: 1;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--fg-2);
+        background: var(--bg-raised);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 3px 10px;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .preview-send-btn {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 14px;
+        border-radius: 5px;
+        background: var(--accent);
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .preview-response-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 7px 14px;
+        border-bottom: 1px solid var(--border);
+        background: #0D0D0D;
+        flex-shrink: 0;
+      }
+      .preview-status-ok {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: #22C55E;
+      }
+      .preview-timing {
+        font-size: 11px;
+        color: var(--fg-4);
+        font-family: var(--mono);
+      }
+      .preview-tabs {
+        margin-left: auto;
+        display: flex;
+        gap: 1px;
+      }
+      .preview-tab {
+        font-size: 10px;
+        font-family: var(--mono);
+        color: var(--fg-4);
+        padding: 2px 8px;
+      }
+      .preview-tab.active { color: var(--accent); }
+      .preview-body-area {
+        flex: 1;
+        padding: 14px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        line-height: 1.9;
+        overflow: hidden;
+      }
+      @media (max-width: 768px) {
+        .preview-sidebar { display: none; }
+      }
+      @media (max-width: 640px) {
+        .preview-rail { display: none; }
+        .preview-section { padding: 0 20px 56px; }
+        .preview-app { height: 260px; }
+      }
+
       /* ── FAQ ── */
       .faq-list {
         display: flex;
@@ -968,7 +1175,7 @@
     <nav>
       <div class="nav-left">
         <span class="nav-logo">Flux</span>
-        <span class="badge">v0.1.0</span>
+        <span class="badge">v0.1.2</span>
       </div>
       <div class="nav-links">
         <a href="#features">Features</a>
@@ -976,6 +1183,14 @@
         <a href="#faq">FAQ</a>
         <a href="#start">Getting Started</a>
         <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">GitHub</a>
+        <a href="https://www.linkedin.com/in/gabriel-zapata-239501287/" target="_blank" title="LinkedIn"
+          style="display:flex;align-items:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+            <rect x="2" y="9" width="4" height="12" />
+            <circle cx="4" cy="4" r="2" />
+          </svg>
+        </a>
       </div>
       <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" class="btn btn-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1036,6 +1251,92 @@
         <div class="stat">
           <span class="stat-value">MIT</span>
           <span class="stat-label">License</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APP PREVIEW ── -->
+    <div class="preview-section">
+      <div class="app-preview">
+        <div class="preview-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="preview-chrome-title">Flux — API Client</span>
+        </div>
+        <div class="preview-app">
+          <!-- NavRail -->
+          <div class="preview-rail">
+            <div class="preview-rail-icon active">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            </div>
+            <div class="preview-rail-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <div class="preview-rail-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div class="preview-rail-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+            </div>
+          </div>
+          <!-- Collections sidebar -->
+          <div class="preview-sidebar">
+            <div class="preview-sidebar-header">My API</div>
+            <div class="preview-sidebar-item active">
+              <span class="preview-method get">GET</span>/users
+            </div>
+            <div class="preview-sidebar-item">
+              <span class="preview-method post">POST</span>/auth/login
+            </div>
+            <div class="preview-sidebar-item">
+              <span class="preview-method get">GET</span>/products
+            </div>
+            <div class="preview-sidebar-item">
+              <span class="preview-method post">POST</span>/orders
+            </div>
+            <div class="preview-sidebar-item">
+              <span class="preview-method del">DEL</span>/users/:id
+            </div>
+          </div>
+          <!-- Request + Response -->
+          <div class="preview-main">
+            <div class="preview-url-row">
+              <span class="preview-method-pill">GET</span>
+              <span class="preview-url-input">https://api.example.com/users</span>
+              <span class="preview-send-btn">Send</span>
+            </div>
+            <div class="preview-response-meta">
+              <span class="preview-status-ok">200 OK</span>
+              <span class="preview-timing">142 ms · 1.2 KB</span>
+              <div class="preview-tabs">
+                <span class="preview-tab active">Body</span>
+                <span class="preview-tab">Headers</span>
+                <span class="preview-tab">Tests ✓3</span>
+                <span class="preview-tab">Timeline</span>
+              </div>
+            </div>
+            <div class="preview-body-area">
+              <span style="color:var(--fg-4)">[</span><br>
+              &nbsp;&nbsp;<span style="color:var(--fg-4)">{</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"id"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#86EFAC">1</span><span style="color:var(--fg-4)">,</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"name"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"Alice Johnson"</span><span style="color:var(--fg-4)">,</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"role"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"developer"</span><span style="color:var(--fg-4)">,</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"active"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#93C5FD">true</span><br>
+              &nbsp;&nbsp;<span style="color:var(--fg-4)">}</span><span style="color:var(--fg-4)">,</span>&nbsp;<span style="color:var(--fg-4)">...</span><br>
+              <span style="color:var(--fg-4)">]</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1730,10 +2031,29 @@
       <div class="footer-left">
         <strong>Flux</strong>
         <span>Open source under the MIT License.</span>
-        <span>Built with Tauri · React · Rust · Claude</span>
+        <span>Built with Tauri · React · Rust</span>
+        <span>by <a href="https://www.linkedin.com/in/gabriel-zapata-239501287/" target="_blank"
+            style="color:var(--fg-3);text-decoration:underline;text-decoration-color:var(--border-2);">Angel
+            Zapata</a></span>
       </div>
       <div class="footer-links">
-        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">GitHub</a>
+        <a href="https://github.com/angeldevmobile" target="_blank" style="display:flex;align-items:center;gap:5px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+          </svg>
+          @angeldevmobile
+        </a>
+        <a href="https://www.linkedin.com/in/gabriel-zapata-239501287/" target="_blank"
+          style="display:flex;align-items:center;gap:5px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+            <rect x="2" y="9" width="4" height="12" />
+            <circle cx="4" cy="4" r="2" />
+          </svg>
+          LinkedIn
+        </a>
+        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">Repo</a>
         <a href="https://github.com/angeldevmobile/Flux-Post/releases" target="_blank">Releases</a>
         <a href="https://github.com/angeldevmobile/Flux-Post/issues" target="_blank">Issues</a>
         <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" target="_blank">License</a>
