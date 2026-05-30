@@ -872,45 +872,90 @@
         display: block;
       }
 
-      /* ── APP PREVIEW ── */
-      .preview-section {
-        padding: 0 24px 80px;
-        max-width: 1000px;
+      /* ── DEMO ── */
+      .demo-section {
+        padding: 80px 24px;
+        max-width: 960px;
         margin: 0 auto;
       }
-      .app-preview {
+
+      .demo-steps-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+      }
+
+      .demo-step-pill {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--fg-4);
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        transition: color .3s, border-color .3s, background .3s;
+        user-select: none;
+      }
+
+      .demo-step-pill.active {
+        color: var(--accent);
+        border-color: var(--accent-20);
+        background: var(--accent-10);
+      }
+
+      .demo-step-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+        transition: background .3s;
+      }
+
+      .demo-step-pill.active .demo-step-dot {
+        animation: dot-blink 1.2s ease-in-out infinite;
+      }
+
+      .demo-step-sep { font-size: 14px; color: var(--fg-4); }
+
+      .demo-window {
         border: 1px solid var(--border);
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 0 120px rgba(168,85,247,.07), 0 40px 80px rgba(0,0,0,.5);
+        box-shadow: 0 0 80px rgba(168,85,247,.06), 0 30px 60px rgba(0,0,0,.4);
       }
-      .preview-chrome {
+
+      .demo-chrome {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 0 16px;
         height: 36px;
-        background: #111111;
+        background: #111;
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
       }
-      .preview-dots { display: flex; gap: 6px; }
-      .preview-dots span { width: 10px; height: 10px; border-radius: 50%; }
-      .preview-dots span:nth-child(1) { background: #FF5F57; }
-      .preview-dots span:nth-child(2) { background: #FEBC2E; }
-      .preview-dots span:nth-child(3) { background: #28C840; }
-      .preview-chrome-title {
+
+      .demo-chrome-title {
         font-size: 11px;
         color: var(--fg-4);
         font-family: var(--mono);
         margin: 0 auto;
       }
-      .preview-app {
+
+      .demo-body {
         display: flex;
-        height: 340px;
+        height: 390px;
       }
-      .preview-rail {
-        width: 52px;
+
+      .demo-rail {
+        width: 48px;
         background: #0F0F0F;
         border-right: 1px solid var(--border);
         display: flex;
@@ -920,7 +965,8 @@
         gap: 10px;
         flex-shrink: 0;
       }
-      .preview-rail-icon {
+
+      .demo-rail-icon {
         width: 28px;
         height: 28px;
         border-radius: 8px;
@@ -929,30 +975,33 @@
         align-items: center;
         justify-content: center;
       }
-      .preview-rail-icon.active {
+
+      .demo-rail-icon.active {
         background: var(--accent-10);
         border: 1px solid var(--accent-20);
       }
-      .preview-sidebar {
-        width: 196px;
+
+      .demo-sidebar {
+        width: 190px;
         background: #0F0F0F;
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        overflow: hidden;
         flex-shrink: 0;
+        overflow: hidden;
       }
-      .preview-sidebar-header {
+
+      .demo-sidebar-hdr {
         padding: 10px 14px 8px;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 600;
         letter-spacing: 1px;
         text-transform: uppercase;
         color: var(--fg-4);
         border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
       }
-      .preview-sidebar-item {
+
+      .demo-sidebar-item {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -960,44 +1009,50 @@
         font-size: 11px;
         color: var(--fg-3);
         border-bottom: 1px solid rgba(39,39,42,.4);
-        overflow: hidden;
         white-space: nowrap;
+        overflow: hidden;
       }
-      .preview-sidebar-item.active {
+
+      .demo-sidebar-item.active {
         background: var(--accent-10);
         color: var(--fg);
         border-left: 2px solid var(--accent);
         padding-left: 12px;
       }
-      .preview-method {
+
+      .demo-m {
         font-family: var(--mono);
-        font-size: 9px;
+        font-size: 8px;
         font-weight: 700;
-        padding: 1px 5px;
+        padding: 1px 4px;
         border-radius: 3px;
         flex-shrink: 0;
       }
-      .preview-method.get  { background: rgba(34,197,94,.15);  color: #22C55E; }
-      .preview-method.post { background: rgba(249,115,22,.15);  color: #F97316; }
-      .preview-method.del  { background: rgba(239,68,68,.15);   color: #EF4444; }
-      .preview-main {
+
+      .demo-m.get  { background: rgba(34,197,94,.15);  color: #22C55E; }
+      .demo-m.post { background: rgba(249,115,22,.15);  color: #F97316; }
+      .demo-m.del  { background: rgba(239,68,68,.15);   color: #EF4444; }
+
+      .demo-main {
         flex: 1;
-        background: #0A0A0A;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        background: #0A0A0A;
         min-width: 0;
       }
-      .preview-url-row {
+
+      .demo-url-row {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 9px 14px;
         border-bottom: 1px solid var(--border);
-        background: #111111;
+        background: #111;
         flex-shrink: 0;
       }
-      .preview-method-pill {
+
+      .demo-method-pill {
         font-family: var(--mono);
         font-size: 10px;
         font-weight: 700;
@@ -1007,7 +1062,8 @@
         color: #22C55E;
         flex-shrink: 0;
       }
-      .preview-url-input {
+
+      .demo-url-field {
         flex: 1;
         font-family: var(--mono);
         font-size: 11px;
@@ -1015,22 +1071,46 @@
         background: var(--bg-raised);
         border: 1px solid var(--border);
         border-radius: 5px;
-        padding: 3px 10px;
+        padding: 4px 10px;
         min-width: 0;
         overflow: hidden;
         white-space: nowrap;
-        text-overflow: ellipsis;
       }
-      .preview-send-btn {
+
+      .demo-cursor {
+        display: inline-block;
+        width: 1.5px;
+        height: 12px;
+        background: var(--accent);
+        vertical-align: middle;
+        margin-left: 1px;
+        animation: cursor-blink .8s step-end infinite;
+      }
+
+      @keyframes cursor-blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0; }
+      }
+
+      .demo-send-btn {
         font-size: 11px;
         font-weight: 600;
-        padding: 3px 14px;
+        padding: 4px 14px;
         border-radius: 5px;
         background: var(--accent);
         color: #fff;
         flex-shrink: 0;
+        border: none;
+        cursor: default;
+        transition: transform .1s, box-shadow .15s;
       }
-      .preview-response-meta {
+
+      .demo-send-btn.pop {
+        transform: scale(.9);
+        box-shadow: 0 0 16px rgba(168,85,247,.7);
+      }
+
+      .demo-meta-row {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -1038,31 +1118,27 @@
         border-bottom: 1px solid var(--border);
         background: #0D0D0D;
         flex-shrink: 0;
+        min-height: 34px;
       }
-      .preview-status-ok {
-        font-family: var(--mono);
-        font-size: 11px;
-        font-weight: 700;
-        color: #22C55E;
-      }
-      .preview-timing {
-        font-size: 11px;
-        color: var(--fg-4);
-        font-family: var(--mono);
-      }
-      .preview-tabs {
-        margin-left: auto;
-        display: flex;
-        gap: 1px;
-      }
-      .preview-tab {
+
+      .demo-status-ok { font-family: var(--mono); font-size: 11px; font-weight: 700; color: #22C55E; }
+      .demo-timing    { font-family: var(--mono); font-size: 10px; color: var(--fg-4); }
+
+      .demo-resp-tabs { margin-left: auto; display: flex; gap: 2px; }
+
+      .demo-resp-tab {
         font-size: 10px;
         font-family: var(--mono);
         color: var(--fg-4);
         padding: 2px 8px;
+        border-radius: 4px;
+        transition: color .2s, background .2s;
+        cursor: default;
       }
-      .preview-tab.active { color: var(--accent); }
-      .preview-body-area {
+
+      .demo-resp-tab.active { color: var(--accent); background: var(--accent-10); }
+
+      .demo-content {
         flex: 1;
         padding: 14px 16px;
         font-family: var(--mono);
@@ -1070,13 +1146,241 @@
         line-height: 1.9;
         overflow: hidden;
       }
-      @media (max-width: 768px) {
-        .preview-sidebar { display: none; }
+
+      .demo-spinner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--fg-4);
+        font-size: 12px;
       }
+
+      .demo-spinner-ring {
+        width: 14px;
+        height: 14px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin .7s linear infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .demo-jline {
+        display: block;
+        opacity: 0;
+        transform: translateX(-5px);
+        transition: opacity .18s ease, transform .18s ease;
+      }
+
+      .demo-jline.on { opacity: 1; transform: translateX(0); }
+
+      .demo-ai-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 8px;
+        opacity: 0;
+        transition: opacity .3s;
+      }
+
+      .demo-ai-bar.on { opacity: 1; }
+
+      .demo-ai-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: var(--accent-10);
+        border: 1px solid var(--accent-20);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: default;
+        transition: background .15s, box-shadow .15s;
+      }
+
+      .demo-ai-btn.pop {
+        background: var(--accent-20);
+        box-shadow: 0 0 14px rgba(168,85,247,.45);
+      }
+
+      .demo-tline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(39,39,42,.35);
+        opacity: 0;
+        transform: translateY(5px);
+        transition: opacity .2s ease, transform .2s ease;
+      }
+
+      .demo-tline.on { opacity: 1; transform: translateY(0); }
+
+      .demo-tcheck { color: #22C55E; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+      .demo-tname  { color: var(--fg-2); font-size: 11px; }
+
+      @media (max-width: 768px) {
+        .demo-sidebar { display: none; }
+        .demo-body    { height: 300px; }
+      }
+
       @media (max-width: 640px) {
-        .preview-rail { display: none; }
+        .demo-rail    { display: none; }
+        .demo-body    { height: 260px; }
+        .demo-section { padding: 56px 20px; }
+      }
+
+      /* ── APP PREVIEW ── */
+      .preview-section {
+        padding: 0 24px 80px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+      .preview-dots { display: flex; gap: 6px; }
+      .preview-dots span { width: 10px; height: 10px; border-radius: 50%; }
+      .preview-dots span:nth-child(1) { background: #FF5F57; }
+      .preview-dots span:nth-child(2) { background: #FEBC2E; }
+      .preview-dots span:nth-child(3) { background: #28C840; }
+      .app-screenshot {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 0 120px rgba(168,85,247,.08), 0 40px 80px rgba(0,0,0,.5);
+      }
+      .app-screenshot-chrome {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        height: 36px;
+        background: #111;
+        border-bottom: 1px solid var(--border);
+      }
+      .app-screenshot-chrome-title {
+        font-size: 11px;
+        color: var(--fg-4);
+        font-family: var(--mono);
+        margin: 0 auto;
+      }
+      .app-screenshot img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      /* ── FEATURE GALLERY ── */
+      .gallery-section {
+        padding: 80px 24px;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      .gallery-tabs {
+        display: flex;
+        gap: 2px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 4px;
+      }
+
+      .gallery-tab {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--fg-4);
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        font-family: inherit;
+        transition: color .15s, background .15s;
+        white-space: nowrap;
+      }
+
+      .gallery-tab:hover { color: var(--fg-2); }
+
+      .gallery-tab.active {
+        background: var(--bg-raised);
+        border: 1px solid var(--border);
+        color: var(--fg);
+      }
+
+      .gallery-tab svg { flex-shrink: 0; }
+
+      .gallery-panel {
+        display: none;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 0 80px rgba(168,85,247,.06), 0 30px 60px rgba(0,0,0,.4);
+      }
+
+      .gallery-panel.active { display: block; }
+
+      .gallery-panel-chrome {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        height: 36px;
+        background: #111;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .gallery-panel-title {
+        font-size: 11px;
+        color: var(--fg-4);
+        font-family: var(--mono);
+        margin: 0 auto;
+      }
+
+      .gallery-panel img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .gallery-caption {
+        padding: 14px 20px;
+        background: var(--bg-card);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .gallery-caption strong {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--fg);
+      }
+
+      .gallery-caption span {
+        font-size: 12px;
+        color: var(--fg-4);
+      }
+
+      @media (max-width: 640px) {
+        .gallery-tab { font-size: 11px; padding: 7px 6px; }
+        .gallery-tab span { display: none; }
         .preview-section { padding: 0 20px 56px; }
-        .preview-app { height: 260px; }
+        .gallery-section { padding: 56px 20px; }
       }
 
       /* ── FAQ ── */
@@ -1257,89 +1561,190 @@
 
     <!-- ── APP PREVIEW ── -->
     <div class="preview-section">
-      <div class="app-preview">
-        <div class="preview-chrome">
+      <div class="app-screenshot">
+        <div class="app-screenshot-chrome">
           <div class="preview-dots"><span></span><span></span><span></span></div>
-          <span class="preview-chrome-title">Flux — API Client</span>
+          <span class="app-screenshot-chrome-title">Flux — API Client</span>
         </div>
-        <div class="preview-app">
-          <!-- NavRail -->
-          <div class="preview-rail">
-            <div class="preview-rail-icon active">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
+        <img src="assets1.png" alt="Flux API Client — main request view with AI Test Generator" loading="lazy" />
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ── DEMO ── -->
+    <section class="demo-section" id="demo">
+      <div class="section-label">See it in action</div>
+      <h2 class="section-title">From URL to tested API in seconds</h2>
+      <p class="section-desc">No setup, no config files, no Docker. Open Flux and start testing.</p>
+
+      <!-- Step indicator -->
+      <div class="demo-steps-row">
+        <div class="demo-step-pill active" id="dpill-1"><span class="demo-step-dot"></span>Type &amp; Send</div>
+        <span class="demo-step-sep">→</span>
+        <div class="demo-step-pill" id="dpill-2"><span class="demo-step-dot"></span>View Response</div>
+        <span class="demo-step-sep">→</span>
+        <div class="demo-step-pill" id="dpill-3"><span class="demo-step-dot"></span>Generate Tests</div>
+      </div>
+
+      <!-- App window -->
+      <div class="demo-window">
+        <!-- Chrome bar -->
+        <div class="demo-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="demo-chrome-title">Flux — API Client</span>
+        </div>
+
+        <div class="demo-body">
+          <!-- Nav rail -->
+          <div class="demo-rail">
+            <div class="demo-rail-icon active">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </div>
-            <div class="preview-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
+            <div class="demo-rail-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </div>
-            <div class="preview-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
-                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-            <div class="preview-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-            </div>
-          </div>
-          <!-- Collections sidebar -->
-          <div class="preview-sidebar">
-            <div class="preview-sidebar-header">My API</div>
-            <div class="preview-sidebar-item active">
-              <span class="preview-method get">GET</span>/users
-            </div>
-            <div class="preview-sidebar-item">
-              <span class="preview-method post">POST</span>/auth/login
-            </div>
-            <div class="preview-sidebar-item">
-              <span class="preview-method get">GET</span>/products
-            </div>
-            <div class="preview-sidebar-item">
-              <span class="preview-method post">POST</span>/orders
-            </div>
-            <div class="preview-sidebar-item">
-              <span class="preview-method del">DEL</span>/users/:id
+            <div class="demo-rail-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
           </div>
-          <!-- Request + Response -->
-          <div class="preview-main">
-            <div class="preview-url-row">
-              <span class="preview-method-pill">GET</span>
-              <span class="preview-url-input">https://api.example.com/users</span>
-              <span class="preview-send-btn">Send</span>
+
+          <!-- Sidebar -->
+          <div class="demo-sidebar">
+            <div class="demo-sidebar-hdr">My API</div>
+            <div class="demo-sidebar-item active"><span class="demo-m get">GET</span>/users</div>
+            <div class="demo-sidebar-item"><span class="demo-m post">POST</span>/auth/login</div>
+            <div class="demo-sidebar-item"><span class="demo-m get">GET</span>/products</div>
+            <div class="demo-sidebar-item"><span class="demo-m post">POST</span>/orders</div>
+            <div class="demo-sidebar-item"><span class="demo-m del">DEL</span>/users/:id</div>
+          </div>
+
+          <!-- Main panel -->
+          <div class="demo-main">
+            <!-- URL bar -->
+            <div class="demo-url-row">
+              <span class="demo-method-pill">GET</span>
+              <div class="demo-url-field" id="d-url"><span class="demo-cursor"></span></div>
+              <button class="demo-send-btn" id="d-send">Send</button>
             </div>
-            <div class="preview-response-meta">
-              <span class="preview-status-ok">200 OK</span>
-              <span class="preview-timing">142 ms · 1.2 KB</span>
-              <div class="preview-tabs">
-                <span class="preview-tab active">Body</span>
-                <span class="preview-tab">Headers</span>
-                <span class="preview-tab">Tests ✓3</span>
-                <span class="preview-tab">Timeline</span>
-              </div>
-            </div>
-            <div class="preview-body-area">
-              <span style="color:var(--fg-4)">[</span><br>
-              &nbsp;&nbsp;<span style="color:var(--fg-4)">{</span><br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"id"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#86EFAC">1</span><span style="color:var(--fg-4)">,</span><br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"name"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"Alice Johnson"</span><span style="color:var(--fg-4)">,</span><br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"role"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"developer"</span><span style="color:var(--fg-4)">,</span><br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"active"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#93C5FD">true</span><br>
-              &nbsp;&nbsp;<span style="color:var(--fg-4)">}</span><span style="color:var(--fg-4)">,</span>&nbsp;<span style="color:var(--fg-4)">...</span><br>
-              <span style="color:var(--fg-4)">]</span>
-            </div>
+
+            <!-- Response meta (status + tabs) -->
+            <div class="demo-meta-row" id="d-meta"></div>
+
+            <!-- Content area -->
+            <div class="demo-content" id="d-content"></div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ── FEATURE GALLERY ── -->
+    <section class="gallery-section">
+      <div class="section-label">Screenshots</div>
+      <h2 class="section-title">Every screen, real and live</h2>
+      <p class="section-desc">Click any feature to see the actual interface — no mockups, no illustrations.</p>
+
+      <div class="gallery-tabs" role="tablist">
+        <button class="gallery-tab active" onclick="showTab('environments')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Environments</span>
+        </button>
+        <button class="gallery-tab" onclick="showTab('compare')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          <span>Compare</span>
+        </button>
+        <button class="gallery-tab" onclick="showTab('websocket')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <span>WebSocket</span>
+        </button>
+        <button class="gallery-tab" onclick="showTab('loadtest')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Load Test</span>
+        </button>
+        <button class="gallery-tab" onclick="showTab('mock')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          <span>Mock Server</span>
+        </button>
+        <button class="gallery-tab" onclick="showTab('cli')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>CLI Tools</span>
+        </button>
+      </div>
+
+      <div id="tab-environments" class="gallery-panel active">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — Environments</span>
+        </div>
+        <img src="assets2.jpeg" alt="Environments — manage variables across dev, staging and production" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Environments</strong>
+          <span>Multiple named environments. Use <code style="font-family:var(--mono);color:var(--accent);font-size:11px">{{BASE_URL}}</code> anywhere in URLs, headers and body. Switch instantly from the top bar.</span>
+        </div>
+      </div>
+
+      <div id="tab-compare" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — Response Compare</span>
+        </div>
+        <img src="assets3.jpeg" alt="Response Compare — same request across two environments side by side" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Response Compare</strong>
+          <span>Send the same request to two environments simultaneously. Side-by-side diff of status, timing and body — ideal for staging vs. production checks.</span>
+        </div>
+      </div>
+
+      <div id="tab-websocket" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — WebSocket</span>
+        </div>
+        <img src="assets4.jpeg" alt="WebSocket client — connect to wss:// endpoints with real-time message log" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>WebSocket Client</strong>
+          <span>Full-duplex WebSocket client. Connect to any ws:// or wss:// endpoint, send JSON messages from a Monaco editor, and see a live timestamped log.</span>
+        </div>
+      </div>
+
+      <div id="tab-loadtest" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — Load Test</span>
+        </div>
+        <img src="assets5.jpeg" alt="Load Test — concurrent request runner with P95/P99 latency report" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Load Test</strong>
+          <span>Run any request N times with C concurrent workers. Live progress bar + final report: min / avg / P50 / P95 / P99 / max latency, throughput and error rate. No k6, no wrk needed.</span>
+        </div>
+      </div>
+
+      <div id="tab-mock" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — Mock Server</span>
+        </div>
+        <img src="assets6.jpeg" alt="Mock Server — localhost HTTP server with AI-generated response bodies" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Local Mock Server</strong>
+          <span>Spin up a localhost HTTP server in one click. Define endpoints, set response bodies (AI-generated or manual), add artificial delay. No Docker, no config files.</span>
+        </div>
+      </div>
+
+      <div id="tab-cli" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — CLI Tools</span>
+        </div>
+        <img src="assets7.jpeg" alt="CLI Tools — run Flux collections from terminal and CI/CD pipelines" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>CLI Runner</strong>
+          <span>Run Flux collections from your terminal or CI/CD pipeline. Returns exit code 1 on test failures — plug it directly into GitHub Actions, Jenkins or any automation tool.</span>
+        </div>
+      </div>
+    </section>
 
     <hr class="divider" />
 
@@ -2059,6 +2464,153 @@
         <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" target="_blank">License</a>
       </div>
     </footer>
+
+  <script>
+    /* ── FAQ toggle ── */
+    document.querySelectorAll('.faq-q').forEach(btn => {
+      btn.addEventListener('click', () => btn.closest('.faq-item').classList.toggle('open'));
+    });
+
+    /* ── Feature Gallery ── */
+    function showTab(id) {
+      document.querySelectorAll('.gallery-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    /* ── Animated Demo ── */
+    (function () {
+      const URL_TEXT = 'https://api.example.com/users';
+      const JSON_LINES = [
+        `<span style="color:var(--fg-4)">[</span>`,
+        `&nbsp;&nbsp;<span style="color:var(--fg-4)">{</span>`,
+        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"id"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#86EFAC">1</span><span style="color:var(--fg-4)">,</span>`,
+        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"name"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"Alice Johnson"</span><span style="color:var(--fg-4)">,</span>`,
+        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"role"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"developer"</span><span style="color:var(--fg-4)">,</span>`,
+        `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"active"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#93C5FD">true</span>`,
+        `&nbsp;&nbsp;<span style="color:var(--fg-4)">}</span>`,
+        `<span style="color:var(--fg-4)">]</span>`,
+      ];
+      const TESTS = [
+        'status == 200',
+        'body[0].id != null',
+        'body[0].name is string',
+        'body[0].active == true',
+        'duration &lt; 500',
+      ];
+
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+      function setStep(n) {
+        [1, 2, 3].forEach(i => {
+          document.getElementById('dpill-' + i).classList.toggle('active', i === n);
+        });
+      }
+
+      async function runDemo() {
+        const urlField = document.getElementById('d-url');
+        const sendBtn  = document.getElementById('d-send');
+        const metaRow  = document.getElementById('d-meta');
+        const content  = document.getElementById('d-content');
+        if (!urlField) return;
+
+        /* ── reset ── */
+        const cursor = document.createElement('span');
+        cursor.className = 'demo-cursor';
+        urlField.textContent = '';
+        urlField.appendChild(cursor);
+        metaRow.innerHTML = '';
+        content.innerHTML = '';
+        setStep(1);
+
+        await sleep(500);
+
+        /* ── phase 1: type URL ── */
+        for (let i = 0; i < URL_TEXT.length; i++) {
+          urlField.insertBefore(document.createTextNode(URL_TEXT[i]), cursor);
+          await sleep(38 + Math.random() * 22);
+        }
+
+        await sleep(350);
+
+        /* send click */
+        sendBtn.classList.add('pop');
+        await sleep(160);
+        sendBtn.classList.remove('pop');
+
+        /* spinner */
+        content.innerHTML = `<div class="demo-spinner"><div class="demo-spinner-ring"></div>Sending request…</div>`;
+        await sleep(820);
+
+        /* ── phase 2: response ── */
+        setStep(2);
+        metaRow.innerHTML = `
+          <span class="demo-status-ok">200 OK</span>
+          <span class="demo-timing">142 ms · 1.2 KB</span>
+          <div class="demo-resp-tabs">
+            <span class="demo-resp-tab active">Body</span>
+            <span class="demo-resp-tab">Headers</span>
+            <span class="demo-resp-tab" id="d-ttab">Tests</span>
+            <span class="demo-resp-tab">Timeline</span>
+          </div>`;
+
+        content.innerHTML = JSON_LINES.map(l => `<span class="demo-jline">${l}</span>`).join('<br>');
+        for (const el of content.querySelectorAll('.demo-jline')) {
+          await sleep(70);
+          el.classList.add('on');
+        }
+
+        await sleep(1800);
+
+        /* ── phase 3: tests ── */
+        setStep(3);
+
+        /* activate Tests tab */
+        const ttab = document.getElementById('d-ttab');
+        if (ttab) {
+          metaRow.querySelectorAll('.demo-resp-tab').forEach(t => t.classList.remove('active'));
+          ttab.classList.add('active');
+        }
+
+        /* show AI button + test lines */
+        content.innerHTML = `
+          <div class="demo-ai-bar" id="d-aibar">
+            <button class="demo-ai-btn" id="d-aibtn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Generate Tests with AI
+            </button>
+          </div>
+          ${TESTS.map(t => `<div class="demo-tline"><span class="demo-tcheck">✓</span><span class="demo-tname">${t}</span></div>`).join('')}`;
+
+        await sleep(150);
+        document.getElementById('d-aibar').classList.add('on');
+
+        await sleep(550);
+        const aibtn = document.getElementById('d-aibtn');
+        if (aibtn) { aibtn.classList.add('pop'); await sleep(200); aibtn.classList.remove('pop'); }
+
+        await sleep(250);
+        for (const el of content.querySelectorAll('.demo-tline')) {
+          await sleep(190);
+          el.classList.add('on');
+        }
+        if (ttab) ttab.textContent = 'Tests ✓5';
+
+        /* pause then loop */
+        await sleep(3200);
+        runDemo();
+      }
+
+      /* start when section enters viewport */
+      const section = document.getElementById('demo');
+      if (section) {
+        new IntersectionObserver((entries, obs) => {
+          if (entries[0].isIntersecting) { obs.disconnect(); runDemo(); }
+        }, { threshold: 0.25 }).observe(section);
+      }
+    })();
+  </script>
 
   </body>
 
