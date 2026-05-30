@@ -1,7 +1,7 @@
 import { useSettingsStore } from "@/stores/settings";
 import { supabase } from "@/lib/supabase";
 
-const APP_VERSION = "0.1.0-beta";
+const APP_VERSION = "0.1.4";
 
 interface AnalyticsEvent {
   type: string;
