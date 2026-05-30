@@ -264,4 +264,4 @@ MIT
 
 ---
 
-Built with [Tauri](https://tauri.app), [React](https://react.dev), [Claude](https://anthropic.com), and Rust
+Built with [Tauri](https://tauri.app), [React](https://react.dev), and Rust
