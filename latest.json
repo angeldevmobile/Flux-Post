@@ -1,11 +1,11 @@
 {
-  "version": "0.1.0",
-  "notes": "Initial public release of Flux — modern AI-powered API client.",
-  "pub_date": "2025-05-26T00:00:00Z",
+  "version": "0.1.2",
+  "notes": "Bug fixes: NSIS-only installer on Windows, flux-cli CI build normalization, bundle target corrections.",
+  "pub_date": "2026-05-29T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRM29MWnZ5ay8ycXhrbkVtZDg2bjlaMG5KZzVZNWhGTGxwdGlTNCtzQml5aEJiWmVSY2hzSGkvVFFIWUZOUkNPL1VkSU9rZWRLRjNOWEZ3OWdGa0YxOFRGcU84UXp4SFFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc5ODUxNjE2CWZpbGU6Rmx1eF8wLjEuMF94NjQtc2V0dXAuZXhlCklZVjBpbGo3TWFwMXZ5Y291bGZuOXZxckxIRlMwU3drVkFBeWtia2o5ME9KZElXV00zOEJXY1BvcTZtTXhMOHFVY3JWZ1p6TWYrd3BER1NMNWp2Q0RBPT0K",
-      "url": "https://github.com/angeldevmobile/Flux-Post/releases/download/v0.1.0/Flux_0.1.0_x64-setup.exe"
+      "signature": "REPLACE_WITH_CONTENT_OF_Flux_0.1.2_x64-setup.exe.sig_FROM_GITHUB_RELEASE",
+      "url": "https://github.com/angeldevmobile/Flux-Post/releases/download/v0.1.2/Flux_0.1.2_x64-setup.exe"
     }
   }
 }

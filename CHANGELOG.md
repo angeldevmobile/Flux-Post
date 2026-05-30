@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
+## [0.1.4] — 2026-05-30
+
+### Fixed
+- Add `createUpdaterArtifacts: true` to bundle config — enables `.sig` generation for auto-updater
+- Releases now publish automatically (non-draft)
+
+---
+
 ## [0.1.3] — 2026-05-30
 
 ### Fixed
