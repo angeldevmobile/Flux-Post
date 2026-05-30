@@ -1672,13 +1672,13 @@
             <p>Three reasons, each on its own makes it non-negotiable:</p>
             <ul>
               <li>
-                <strong>Security.</strong> If Flux shipped a built-in key, every user would share the same secret. One person decompiling the binary — or a single leaked GitHub commit — would expose it to the entire internet, immediately draining the account. Your own key belongs only to you.
+                <strong>Security.</strong> If Flux shipped a built-in key, every user would share the same secret. One person decompiling the binary, or a single leaked GitHub commit, would expose it to the entire internet, immediately draining the account. Your own key belongs only to you.
               </li>
               <li>
-                <strong>Privacy.</strong> With your key, every AI request travels <em>directly</em> from your machine to Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing. If a shared key were used, those calls would have to route through a Flux backend — meaning a third party would process your data.
+                <strong>Privacy.</strong> With your key, every AI request travels <em>directly</em> from your machine to Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing. If a shared key were used, those calls would have to route through a Flux backend, meaning a third party would process your data.
               </li>
               <li>
-                <strong>Cost &amp; fairness.</strong> The API is not free. Bundling a key would mean Flux pays for every AI call every user makes — which is unsustainable for a free, open-source tool. With BYOK ("bring your own key") you pay Anthropic directly, only for what you use, at the published rate. No subscription, no hidden fees.
+                <strong>Cost &amp; fairness.</strong> The API is not free. Bundling a key would mean Flux pays for every AI call every user makes, which is unsustainable for a free, open-source tool. With BYOK ("bring your own key") you pay Anthropic directly, only for what you use, at the published rate. No subscription, no hidden fees.
               </li>
             </ul>
             <p style="margin-top:12px;">
@@ -1694,7 +1694,7 @@
             <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="faq-a">
-            <p>Your API key is stored <strong>only on your local device</strong> using the OS secure storage. It is explicitly excluded from cloud sync — even if you sign in to sync your collections, the key never leaves your machine.</p>
+            <p>Your API key is stored <strong>only on your local device</strong> using the OS secure storage. It is explicitly excluded from cloud sync, even if you sign in to sync your collections, the key never leaves your machine.</p>
             <p>Request bodies, response bodies, and everything you send through Flux goes directly from your device to the target server (or to Anthropic when using AI features). Flux has no relay server in the middle.</p>
           </div>
         </div>
@@ -1705,7 +1705,7 @@
             <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="faq-a">
-            <p>Flux itself is free. The only cost is what Anthropic charges for the API calls you make, billed directly to your Anthropic account. In practice, typical developer use (generating tests, debugging errors) costs a few cents per month — AI calls in Flux are short, focused prompts, not long conversations.</p>
+            <p>Flux itself is free. The only cost is what Anthropic charges for the API calls you make, billed directly to your Anthropic account. In practice, typical developer use (generating tests, debugging errors) costs a few cents per month, AI calls in Flux are short, focused prompts, not long conversations.</p>
             <p>You can monitor your exact usage at <code style="font-family:var(--mono);color:var(--accent);font-size:12px">console.anthropic.com/usage</code>. The cheapest model (<strong>Haiku</strong>) is recommended for everyday use; switch to Sonnet when you need deeper reasoning.</p>
           </div>
         </div>
@@ -1716,7 +1716,7 @@
             <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="faq-a">
-            <p>Yes — all core features work without an internet connection: sending HTTP requests, running tests, the mock server, load testing, environment variables, code snippets, and the CLI runner. The only features that require a connection are the AI functions (which call Anthropic's API) and cloud sync (optional).</p>
+            <p>Yes, all core features work without an internet connection: sending HTTP requests, running tests, the mock server, load testing, environment variables, code snippets, and the CLI runner. The only features that require a connection are the AI functions (which call Anthropic's API) and cloud sync (optional).</p>
           </div>
         </div>
 
