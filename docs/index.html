@@ -1650,6 +1650,381 @@
         margin-right: 4px;
         vertical-align: middle;
       }
+
+      /* ── WHY FLUX ── */
+      .why-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .why-card {
+        background: var(--bg-card);
+        padding: 28px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .why-card-eyebrow {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .why-card h3 {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+        color: var(--fg);
+        line-height: 1.3;
+        margin: 0;
+      }
+
+      .why-card p {
+        font-size: 13px;
+        color: var(--fg-3);
+        line-height: 1.65;
+        margin: 0;
+      }
+
+      .why-metric {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        background: var(--accent-10);
+        border: 1px solid var(--accent-20);
+        border-radius: 6px;
+        padding: 4px 10px;
+        align-self: flex-start;
+        margin-top: 4px;
+      }
+
+      @media (max-width: 768px) {
+        .why-grid { grid-template-columns: 1fr; }
+      }
+
+      /* ── COMPARE TABLE ── */
+      .compare-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .compare-table th {
+        padding: 13px 20px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--fg-4);
+        background: var(--bg-raised);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+
+      .compare-table th.flux-col {
+        color: var(--accent);
+        background: var(--accent-10);
+        border-bottom-color: var(--accent-20);
+      }
+
+      .compare-table td {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+        color: var(--fg-3);
+        vertical-align: middle;
+        white-space: nowrap;
+      }
+
+      .compare-table tbody tr:last-child td { border-bottom: none; }
+
+      .compare-table tbody tr:hover td { background: var(--bg-raised); }
+
+      .compare-table td.flux-col {
+        background: rgba(168,85,247,.04);
+        color: var(--fg-2);
+      }
+
+      .compare-table tr:hover td.flux-col { background: rgba(168,85,247,.08); }
+
+      .compare-table td.feat-name {
+        font-weight: 500;
+        color: var(--fg-2);
+        white-space: nowrap;
+      }
+
+      .ct-yes   { color: #22C55E; font-size: 15px; font-weight: 700; }
+      .ct-part  { color: #F59E0B; font-size: 15px; }
+      .ct-no    { color: var(--fg-4); font-size: 15px; }
+      .ct-note  { font-size: 11px; color: var(--fg-4); margin-left: 4px; }
+      .ct-ram   { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+      .ct-ram.good { color: #22C55E; }
+      .ct-ram.meh  { color: var(--fg-4); }
+
+      .compare-legend {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--fg-4);
+        align-items: center;
+      }
+
+      .compare-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* ── WHO IS FLUX FOR ── */
+      .who-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .who-card {
+        background: var(--bg-card);
+        padding: 28px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .who-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--accent-10);
+        border: 1px solid var(--accent-20);
+        flex-shrink: 0;
+      }
+
+      .who-card-icon svg { color: var(--accent); }
+
+      .who-card h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--fg);
+        margin: 0;
+      }
+
+      .who-card > p {
+        font-size: 13px;
+        color: var(--fg-3);
+        line-height: 1.65;
+        margin: 0;
+      }
+
+      .who-card ul {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin: 0;
+      }
+
+      .who-card ul li {
+        font-size: 12px;
+        color: var(--fg-3);
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        line-height: 1.5;
+      }
+
+      .who-card ul li::before {
+        content: "→";
+        color: var(--accent);
+        flex-shrink: 0;
+        font-size: 11px;
+        margin-top: 1px;
+      }
+
+      @media (max-width: 768px) {
+        .who-grid { grid-template-columns: 1fr; }
+      }
+
+      /* ── APPLY DEMO ── */
+      .apd-section { padding: 80px 24px; max-width: 960px; margin: 0 auto; }
+
+      .apd-window {
+        border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+        box-shadow: 0 0 80px rgba(168,85,247,.06), 0 30px 60px rgba(0,0,0,.4);
+      }
+
+      .apd-body { display: flex; height: 320px; }
+
+      .apd-left {
+        width: 230px; flex-shrink: 0;
+        border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; background: #0A0A0A;
+      }
+
+      .apd-req-tabs {
+        display: flex; flex-shrink: 0; height: 34px;
+        background: #111; border-bottom: 1px solid var(--border);
+      }
+
+      .apd-req-tab {
+        padding: 0 10px; font-size: 11px;
+        display: flex; align-items: center; color: var(--fg-4); position: relative;
+      }
+
+      .apd-req-tab.active { color: var(--fg); }
+
+      .apd-req-tab.active::after {
+        content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+        height: 2px; border-radius: 2px; background: var(--accent);
+      }
+
+      .apd-left-body {
+        flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 6px;
+      }
+
+      .apd-left-empty { font-size: 11px; color: var(--fg-4); font-style: italic; transition: opacity .3s; }
+
+      .apd-hrow {
+        display: flex; align-items: center;
+        padding: 5px 8px; border-radius: 5px;
+        background: var(--bg-card); border: 1px solid var(--border);
+        opacity: 0; transform: translateY(-8px);
+        transition: opacity .35s ease, transform .35s ease;
+      }
+
+      .apd-hrow.on { opacity: 1; transform: translateY(0); }
+      .apd-hkey { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 600; }
+      .apd-hsep { font-family: var(--mono); font-size: 11px; color: var(--fg-4); margin: 0 4px; }
+      .apd-hval { font-family: var(--mono); font-size: 11px; color: var(--fg-2); }
+      .apd-henabled { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; margin-left: auto; flex-shrink: 0; }
+
+      .apd-right {
+        flex: 1; display: flex; flex-direction: column;
+        background: #0A0A0A; min-width: 0; overflow: hidden;
+      }
+
+      .apd-resp-header {
+        display: flex; align-items: center; gap: 8px;
+        padding: 0 14px; height: 38px;
+        background: #111; border-bottom: 1px solid var(--border); flex-shrink: 0;
+      }
+
+      .apd-resp-tabs-row {
+        display: flex; flex-shrink: 0;
+        height: 32px; border-bottom: 1px solid var(--border); background: #0D0D0D;
+      }
+
+      .apd-resp-tab {
+        padding: 0 10px; font-size: 11px;
+        display: flex; align-items: center; color: var(--fg-4); position: relative;
+      }
+
+      .apd-resp-tab.active { color: var(--fg); }
+
+      .apd-resp-tab.active::after {
+        content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+        height: 2px; background: var(--accent);
+      }
+
+      .apd-resp-body-text {
+        padding: 10px 14px; font-family: var(--mono);
+        font-size: 11px; color: #EF4444; line-height: 1.7;
+        flex: 1; overflow: hidden;
+      }
+
+      .apd-ai-wrap {
+        border-top: 1px solid var(--border);
+        padding: 10px 12px; background: rgba(239,68,68,.04);
+        display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+      }
+
+      .apd-ai-hdr { display: flex; align-items: center; gap: 6px; }
+      .apd-ai-title { font-size: 12px; font-weight: 600; color: var(--fg); flex: 1; }
+      .apd-ai-model { font-family: var(--mono); font-size: 10px; color: var(--fg-4); }
+
+      .apd-loading { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--fg-4); }
+
+      .apd-result { display: flex; flex-direction: column; gap: 5px; }
+
+      .apd-rline { font-size: 11px; line-height: 1.5; opacity: 0; transition: opacity .3s; }
+      .apd-rline.on { opacity: 1; }
+      .apd-rline.what { color: #EF4444; font-weight: 600; }
+      .apd-rline.cause { color: var(--fg-3); }
+      .apd-rline.step { color: var(--fg-3); display: flex; gap: 5px; }
+      .apd-step-n { color: #EF4444; font-weight: 700; flex-shrink: 0; }
+
+      .apd-fix-box {
+        border-top: 1px solid rgba(239,68,68,.18);
+        padding-top: 8px; display: flex; flex-direction: column; gap: 5px;
+        opacity: 0; transform: translateY(5px); transition: opacity .3s, transform .3s;
+      }
+
+      .apd-fix-box.on { opacity: 1; transform: translateY(0); }
+      .apd-fix-lbl { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #EF4444; }
+
+      .apd-fix-row {
+        display: flex; align-items: center; gap: 8px;
+        padding: 6px 8px; border-radius: 6px;
+        background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.18);
+      }
+
+      .apd-fix-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+      .apd-fix-name { font-size: 11px; font-weight: 600; color: var(--fg-2); }
+      .apd-fix-code { font-family: var(--mono); font-size: 10px; color: #EF4444; }
+
+      .apd-apply-btn {
+        flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+        padding: 0 10px; height: 26px; border-radius: 5px;
+        font-size: 11px; font-weight: 600; cursor: default;
+        border: 1px solid rgba(239,68,68,.3); background: rgba(239,68,68,.1);
+        color: #EF4444; transition: transform .1s, box-shadow .15s, background .25s, color .25s, border-color .25s;
+        white-space: nowrap;
+      }
+
+      .apd-apply-btn.pop { transform: scale(.87); box-shadow: 0 0 12px rgba(239,68,68,.5); }
+
+      .apd-apply-btn.done {
+        background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: #22C55E;
+      }
+
+      .apd-debug-btn {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        height: 28px; border-radius: 5px;
+        background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.22);
+        color: #EF4444; font-size: 11px; font-weight: 600; cursor: default;
+        transition: transform .1s, box-shadow .15s;
+      }
+
+      .apd-debug-btn.pop { transform: scale(.95); box-shadow: 0 0 12px rgba(239,68,68,.4); }
+
+      @media (max-width: 640px) {
+        .apd-left { display: none; }
+        .apd-section { padding: 56px 20px; }
+      }
     </style>
   </head>
 
@@ -1697,8 +2072,8 @@
         </svg>
         Open source · MIT License
       </div>
-      <h1>The <span>modern</span> API client for developers</h1>
-      <p>Local-first, AI-powered, cloud-synced. Under 30 MB of RAM, no Electron, no account required to start.</p>
+      <h1>Open-source API client with built-in <span>AI</span>, Load Testing and Mock Servers.</h1>
+      <p>Built with Rust. Under 30 MB RAM. No Electron. No account required.</p>
       <div class="hero-actions">
         <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank"
           class="btn btn-primary btn-lg">
@@ -1729,8 +2104,8 @@
           <span class="stat-label">Installer size</span>
         </div>
         <div class="stat">
-          <span class="stat-value">13+</span>
-          <span class="stat-label">Feature modules</span>
+          <span class="stat-value" style="font-size:15px;letter-spacing:0">AI · Load · Mock</span>
+          <span class="stat-label">Built in, zero extra tools</span>
         </div>
         <div class="stat">
           <span class="stat-value">MIT</span>
@@ -1749,6 +2124,191 @@
         <img src="assets1.png" alt="Flux API Client — main request view with AI Test Generator" loading="lazy" />
       </div>
     </div>
+
+    <hr class="divider" />
+
+    <!-- ── WHY FLUX ── -->
+    <section id="why">
+      <div class="section-label">Why Flux?</div>
+      <h2 class="section-title">Why switch from Postman, Bruno or Insomnia?</h2>
+      <p class="section-desc">Most API clients are Electron wrappers consuming hundreds of MB of RAM. Flux is different — and the difference is obvious from the first request.</p>
+
+      <div class="why-grid">
+        <div class="why-card">
+          <span class="why-card-eyebrow">Performance</span>
+          <h3>Native binary, not a browser wrapper</h3>
+          <p>Postman and Insomnia bundle a full Chromium engine and Node.js runtime. Flux is built with Tauri and Rust — a true native binary with no web runtime overhead.</p>
+          <span class="why-metric">&lt; 30 MB RAM · ~ 5 MB installer</span>
+        </div>
+        <div class="why-card">
+          <span class="why-card-eyebrow">All-in-one</span>
+          <h3>Load testing and mock servers, built in</h3>
+          <p>With Postman you need k6 or wrk for load testing. Bruno needs a separate mock tool. With Flux, both are native features — no extra installs, no Docker, no config files.</p>
+          <span class="why-metric">AI · Load Testing · Mock Server</span>
+        </div>
+        <div class="why-card">
+          <span class="why-card-eyebrow">Privacy</span>
+          <h3>Local-first, no account required to start</h3>
+          <p>Postman requires an account and routes data through their cloud by default. Flux stores everything locally. Cloud sync is opt-in and uses your own Supabase instance — you own your data.</p>
+          <span class="why-metric">No account · No vendor lock-in</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ── COMPARISON TABLE ── -->
+    <section id="compare">
+      <div class="section-label">Comparison</div>
+      <h2 class="section-title">Flux vs the alternatives</h2>
+      <p class="section-desc">A direct look at what sets Flux apart from the tools you may already be using.</p>
+
+      <div class="compare-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th style="min-width:200px">Feature</th>
+              <th class="flux-col">Flux</th>
+              <th>Postman</th>
+              <th>Bruno</th>
+              <th>Insomnia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feat-name">AI Test Generation</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">paid plan</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">limited</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">Built-in Load Testing</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-no">✕</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">Built-in Mock Server</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">cloud only</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">limited</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">Rust Native (no Electron)</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-no">✕</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">RAM Usage</td>
+              <td class="flux-col"><span class="ct-ram good">&lt; 30 MB</span></td>
+              <td><span class="ct-ram meh">~ 500 MB</span></td>
+              <td><span class="ct-ram meh">~ 200 MB</span></td>
+              <td><span class="ct-ram meh">~ 400 MB</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">Installer Size</td>
+              <td class="flux-col"><span class="ct-ram good">~ 5 MB</span></td>
+              <td><span class="ct-ram meh">~ 150 MB</span></td>
+              <td><span class="ct-ram meh">~ 80 MB</span></td>
+              <td><span class="ct-ram meh">~ 130 MB</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">WebSocket + SSE Support</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">WS only</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">limited</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">WS only</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">No Account Required</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-yes">✓</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">some features</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">Open Source</td>
+              <td class="flux-col"><span class="ct-yes">✓</span></td>
+              <td><span class="ct-no">✕</span></td>
+              <td><span class="ct-yes">✓</span></td>
+              <td><span class="ct-part">⚠</span><span class="ct-note">partially</span></td>
+            </tr>
+            <tr>
+              <td class="feat-name">Price</td>
+              <td class="flux-col"><span style="color:#22C55E;font-weight:600">Free forever</span></td>
+              <td><span style="font-size:12px;color:var(--fg-4)">Free / $14/mo+</span></td>
+              <td><span style="font-size:12px;color:var(--fg-4)">Free</span></td>
+              <td><span style="font-size:12px;color:var(--fg-4)">Free / $8/mo+</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="compare-legend">
+        <span class="compare-legend-item"><span class="ct-yes" style="font-size:14px">✓</span> Fully supported</span>
+        <span class="compare-legend-item"><span class="ct-part" style="font-size:14px">⚠</span> Partial or paid</span>
+        <span class="compare-legend-item"><span class="ct-no" style="font-size:14px">✕</span> Not available</span>
+        <span style="margin-left:auto;font-size:11px;font-style:italic">RAM figures are approximate and may vary by workload.</span>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ── WHO IS FLUX FOR ── -->
+    <section id="for">
+      <div class="section-label">Audience</div>
+      <h2 class="section-title">Who is Flux for?</h2>
+      <p class="section-desc">Whether you're building APIs, testing them under load, or mocking a backend that doesn't exist yet.</p>
+
+      <div class="who-grid">
+        <div class="who-card">
+          <div class="who-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+          <h3>Backend Developers</h3>
+          <p>Test APIs as you write them. AI-generated assertions catch regressions before they reach production.</p>
+          <ul>
+            <li>One-click test suite from any response</li>
+            <li>AI debug assist on 4xx and 5xx errors — one-click Apply fixes</li>
+            <li>Environments for dev, staging, production</li>
+          </ul>
+        </div>
+        <div class="who-card">
+          <div class="who-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+          </div>
+          <h3>QA Engineers</h3>
+          <p>Run load tests, validate environments side-by-side, and wire your test collections into CI/CD — with no extra tools.</p>
+          <ul>
+            <li>P95/P99 latency reports, no k6 needed</li>
+            <li>Staging vs. production side-by-side diff</li>
+            <li>CLI runner for GitHub Actions and Jenkins</li>
+          </ul>
+        </div>
+        <div class="who-card">
+          <div class="who-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <h3>Startup Teams</h3>
+          <p>No subscriptions, no cloud accounts, no vendor lock-in. Spin up a mock server in one click while the backend is still being built.</p>
+          <ul>
+            <li>No account required to start</li>
+            <li>Local mock server — no Docker, no config</li>
+            <li>Open source, self-hostable cloud sync</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
     <hr class="divider" />
 
@@ -1822,6 +2382,116 @@
 
             <!-- Content area -->
             <div class="demo-content" id="d-content"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ── APPLY DEMO ── -->
+    <section class="apd-section" id="apply-demo">
+      <div class="section-label">One-click fixes</div>
+      <h2 class="section-title">From error to fixed — one click</h2>
+      <p class="section-desc">AI Debug Assist explains the error in Flux terms and offers instant Apply buttons. Click one and the fix is added directly to your request — no copy-pasting, no tab switching.</p>
+
+      <div class="apd-window">
+        <!-- Chrome + URL bar -->
+        <div class="demo-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="demo-chrome-title">Flux — API Client</span>
+        </div>
+        <div class="demo-url-row">
+          <span class="demo-method-pill">GET</span>
+          <div class="demo-url-field" style="font-size:11px">https://api.github.com/users/octocat</div>
+          <button class="demo-send-btn">Send</button>
+        </div>
+
+        <div class="apd-body">
+          <!-- Left: Request Headers tab -->
+          <div class="apd-left">
+            <div class="apd-req-tabs">
+              <span class="apd-req-tab">Params</span>
+              <span class="apd-req-tab active">Headers</span>
+              <span class="apd-req-tab">Auth</span>
+              <span class="apd-req-tab">Body</span>
+            </div>
+            <div class="apd-left-body">
+              <span class="apd-left-empty" id="apd-empty">No headers added</span>
+              <div class="apd-hrow" id="apd-hrow">
+                <span class="apd-hkey">User-Agent</span>
+                <span class="apd-hsep">:</span>
+                <span class="apd-hval">Flux/0.1.5</span>
+                <span class="apd-henabled"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Response + AI Debug -->
+          <div class="apd-right">
+            <!-- Response header -->
+            <div class="apd-resp-header">
+              <span style="font-size:11px;color:var(--fg-3);flex:1">Response</span>
+              <div style="display:flex;align-items:center;gap:5px;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1)">
+                <span style="width:5px;height:5px;border-radius:50%;background:#EF4444;display:block;flex-shrink:0"></span>
+                <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#EF4444">403 Forbidden</span>
+              </div>
+              <span style="font-family:var(--mono);font-size:10px;color:var(--fg-4)">428ms · 252 B</span>
+            </div>
+            <!-- Response tabs -->
+            <div class="apd-resp-tabs-row">
+              <span class="apd-resp-tab active">Body</span>
+              <span class="apd-resp-tab">Headers</span>
+              <span class="apd-resp-tab">Cookies</span>
+              <span class="apd-resp-tab">Tests</span>
+              <span class="apd-resp-tab">Timeline</span>
+            </div>
+            <!-- Response body -->
+            <div class="apd-resp-body-text">
+              Request forbidden by administrative rules.<br>
+              Make sure your request has a User-Agent header.
+            </div>
+
+            <!-- AI Debug panel -->
+            <div class="apd-ai-wrap">
+              <div class="apd-ai-hdr">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="apd-ai-title">AI Debug Assist</span>
+                <span class="apd-ai-model">claude-sonnet-4-6</span>
+              </div>
+
+              <!-- Phase 0: debug button -->
+              <button class="apd-debug-btn" id="apd-dbgbtn">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Debug with AI
+              </button>
+
+              <!-- Phase 1: loading -->
+              <div class="apd-loading" id="apd-loading" style="display:none">
+                <div class="demo-spinner-ring"></div>
+                <span>Analyzing error...</span>
+              </div>
+
+              <!-- Phase 2+: result -->
+              <div class="apd-result" id="apd-result" style="display:none">
+                <div class="apd-rline what" id="apd-what">GitHub rejected the request — no User-Agent header was sent.</div>
+                <div class="apd-rline cause" id="apd-cause">GitHub's API requires a User-Agent on every request, no exceptions.</div>
+                <div class="apd-rline step" id="apd-step1"><span class="apd-step-n">1.</span><span>Go to the <strong style="color:var(--fg-2)">Headers</strong> tab in the request panel</span></div>
+                <div class="apd-rline step" id="apd-step2"><span class="apd-step-n">2.</span><span>Add <code style="font-family:var(--mono);color:var(--accent);font-size:10px">User-Agent: Flux/0.1.5</code></span></div>
+
+                <!-- Apply fix box -->
+                <div class="apd-fix-box" id="apd-fixbox">
+                  <span class="apd-fix-lbl">Apply fix</span>
+                  <div class="apd-fix-row">
+                    <div class="apd-fix-info">
+                      <span class="apd-fix-name">Add User-Agent header</span>
+                      <code class="apd-fix-code">User-Agent: Flux/0.1.5</code>
+                    </div>
+                    <button class="apd-apply-btn" id="apd-applybtn">⚡ Apply</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2116,7 +2786,7 @@
                 style="font-family:var(--mono);font-size:11px;color:var(--accent)">duration &lt; 500</code></li>
             <li>AI-generated assertions: one click after any response generates a full test suite</li>
             <li>Post-response scripts using pm.test() and pm.expect(), Chai-style API</li>
-            <li>AI fix suggestion when an assertion fails, explains the failure and proposes a fix</li>
+            <li>AI fix suggestion when an assertion fails — Apply button applies the fix directly to the request headers or body</li>
             <li>Batch runner: run all requests in a collection and get a consolidated report</li>
           </ul>
         </div>
@@ -2140,9 +2810,9 @@
           </div>
           <ul>
             <li>Generate test assertions from any response body with one click</li>
-            <li>Debug assist: automatic analysis of 4xx and 5xx errors with fix suggestions</li>
+            <li>Debug assist: structured analysis of 4xx and 5xx errors — what went wrong, root cause, Flux-specific steps, and one-click Apply buttons that add the suggested header, param, or body directly to your request</li>
             <li>AI script editor: describe what your script should do in plain English</li>
-            <li>Fix failing assertions: Claude reads the failure and proposes a corrected assertion</li>
+            <li>Fix failing assertions: Claude proposes a corrected value and an Apply button applies it to the request without leaving the panel</li>
             <li>Analyze batch test failures across an entire collection run</li>
             <li>Requires your own Claude API key, added in Settings, never sent to our servers</li>
           </ul>
@@ -2897,6 +3567,82 @@
           new IntersectionObserver((entries, obs) => {
             if (entries[0].isIntersecting) { obs.disconnect(); runDemo(); }
           }, { threshold: 0.25 }).observe(section);
+        }
+      })();
+
+      /* ── Apply Demo ── */
+      (function () {
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        async function runApplyDemo() {
+          const dbgBtn   = document.getElementById('apd-dbgbtn');
+          const loading  = document.getElementById('apd-loading');
+          const result   = document.getElementById('apd-result');
+          const what     = document.getElementById('apd-what');
+          const cause    = document.getElementById('apd-cause');
+          const step1    = document.getElementById('apd-step1');
+          const step2    = document.getElementById('apd-step2');
+          const fixBox   = document.getElementById('apd-fixbox');
+          const applyBtn = document.getElementById('apd-applybtn');
+          const hrow     = document.getElementById('apd-hrow');
+          const empty    = document.getElementById('apd-empty');
+          if (!dbgBtn) return;
+
+          /* reset */
+          dbgBtn.style.display = 'flex';
+          dbgBtn.classList.remove('pop');
+          loading.style.display = 'none';
+          result.style.display  = 'none';
+          [what, cause, step1, step2].forEach(el => el.classList.remove('on'));
+          fixBox.classList.remove('on');
+          applyBtn.classList.remove('pop', 'done');
+          applyBtn.textContent = '⚡ Apply';
+          hrow.classList.remove('on');
+          empty.style.opacity = '1';
+
+          await sleep(1200);
+
+          /* click Debug with AI */
+          dbgBtn.classList.add('pop');
+          await sleep(180);
+          dbgBtn.classList.remove('pop');
+          dbgBtn.style.display = 'none';
+          loading.style.display = 'flex';
+
+          await sleep(1500);
+
+          /* show structured result */
+          loading.style.display = 'none';
+          result.style.display  = 'flex';
+          await sleep(60);  what.classList.add('on');
+          await sleep(320); cause.classList.add('on');
+          await sleep(300); step1.classList.add('on');
+          await sleep(260); step2.classList.add('on');
+          await sleep(500); fixBox.classList.add('on');
+
+          await sleep(1400);
+
+          /* click Apply */
+          applyBtn.classList.add('pop');
+          await sleep(170);
+          applyBtn.classList.remove('pop');
+          applyBtn.classList.add('done');
+          applyBtn.textContent = '✓ Applied';
+
+          /* header appears in left panel */
+          empty.style.opacity = '0';
+          await sleep(80);
+          hrow.classList.add('on');
+
+          await sleep(3800);
+          runApplyDemo();
+        }
+
+        const sec = document.getElementById('apply-demo');
+        if (sec) {
+          new IntersectionObserver((entries, obs) => {
+            if (entries[0].isIntersecting) { obs.disconnect(); runApplyDemo(); }
+          }, { threshold: 0.3 }).observe(sec);
         }
       })();
     </script>

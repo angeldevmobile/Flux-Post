@@ -14,7 +14,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 | Binary size | ~150 MB | ~5 MB |
 | Requires account | Yes | No, offline first |
 | AI test generation | Paid plan | Built-in (Claude) |
-| AI debug on errors | No | 4xx/5xx auto-analysis |
+| AI debug on errors | No | 4xx/5xx analysis + one-click Apply fixes |
 | AI script editing | No | Natural language edits |
 | SSE / EventStream | No | Full streaming viewer |
 | GraphQL autocomplete | Basic | Schema introspection + Monaco |
@@ -59,7 +59,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 ### Tests
 - Assertion syntax: `status == 200`, `body.token != null`, `duration < 500`
 - AI-generated assertions from Claude, one click after any response
-- AI fix suggestion on failing assertions
+- AI fix suggestion on failing assertions — Apply button applies the fix directly to the request (header or body)
 - Batch test runner across collection requests with pass/fail report
 - Post-response scripts with `pm.test()` and `pm.expect()` Chai-style API
 
@@ -91,9 +91,9 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 
 ### AI (Claude API, your key)
 - Generate test assertions from any response
-- Debug assist on 4xx/5xx errors
+- Debug assist on 4xx/5xx errors: Flux-aware analysis with structured explanation (what, cause, steps) and one-click Apply fixes — suggested headers, params, or body values are applied directly to the request without leaving the panel
 - Edit pre/post scripts with natural language
-- Fix failing assertions with one click
+- Fix failing assertions: AI suggests the corrected value and an Apply button applies it to the request headers or body automatically
 - Analyze batch test failures
 - Generate realistic mock response bodies from endpoint context
 
@@ -201,7 +201,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - GraphQL body type with query, variables, and schema autocomplete
 - AWS SigV4 signing
 - OAuth 2.0 (auth code and client credentials)
-- AI test generation, debug assist, script editing, fix assertions, batch analysis
+- AI test generation, debug assist with one-click Apply fixes, script editing, fix assertions with Apply button, batch analysis
 - Request history (SQLite and cloud sync)
 - Environment compare across multiple environments side by side
 - Command palette (Ctrl+K)
@@ -215,6 +215,13 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 ### In progress
 - gRPC support: `.proto` import, Monaco editor for request messages, server reflection
 - Team workspaces: shared collections with real-time sync via Supabase Realtime
+
+### Planned
+- Native CI/CD integrations: GitHub Actions, GitLab CI, Jenkins — trigger collection runs and post results directly from the pipeline UI
+- Slack and webhook notifications: send pass/fail summaries after a collection run to any channel or endpoint
+- API monitoring: schedule collection runs on a cron, get alerted when an endpoint goes down or a test regresses
+- Postman-compatible public workspace / template gallery: browse and fork community collections from inside the app
+- Browser extension: capture requests from DevTools and send them directly to Flux
 
 ---
 

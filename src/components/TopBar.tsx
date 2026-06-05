@@ -17,6 +17,9 @@ export function TopBar({ onNavigate }: TopBarProps) {
   const [envOpen, setEnvOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const newNameRef = useRef<HTMLInputElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +33,11 @@ export function TopBar({ onNavigate }: TopBarProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Reset create input when dropdown closes
+  useEffect(() => {
+    if (!envOpen) { setCreating(false); setNewName(""); }
+  }, [envOpen]);
+
   // Ctrl+K to open search
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -42,10 +50,20 @@ export function TopBar({ onNavigate }: TopBarProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  function createNew() {
+  function startCreating() {
+    setNewName("");
+    setCreating(true);
+    setTimeout(() => newNameRef.current?.focus(), 0);
+  }
+
+  function confirmCreate() {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
     const id = `env-${Date.now()}`;
-    addEnvironment({ id, name: "New Environment", variables: {} });
+    addEnvironment({ id, name: trimmed, variables: {} });
     setActive(id);
+    setCreating(false);
+    setNewName("");
     setEnvOpen(false);
     onNavigate("environments");
   }
@@ -105,14 +123,38 @@ export function TopBar({ onNavigate }: TopBarProps) {
                 </button>
               ))}
               <div style={{ height: 1, background: "var(--color-border)", margin: "4px 0" }} />
-              <button onClick={createNew}
-                className="flex items-center gap-2 w-full px-3 py-2 transition-colors"
-                style={{ background: "transparent" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                <Plus size={13} style={{ color: "var(--color-fg-3)" }} />
-                <span className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>New environment</span>
-              </button>
+              {creating ? (
+                <div className="flex items-center gap-1 px-2 py-1.5">
+                  <input
+                    ref={newNameRef}
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") confirmCreate();
+                      if (e.key === "Escape") { setCreating(false); setNewName(""); }
+                    }}
+                    placeholder="Environment name"
+                    className="flex-1 px-2 rounded text-[12px] bg-transparent outline-none"
+                    style={{ height: 26, border: "1px solid var(--color-accent)", color: "var(--color-fg)" }}
+                  />
+                  <button
+                    onClick={confirmCreate}
+                    disabled={!newName.trim()}
+                    className="flex items-center justify-center rounded"
+                    style={{ width: 26, height: 26, background: newName.trim() ? "var(--color-accent)" : "var(--color-border)", flexShrink: 0 }}>
+                    <Check size={12} style={{ color: "white" }} />
+                  </button>
+                </div>
+              ) : (
+                <button onClick={startCreating}
+                  className="flex items-center gap-2 w-full px-3 py-2 transition-colors"
+                  style={{ background: "transparent" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  <Plus size={13} style={{ color: "var(--color-fg-3)" }} />
+                  <span className="text-[13px]" style={{ color: "var(--color-fg-3)" }}>New environment</span>
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -92,8 +92,23 @@ function ConsolePanel() {
   );
 }
 
+interface DebugSuggestion {
+  kind: "header" | "param" | "body";
+  key: string;
+  value: string;
+  label: string;
+}
+
+interface DebugResult {
+  what: string;
+  cause: string;
+  steps: string[];
+  suggestions?: DebugSuggestion[];
+}
+
 export function ResponsePanel() {
-  const { response, error, isLoading, getRequest, setMethod, setUrl } = useRequestStore();
+  const { response, error, isLoading, getRequest, setMethod, setUrl,
+          headers, setHeaders, params, setParams, setBody, setBodyType } = useRequestStore();
   const {
     claudeApiKey, claudeModel,
     autoGenerateTests, aiDebugAssist: debugAssistEnabled,
@@ -105,8 +120,12 @@ export function ResponsePanel() {
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
+  const [debugResult, setDebugResult] = useState<DebugResult | null>(null);
+  const [debugRaw, setDebugRaw] = useState<string | null>(null);
   const [fixLoading, setFixLoading] = useState<Record<number, boolean>>({});
   const [fixes, setFixes] = useState<Record<number, AssertionFix>>({});
+  const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set());
+  const [appliedFixes, setAppliedFixes] = useState<Set<number>>(new Set());
 
   const isError = response ? response.status >= 400 : false;
   const isBinary = response?.bodyEncoding === "base64";
@@ -159,7 +178,8 @@ export function ResponsePanel() {
 
   async function handleDebugAssist() {
     if (!response || !debugAssistEnabled) return;
-    setAiLoading(true); setAiResult(null);
+    setAiLoading(true); setDebugResult(null); setDebugRaw(null);
+    setAppliedSuggestions(new Set());
     try {
       const req = getRequest();
       const result = await debugAssist(
@@ -168,10 +188,42 @@ export function ResponsePanel() {
         claudeApiKey,
         claudeModel,
       );
-      setAiResult(result);
+      try {
+        const parsed = JSON.parse(result) as DebugResult;
+        setDebugResult(parsed);
+      } catch {
+        setDebugRaw(result);
+      }
       trackUsage("debugs");
-    } catch (e) { setAiResult(`Error: ${e}`); }
+    } catch (e) { setDebugRaw(`Error: ${e}`); }
     finally { setAiLoading(false); }
+  }
+
+  function applyDebugSuggestion(s: DebugSuggestion, id: string) {
+    if (s.kind === "header") {
+      setHeaders([...headers, { id: crypto.randomUUID(), key: s.key, value: s.value, enabled: true }]);
+    } else if (s.kind === "param") {
+      setParams([...params, { id: crypto.randomUUID(), key: s.key, value: s.value, enabled: true }]);
+    } else if (s.kind === "body") {
+      setBody(s.value);
+      if (s.value.trimStart().startsWith("{") || s.value.trimStart().startsWith("[")) setBodyType("json");
+    }
+    setAppliedSuggestions(prev => new Set([...prev, id]));
+  }
+
+  function applyFix(index: number, fix: AssertionFix) {
+    if (fix.kind === "header") {
+      const colonIdx = fix.value.indexOf(":");
+      if (colonIdx > 0) {
+        const key = fix.value.slice(0, colonIdx).trim();
+        const val = fix.value.slice(colonIdx + 1).trim();
+        setHeaders([...headers, { id: crypto.randomUUID(), key, value: val, enabled: true }]);
+      }
+    } else if (fix.kind === "body") {
+      setBody(fix.value);
+      if (fix.value.trimStart().startsWith("{") || fix.value.trimStart().startsWith("[")) setBodyType("json");
+    }
+    setAppliedFixes(prev => new Set([...prev, index]));
   }
 
   function handleCopy() {
@@ -427,7 +479,7 @@ export function ResponsePanel() {
                     )}
                   </div>
                   {fixes[i] && (
-                    <div className="rounded px-3 py-2 flex flex-col gap-0.5"
+                    <div className="rounded px-3 py-2 flex flex-col gap-1.5"
                       style={{ background: "#A855F710", border: "1px solid #A855F730" }}>
                       <div className="flex items-center gap-1.5">
                         <Sparkles size={10} style={{ color: "var(--color-accent)" }} />
@@ -439,6 +491,20 @@ export function ResponsePanel() {
                         {fixes[i].value}
                       </code>
                       <span className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>{fixes[i].explanation}</span>
+                      {fixes[i].kind !== "assertion" && (
+                        <button
+                          onClick={() => applyFix(i, fixes[i])}
+                          disabled={appliedFixes.has(i)}
+                          className="self-start flex items-center gap-1 px-2 rounded transition-opacity hover:opacity-80 disabled:opacity-60"
+                          style={{ height: 22, fontSize: 11, fontWeight: 600,
+                            background: appliedFixes.has(i) ? "#22C55E20" : "var(--color-accent-10)",
+                            border: `1px solid ${appliedFixes.has(i) ? "#22C55E40" : "var(--color-accent-20)"}`,
+                            color: appliedFixes.has(i) ? "#22C55E" : "var(--color-accent)" }}>
+                          {appliedFixes.has(i)
+                            ? <><Check size={10} /> Applied</>
+                            : <><Zap size={10} /> Apply</>}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -562,14 +628,68 @@ export function ResponsePanel() {
               ? "Claude will explain the error and suggest fixes"
               : "Generate assertions from this response automatically"}
           </p>
-          {aiResult && (
+          {/* Debug Assist structured result */}
+          {isError && (debugResult || debugRaw) && (
+            <div className="flex flex-col gap-2">
+              {debugResult ? (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[11px] font-semibold" style={{ color: "#EF4444" }}>{debugResult.what}</p>
+                    <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{debugResult.cause}</p>
+                  </div>
+                  {debugResult.steps.length > 0 && (
+                    <div className="flex flex-col gap-0.5 pl-1">
+                      {debugResult.steps.map((s, si) => (
+                        <div key={si} className="flex gap-1.5 text-[11px]" style={{ color: "var(--color-fg-3)" }}>
+                          <span style={{ color: "#EF4444", flexShrink: 0, fontWeight: 600 }}>{si + 1}.</span>
+                          <span>{s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {debugResult.suggestions && debugResult.suggestions.length > 0 && (
+                    <div className="flex flex-col gap-1 pt-1" style={{ borderTop: "1px solid #EF444420" }}>
+                      <span className="text-[10px] font-semibold uppercase" style={{ color: "#EF4444", letterSpacing: "0.05em" }}>Apply fix</span>
+                      {debugResult.suggestions.map((s, si) => {
+                        const sid = `${s.kind}-${s.key}-${s.value}`;
+                        const applied = appliedSuggestions.has(sid);
+                        return (
+                          <div key={si} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded"
+                            style={{ background: "#EF444410", border: "1px solid #EF444425" }}>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="text-[10px] font-semibold" style={{ color: "var(--color-fg-2)" }}>{s.label}</span>
+                              <code className="text-[10px] truncate" style={{ color: "#EF4444", fontFamily: "Geist Mono, monospace" }}>
+                                {s.kind === "body" ? s.value : `${s.key}: ${s.value}`}
+                              </code>
+                            </div>
+                            <button
+                              onClick={() => applyDebugSuggestion(s, sid)}
+                              disabled={applied}
+                              className="shrink-0 flex items-center gap-1 px-2 rounded transition-opacity hover:opacity-80 disabled:opacity-60"
+                              style={{ height: 24, fontSize: 11, fontWeight: 600,
+                                background: applied ? "#22C55E20" : "#EF444418",
+                                border: `1px solid ${applied ? "#22C55E40" : "#EF444435"}`,
+                                color: applied ? "#22C55E" : "#EF4444" }}>
+                              {applied ? <><Check size={10} /> Applied</> : <><Zap size={10} /> Apply</>}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <pre className="text-[11px] rounded-lg p-2 overflow-x-auto whitespace-pre-wrap"
+                  style={{ background: "#EF444415", border: "1px solid #EF444430", color: "#EF4444", fontFamily: "Geist Mono, monospace" }}>
+                  {debugRaw}
+                </pre>
+              )}
+            </div>
+          )}
+          {/* Generate Tests result */}
+          {!isError && aiResult && (
             <pre className="text-[11px] rounded-lg p-2 overflow-x-auto whitespace-pre-wrap"
-              style={{
-                background: isError ? "#EF444415" : "var(--color-accent-10)",
-                border: `1px solid ${isError ? "#EF444430" : "var(--color-accent-20)"}`,
-                color: isError ? "#EF4444" : "var(--color-accent)",
-                fontFamily: "Geist Mono, monospace",
-              }}>
+              style={{ background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)", color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>
               {aiResult}
             </pre>
           )}
