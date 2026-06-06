@@ -58,7 +58,7 @@ export interface CookieEntry {
 
 export interface HistoryEntry {
   id: number;
-  method: HttpMethod;
+  method: string;
   url: string;
   status: number;
   durationMs: number;
@@ -135,14 +135,29 @@ export async function saveHistory(
   return invoke("save_history", { method, url, status, durationMs, environment });
 }
 
+export interface GrpcRequestFields {
+  endpoint?: string;
+  service?: string;
+  method?: string;
+  payload?: string;
+  metadata: Record<string, string>;
+  protoId?: string;
+  protoName?: string;
+}
+
 export interface CollectionRequest {
   id: string;
   name: string;
+  kind?: "http" | "grpc";
+  // HTTP
   method: HttpMethod;
   path: string;
   headers: Record<string, string>;
   body?: string;
+  bodyType?: string;
   tests: { assert: string }[];
+  // gRPC
+  grpc?: GrpcRequestFields;
 }
 
 export interface CollectionFolder {
@@ -423,6 +438,30 @@ export async function grpcImportProto(protoContent: string): Promise<GrpcProtoIn
 
 export async function grpcReflect(endpoint: string, useTls: boolean): Promise<GrpcProtoInfo> {
   return invoke("grpc_reflect", { endpoint, useTls });
+}
+
+export interface SavedProtoMeta {
+  id: string;
+  name: string;
+  source: string;
+  services: GrpcService[];
+  createdAt: string;
+}
+
+export async function grpcLoadProtos(): Promise<SavedProtoMeta[]> {
+  return invoke("grpc_load_protos");
+}
+
+export async function grpcSaveProto(name: string, source: string, protoId: string): Promise<SavedProtoMeta> {
+  return invoke("grpc_save_proto", { name, source, protoId });
+}
+
+export async function grpcDeleteProto(id: string): Promise<void> {
+  return invoke("grpc_delete_proto", { id });
+}
+
+export async function grpcLoadProtoById(id: string): Promise<GrpcProtoInfo> {
+  return invoke("grpc_load_proto_by_id", { id });
 }
 
 export async function grpcInvoke(

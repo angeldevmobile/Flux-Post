@@ -1,16 +1,7 @@
 import { create } from "zustand";
-import type { HttpMethod } from "@/lib/tauri";
+import type { CollectionRequest, GrpcRequestFields } from "@/lib/tauri";
 
-export interface CollectionRequest {
-  id: string;
-  name: string;
-  method: HttpMethod;
-  path: string;
-  headers?: Record<string, string>;
-  body?: string;
-  bodyType?: string;
-  tests?: { assert: string }[];
-}
+export type { CollectionRequest, GrpcRequestFields };
 
 export interface CollectionFolder {
   id: string;

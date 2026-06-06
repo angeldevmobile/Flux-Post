@@ -1,12 +1,14 @@
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes};
+use chrono::Utc;
 use futures_util::stream;
 use prost::Message as ProstMessage;
 use prost_reflect::{Cardinality, DescriptorPool, DynamicMessage, Kind};
 use prost_types::FileDescriptorProto;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 use tonic::codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder};
 use tonic::metadata::{Ascii, MetadataKey, MetadataValue};
 use tonic::transport::{Channel, ClientTlsConfig};
@@ -18,11 +20,12 @@ use tonic_reflection::pb::v1::{
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-pub struct GrpcProtos(pub Mutex<HashMap<String, DescriptorPool>>);
+// Each entry: (pool, serialized FileDescriptorSet bytes for persistence)
+pub struct GrpcProtos(pub Mutex<HashMap<String, (DescriptorPool, Vec<u8>)>>);
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GrpcField {
     pub name: String,
     pub kind: String,
@@ -31,7 +34,7 @@ pub struct GrpcField {
     pub optional: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GrpcMethod {
     pub name: String,
     pub input_type: String,
@@ -41,7 +44,7 @@ pub struct GrpcMethod {
     pub input_fields: Vec<GrpcField>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GrpcService {
     pub name: String,
     pub full_name: String,
@@ -59,6 +62,39 @@ pub struct GrpcResponse {
     pub body: String,
     pub duration_ms: u64,
     pub trailers: HashMap<String, String>,
+}
+
+// ── Proto Library ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SavedProtoMeta {
+    pub id: String,
+    pub name: String,
+    pub source: String,
+    pub services: Vec<GrpcService>,
+    pub created_at: String,
+}
+
+fn protos_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("protos");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir)
+}
+
+fn read_index(dir: &Path) -> Vec<SavedProtoMeta> {
+    let Ok(content) = std::fs::read_to_string(dir.join("index.json")) else {
+        return vec![];
+    };
+    serde_json::from_str(&content).unwrap_or_default()
+}
+
+fn write_index(dir: &Path, index: &[SavedProtoMeta]) -> Result<(), String> {
+    let content = serde_json::to_string_pretty(index).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("index.json"), content).map_err(|e| e.to_string())
 }
 
 // ── Raw-bytes codec for dynamic gRPC calls ────────────────────────────────────
@@ -199,11 +235,12 @@ pub async fn grpc_import_proto(
     let fds = protox::compile(["flux_grpc_input.proto"], [std::env::temp_dir()])
         .map_err(|e| e.to_string())?;
 
+    let fds_bytes = prost::Message::encode_to_vec(&fds);
     let pool = DescriptorPool::from_file_descriptor_set(fds).map_err(|e| e.to_string())?;
 
     let services = extract_services(&pool);
     let id = uuid::Uuid::new_v4().to_string();
-    state.0.lock().unwrap().insert(id.clone(), pool);
+    state.0.lock().unwrap().insert(id.clone(), (pool, fds_bytes));
 
     Ok(ProtoInfo { id, services })
 }
@@ -270,6 +307,7 @@ pub async fn grpc_reflect(
         .into_inner();
 
     let mut pool = DescriptorPool::new();
+    let mut protos: Vec<FileDescriptorProto> = vec![];
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     while let Some(resp) = resp_stream2
@@ -285,6 +323,7 @@ pub async fn grpc_reflect(
                     .map_err(|e| e.to_string())?;
                 let name = fdp.name().to_string();
                 if seen.insert(name) {
+                    protos.push(fdp.clone());
                     pool.add_file_descriptor_proto(fdp)
                         .map_err(|e| e.to_string())?;
                 }
@@ -292,9 +331,13 @@ pub async fn grpc_reflect(
         }
     }
 
+    // Serialize pool as FileDescriptorSet for persistence
+    let fds = prost_types::FileDescriptorSet { file: protos };
+    let fds_bytes = prost::Message::encode_to_vec(&fds);
+
     let services = extract_services(&pool);
     let id = uuid::Uuid::new_v4().to_string();
-    state.0.lock().unwrap().insert(id.clone(), pool);
+    state.0.lock().unwrap().insert(id.clone(), (pool, fds_bytes));
 
     Ok(ProtoInfo { id, services })
 }
@@ -316,7 +359,7 @@ pub async fn grpc_invoke(
         let guard = state.0.lock().unwrap();
         guard
             .get(&proto_id)
-            .cloned()
+            .map(|(pool, _)| pool.clone())
             .ok_or_else(|| "Proto not loaded — import or reflect first".to_string())?
     };
 
@@ -383,4 +426,81 @@ pub async fn grpc_invoke(
         duration_ms,
         trailers: HashMap::new(),
     })
+}
+
+// ── Proto Library Commands ────────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn grpc_load_protos(app: AppHandle) -> Result<Vec<SavedProtoMeta>, String> {
+    let dir = protos_dir(&app)?;
+    Ok(read_index(&dir))
+}
+
+#[tauri::command]
+pub async fn grpc_save_proto(
+    name: String,
+    source: String,
+    proto_id: String,
+    state: State<'_, GrpcProtos>,
+    app: AppHandle,
+) -> Result<SavedProtoMeta, String> {
+    let (bytes, services) = {
+        let guard = state.0.lock().unwrap();
+        let (pool, bytes) = guard
+            .get(&proto_id)
+            .ok_or("Proto not in memory — import or reflect first")?;
+        (bytes.clone(), extract_services(pool))
+    };
+
+    let dir = protos_dir(&app)?;
+    let id = uuid::Uuid::new_v4().to_string();
+
+    std::fs::write(dir.join(format!("{}.bin", id)), &bytes)
+        .map_err(|e| e.to_string())?;
+
+    let meta = SavedProtoMeta {
+        id: id.clone(),
+        name,
+        source,
+        services,
+        created_at: Utc::now().to_rfc3339(),
+    };
+
+    let mut index = read_index(&dir);
+    index.push(meta.clone());
+    write_index(&dir, &index)?;
+
+    Ok(meta)
+}
+
+#[tauri::command]
+pub async fn grpc_delete_proto(id: String, app: AppHandle) -> Result<(), String> {
+    let dir = protos_dir(&app)?;
+    let bin = dir.join(format!("{}.bin", id));
+    if bin.exists() {
+        std::fs::remove_file(&bin).map_err(|e| e.to_string())?;
+    }
+    let mut index = read_index(&dir);
+    index.retain(|m| m.id != id);
+    write_index(&dir, &index)
+}
+
+#[tauri::command]
+pub async fn grpc_load_proto_by_id(
+    id: String,
+    app: AppHandle,
+    state: State<'_, GrpcProtos>,
+) -> Result<ProtoInfo, String> {
+    let dir = protos_dir(&app)?;
+    let bytes = std::fs::read(dir.join(format!("{}.bin", id)))
+        .map_err(|e| format!("Proto not found on disk: {}", e))?;
+
+    let fds = prost_types::FileDescriptorSet::decode(Bytes::from(bytes.clone()))
+        .map_err(|e| format!("Failed to decode proto: {}", e))?;
+    let pool = DescriptorPool::from_file_descriptor_set(fds).map_err(|e| e.to_string())?;
+
+    let services = extract_services(&pool);
+    state.0.lock().unwrap().insert(id.clone(), (pool, bytes));
+
+    Ok(ProtoInfo { id, services })
 }

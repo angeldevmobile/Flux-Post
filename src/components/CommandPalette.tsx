@@ -54,7 +54,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     }))
   );
 
-  const historyResults: Result[] = history.slice(0, 20).map(h => ({
+  const historyResults: Result[] = history.filter(h => h.method !== "gRPC").slice(0, 20).map(h => ({
     id: String(h.id),
     kind: "history" as const,
     method: h.method,

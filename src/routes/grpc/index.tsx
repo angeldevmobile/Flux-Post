@@ -1,9 +1,16 @@
-import { useState, useRef } from "react";
-import { Network, Play, RefreshCw, Upload, Trash2, Plus, X, ChevronRight, ChevronDown, Lock, Unlock } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Network, Play, RefreshCw, Upload, Trash2, Plus, X, ChevronRight, ChevronDown, Lock, Unlock, BookMarked, Check, Bookmark } from "lucide-react";
 import { useGrpcStore, type GrpcMetadataEntry } from "@/stores/grpcStore";
-import { grpcImportProto, grpcReflect, grpcInvoke, type GrpcService } from "@/lib/tauri";
+import { grpcImportProto, grpcReflect, grpcInvoke, grpcLoadProtoById, saveHistory, saveCollection, type GrpcService } from "@/lib/tauri";
+import { useProtoLibraryStore } from "@/stores/protoLibraryStore";
+import { useCollectionsStore } from "@/stores/collections";
+import { pushHistory, pushCollection } from "@/lib/sync";
 import { CodeEditor } from "@/components/CodeEditor";
 import { useEnvironmentStore } from "@/stores/environment";
+import { useUserStore } from "@/stores/user";
+import { toast } from "sonner";
+
+const DIR_KEY = "flux_collections_dir";
 
 type Tab = "payload" | "metadata" | "proto";
 
@@ -139,6 +146,103 @@ function MetadataEditor({
   );
 }
 
+function GrpcSavePopover({
+  onClose,
+  endpoint,
+  service,
+  method,
+  payload,
+  metadata,
+  protoId,
+  protoName,
+}: {
+  onClose: () => void;
+  endpoint: string;
+  service: string | null;
+  method: string | null;
+  payload: string;
+  metadata: GrpcMetadataEntry[];
+  protoId: string | null;
+  protoName?: string;
+}) {
+  const { collections } = useCollectionsStore();
+  const defaultName = service && method ? `${service.split(".").pop()}/${method}` : "gRPC request";
+  const [name, setName] = useState(defaultName);
+  const [collectionId, setCollectionId] = useState(collections[0]?.id ?? "");
+  const [saving, setSaving] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [onClose]);
+
+  async function handleSave() {
+    const dir = localStorage.getItem(DIR_KEY);
+    if (!dir || !collectionId) return;
+    const col = collections.find(c => c.id === collectionId);
+    if (!col) return;
+    setSaving(true);
+    try {
+      const metaMap: Record<string, string> = {};
+      for (const e of metadata) {
+        if (e.enabled && e.key) metaMap[e.key] = e.value;
+      }
+      const newReq = {
+        id: `${collectionId}-grpc-${Date.now()}`,
+        name,
+        kind: "grpc" as const,
+        method: "GET" as const,
+        path: "",
+        headers: {},
+        tests: [],
+        grpc: { endpoint, service: service ?? undefined, method: method ?? undefined, payload, metadata: metaMap, protoId: protoId ?? undefined, protoName },
+      };
+      const updated = {
+        ...col,
+        requests: [...col.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })), newReq],
+        folders: col.folders.map(f => ({ ...f, requests: f.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })) })),
+      };
+      await saveCollection(dir, updated);
+      useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
+      const userId = useUserStore.getState().user?.id;
+      if (userId) pushCollection(userId, updated);
+      toast.success(`Saved to ${col.name}`);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div ref={ref} className="absolute top-full right-0 mt-1 z-50 rounded-lg p-3 flex flex-col gap-2"
+      style={{ width: 260, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 32px #00000060" }}>
+      <span className="text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>Save to collection</span>
+      <input value={name} onChange={e => setName(e.target.value)}
+        placeholder="Request name"
+        className="w-full px-2 rounded text-[12px]"
+        style={{ height: 30, background: "var(--color-input)", border: "1px solid var(--color-border)", color: "var(--color-fg)" }} />
+      {collections.length > 0 ? (
+        <select value={collectionId} onChange={e => setCollectionId(e.target.value)}
+          className="w-full px-2 rounded text-[12px]"
+          style={{ height: 30, background: "var(--color-input)", border: "1px solid var(--color-border)", color: "var(--color-fg)" }}>
+          {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      ) : (
+        <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>No collections loaded — set a folder first.</p>
+      )}
+      <button onClick={handleSave} disabled={saving || !collectionId || !name}
+        className="flex items-center justify-center gap-1.5 w-full rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        style={{ height: 28, fontSize: 12, background: "var(--color-accent)" }}>
+        {saving ? "Saving…" : "Save"}
+      </button>
+    </div>
+  );
+}
+
 export function GrpcRoute() {
   const {
     protoId, protoText, services,
@@ -154,14 +258,56 @@ export function GrpcRoute() {
   } = useGrpcStore();
 
   const { resolveVariable } = useEnvironmentStore();
+  const { protos, load: loadProtos, save: saveProto, remove: removeProto } = useProtoLibraryStore();
+
   const [tab, setTab] = useState<Tab>("payload");
   const [invokedAt, setInvokedAt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Proto library UI state
+  const [libOpen, setLibOpen] = useState(true);
+  const [savingName, setSavingName] = useState("");
+  const [saveMode, setSaveMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Save to collection popover
+  const [showSave, setShowSave] = useState(false);
+
+  useEffect(() => { loadProtos(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedSvc = services.find((s) => s.fullName === selectedService) ?? null;
   const selectedMth = selectedSvc?.methods.find((m) => m.name === selectedMethod) ?? null;
   const resolvedEndpoint = resolveVariable(endpoint.trim());
   const endpointHasVars = /\{\{[^}]+\}\}/.test(endpoint);
+
+  async function handleSaveProto() {
+    if (!protoId || !savingName.trim()) return;
+    setSaving(true);
+    try {
+      const source = protoText.trim() ? "file" : resolveVariable(endpoint.trim());
+      await saveProto(savingName.trim(), source, protoId);
+      setSaveMode(false);
+      setSavingName("");
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleLoadSavedProto(id: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      const info = await grpcLoadProtoById(id);
+      setProtoId(info.id);
+      setServices(info.services);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleImportFile(file: File) {
     const text = await file.text();
@@ -240,6 +386,21 @@ export function GrpcRoute() {
       );
       setResponse(resp);
       setTab("payload");
+
+      const resolvedEp = resolveVariable(endpoint.trim());
+      const histUrl = `${resolvedEp}/${selectedService}/${selectedMethod}`;
+      const { environments: envs, activeId: envActiveId } = useEnvironmentStore.getState();
+      const envName = envs.find(e => e.id === envActiveId)?.name ?? "";
+      const timestamp = new Date().toISOString();
+      await saveHistory("gRPC", histUrl, 200, resp.durationMs, envName);
+      const userId = useUserStore.getState().user?.id;
+      if (userId) {
+        pushHistory(userId, {
+          method: "gRPC", url: histUrl,
+          status: 200, durationMs: resp.durationMs,
+          environment: envName, timestamp,
+        });
+      }
     } catch (e) {
       setError(String(e));
     } finally {
@@ -285,6 +446,98 @@ export function GrpcRoute() {
               e.target.value = "";
             }}
           />
+        </div>
+
+        {/* Save to Library */}
+        {protoId && (
+          <div className="shrink-0 px-3 py-2 flex flex-col gap-1.5" style={{ borderBottom: "1px solid var(--color-border)" }}>
+            {!saveMode ? (
+              <button
+                className="flex items-center gap-1.5 px-2 rounded transition-colors hover:opacity-80 text-left"
+                style={{ height: 28, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-50)", color: "var(--color-accent)", fontSize: 11 }}
+                onClick={() => { setSaveMode(true); setSavingName(""); }}
+              >
+                <BookMarked size={11} /> Save to Library
+              </button>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <input
+                  autoFocus
+                  value={savingName}
+                  onChange={(e) => setSavingName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveProto(); if (e.key === "Escape") setSaveMode(false); }}
+                  placeholder="Proto name…"
+                  className="px-2 rounded text-[11px] bg-transparent"
+                  style={{ height: 26, border: "1px solid var(--color-accent-50)", color: "var(--color-fg)", background: "var(--color-input)" }}
+                />
+                <div className="flex gap-1">
+                  <button
+                    onClick={handleSaveProto}
+                    disabled={!savingName.trim() || saving}
+                    className="flex-1 flex items-center justify-center gap-1 rounded text-[11px] transition-colors hover:opacity-80 disabled:opacity-40"
+                    style={{ height: 24, background: "var(--color-accent)", color: "#fff" }}
+                  >
+                    <Check size={10} /> {saving ? "Saving…" : "Save"}
+                  </button>
+                  <button
+                    onClick={() => setSaveMode(false)}
+                    className="flex items-center justify-center rounded transition-colors hover:opacity-80"
+                    style={{ width: 24, height: 24, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Saved Protos Library */}
+        <div className="shrink-0 flex flex-col" style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <button
+            className="flex items-center gap-1.5 px-3 w-full text-left transition-colors hover:opacity-80"
+            style={{ height: 32 }}
+            onClick={() => setLibOpen((v) => !v)}
+          >
+            {libOpen
+              ? <ChevronDown size={11} style={{ color: "var(--color-fg-4)", flexShrink: 0 }} />
+              : <ChevronRight size={11} style={{ color: "var(--color-fg-4)", flexShrink: 0 }} />}
+            <span className="text-[10px] font-semibold uppercase tracking-wide flex-1" style={{ color: "var(--color-fg-4)" }}>Library</span>
+            {protos.length > 0 && (
+              <span className="text-[10px] px-1.5 rounded" style={{ background: "var(--color-card)", color: "var(--color-fg-3)" }}>
+                {protos.length}
+              </span>
+            )}
+          </button>
+          {libOpen && (
+            <div className="flex flex-col py-1 max-h-40 overflow-y-auto">
+              {protos.length === 0 && (
+                <span className="px-3 pb-2 text-[11px]" style={{ color: "var(--color-fg-4)" }}>No saved protos</span>
+              )}
+              {protos.map((p) => {
+                const isActive = protoId === p.id;
+                return (
+                  <div key={p.id} className="flex items-center gap-1 px-2 group">
+                    <button
+                      className="flex items-center gap-1.5 flex-1 py-1 text-left rounded transition-colors hover:opacity-80 truncate"
+                      style={{ fontSize: 11, color: isActive ? "var(--color-accent)" : "var(--color-fg-2)" }}
+                      onClick={() => handleLoadSavedProto(p.id)}
+                    >
+                      <BookMarked size={10} style={{ flexShrink: 0, color: isActive ? "var(--color-accent)" : "var(--color-fg-4)" }} />
+                      <span className="truncate">{p.name}</span>
+                    </button>
+                    <button
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      style={{ color: "var(--color-fg-4)" }}
+                      onClick={() => removeProto(p.id)}
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Service list */}
@@ -368,6 +621,32 @@ export function GrpcRoute() {
               : <Play size={11} />}
             {isLoading ? "Invoking…" : "Invoke"}
           </button>
+
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowSave(v => !v)}
+              disabled={!selectedService || !selectedMethod}
+              title="Save to collection"
+              className="flex items-center justify-center rounded-md transition-colors disabled:opacity-40"
+              style={{ width: 32, height: 32, border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              <Bookmark size={13} />
+            </button>
+            {showSave && (
+              <GrpcSavePopover
+                onClose={() => setShowSave(false)}
+                endpoint={endpoint}
+                service={selectedService}
+                method={selectedMethod}
+                payload={payload}
+                metadata={metadata}
+                protoId={protoId}
+                protoName={protos.find(p => p.id === protoId)?.name}
+              />
+            )}
+          </div>
           </div>
           {endpointHasVars && (
             <div className="pb-1.5 pl-9">

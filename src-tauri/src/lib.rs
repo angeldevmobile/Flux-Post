@@ -76,6 +76,10 @@ pub fn run() {
             commands::grpc::grpc_import_proto,
             commands::grpc::grpc_reflect,
             commands::grpc::grpc_invoke,
+            commands::grpc::grpc_load_protos,
+            commands::grpc::grpc_save_proto,
+            commands::grpc::grpc_delete_proto,
+            commands::grpc::grpc_load_proto_by_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

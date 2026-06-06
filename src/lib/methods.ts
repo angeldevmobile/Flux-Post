@@ -6,6 +6,7 @@ export const METHOD_COLOR: Record<string, string> = {
   DELETE:  "#EF4444",
   HEAD:    "#71717A",
   OPTIONS: "#71717A",
+  GRPC:    "#A855F7",
 };
 
 export function methodColor(m: string) {

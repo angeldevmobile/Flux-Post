@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play } from "lucide-react";
+import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
-import { loadCollections } from "@/lib/tauri";
+import { useGrpcStore } from "@/stores/grpcStore";
+import { useNavStore } from "@/stores/nav";
+import { loadCollections, grpcLoadProtoById } from "@/lib/tauri";
 import { methodColor, methodBg } from "@/lib/methods";
 import { exportPostman, exportOpenAPI } from "@/lib/exporters";
 import { exportDataAsJson } from "@/lib/tauri";
@@ -76,6 +78,7 @@ function RequestRow({
   onSelect: (req: CollectionRequest) => void;
 }) {
   const isActive = activeRequestId === req.id;
+  const isGrpc = (req.kind ?? "http") === "grpc";
   return (
     <button
       onClick={() => onSelect(req)}
@@ -87,11 +90,15 @@ function RequestRow({
       }}
       onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--color-card)"; }}
       onMouseLeave={e => { e.currentTarget.style.background = isActive ? "var(--color-accent-10)" : "transparent"; }}>
-      <MethodPill method={req.method} />
+      {isGrpc
+        ? <span className="inline-flex items-center justify-center shrink-0" style={{ width: 36, height: 16 }}>
+            <Network size={11} style={{ color: "var(--color-accent)" }} />
+          </span>
+        : <MethodPill method={req.method} />}
       <span
         className="text-[11px] truncate"
         style={{ fontFamily: "Geist Mono, monospace", color: isActive ? "var(--color-fg)" : "var(--color-fg-3)" }}>
-        {req.name || req.path}
+        {req.name || (isGrpc ? req.grpc?.method : req.path)}
       </span>
     </button>
   );
@@ -100,6 +107,8 @@ function RequestRow({
 export function CollectionsSidebar() {
   const { collections, activeRequestId, setActiveRequest, toggleCollection, toggleFolder } = useCollectionsStore();
   const { setMethod, setUrl, setHeaders, setBody, setBodyType } = useRequestStore();
+  const { setProtoId, setServices, setEndpoint, setSelectedService, setSelectedMethod, setPayload, setMetadata } = useGrpcStore();
+  const { navigate } = useNavStore();
   const [search, setSearch] = useState("");
   const [dir, setDir] = useState<string | null>(() => localStorage.getItem(DIR_KEY));
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -130,8 +139,40 @@ export function CollectionsSidebar() {
     setDir(d);
   }
 
-  function handleSelect(req: CollectionRequest) {
+  async function handleSelect(req: CollectionRequest) {
     setActiveRequest(req.id);
+
+    if ((req.kind ?? "http") === "grpc" && req.grpc) {
+      const g = req.grpc;
+      if (g.endpoint) setEndpoint(g.endpoint);
+      if (g.payload) setPayload(g.payload);
+      if (g.metadata && Object.keys(g.metadata).length > 0) {
+        setMetadata(
+          Object.entries(g.metadata).map(([key, value], i) => ({
+            id: `m-${i}`, key, value, enabled: true,
+          }))
+        );
+      }
+      // Load proto from library if we have a saved protoName/protoId
+      if (g.protoId) {
+        try {
+          const info = await grpcLoadProtoById(g.protoId);
+          setProtoId(info.id);
+          setServices(info.services);
+          if (g.service) setSelectedService(g.service);
+          if (g.method) setSelectedMethod(g.method);
+        } catch {
+          // proto not found on disk — user will need to re-import
+        }
+      } else {
+        if (g.service) setSelectedService(g.service);
+        if (g.method) setSelectedMethod(g.method);
+      }
+      navigate("grpc");
+      return;
+    }
+
+    // HTTP request
     setMethod(req.method as HttpMethod);
     setUrl(req.path);
     setBodyType((req.bodyType as Parameters<typeof setBodyType>[0]) ?? "none");

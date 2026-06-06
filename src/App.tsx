@@ -24,6 +24,7 @@ import { loadSession, saveSession, clearSessionDb } from "@/lib/tauri";
 import { initCrashReporting, trackEvent } from "@/lib/analytics";
 import { checkForUpdates, installAndRestart } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
+import { useNavStore } from "@/stores/nav";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
 
@@ -32,6 +33,11 @@ function AppShell() {
   const tourSeen = useSettingsStore(s => s.tourSeen);
   const [showTour, setShowTour] = useState(() => !useSettingsStore.getState().tourSeen);
   useAppearance();
+
+  const { pendingRoute, clearPending } = useNavStore();
+  useEffect(() => {
+    if (pendingRoute) { setRoute(pendingRoute); clearPending(); }
+  }, [pendingRoute, clearPending]);
 
   // Check for updates 4s after mount — non-blocking, silent on failure
   useEffect(() => {

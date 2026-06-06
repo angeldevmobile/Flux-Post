@@ -82,14 +82,16 @@ export function HistoryRoute() {
     const col = {
       id: `history-${Date.now()}`,
       name: "History Export",
-      requests: filtered.map((e, i) => ({
-        id: `hist-${i}`,
-        name: e.url,
-        method: e.method as HttpMethod,
-        path: e.url,
-        headers: {},
-        tests: [],
-      })),
+      requests: filtered
+        .filter(e => e.method !== "gRPC")
+        .map((e, i) => ({
+          id: `hist-${i}`,
+          name: e.url,
+          method: e.method as HttpMethod,
+          path: e.url,
+          headers: {},
+          tests: [],
+        })),
       folders: [],
       expanded: true,
     };
@@ -97,6 +99,7 @@ export function HistoryRoute() {
   }
 
   function handleReplay(e: HistoryEntry) {
+    if (e.method === "gRPC") return;
     setMethod(e.method as HttpMethod);
     setUrl(e.url);
   }
@@ -136,10 +139,11 @@ export function HistoryRoute() {
       <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-0.5">
         {filtered.map((entry, i) => {
           const isAlt = i % 2 === 0;
+          const isGrpc = entry.method === "gRPC";
           return (
             <div key={entry.id}
               onClick={() => handleReplay(entry)}
-              className="flex items-center gap-3 px-4 rounded-md cursor-pointer transition-opacity hover:opacity-80 group"
+              className={`flex items-center gap-3 px-4 rounded-md transition-opacity group ${isGrpc ? "cursor-default" : "cursor-pointer hover:opacity-80"}`}
               style={{ height: 48, background: isAlt ? "var(--color-elevated)" : "transparent", border: "1px solid var(--color-card)" }}>
               <MethodPill method={entry.method} />
               <span className="flex-1 truncate text-[12px]"
@@ -155,10 +159,13 @@ export function HistoryRoute() {
               <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-4)", width: 80 }}>
                 {entry.timestamp}
               </span>
-              <button className="flex items-center justify-center rounded shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ width: 28, height: 28 }}>
-                <RotateCcw size={14} style={{ color: "var(--color-fg-4)" }} />
-              </button>
+              {!isGrpc && (
+                <button className="flex items-center justify-center rounded shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ width: 28, height: 28 }}>
+                  <RotateCcw size={14} style={{ color: "var(--color-fg-4)" }} />
+                </button>
+              )}
+              {isGrpc && <div style={{ width: 28, flexShrink: 0 }} />}
             </div>
           );
         })}
