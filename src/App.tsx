@@ -16,6 +16,7 @@ import { WebSocketRoute } from "@/routes/websocket";
 import { SseRoute } from "@/routes/sse";
 import { LoadTestRoute } from "@/routes/loadtest";
 import { MockRoute } from "@/routes/mock";
+import { GrpcRoute } from "@/routes/grpc";
 import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
@@ -79,6 +80,7 @@ function AppShell() {
           {route === "sse"          && <SseRoute />}
           {route === "loadtest"     && <LoadTestRoute />}
           {route === "mock"         && <MockRoute />}
+          {route === "grpc"         && <GrpcRoute />}
           {route === "settings"     && <SettingsRoute />}
         </main>
       </div>

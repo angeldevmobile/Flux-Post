@@ -47,6 +47,42 @@ monaco.languages.setMonarchTokensProvider("graphql", {
   },
 });
 
+// Register Protocol Buffers (.proto) language
+monaco.languages.register({ id: "proto" });
+monaco.languages.setMonarchTokensProvider("proto", {
+  keywords: [
+    "syntax", "package", "import", "option", "message", "enum", "service",
+    "rpc", "returns", "stream", "oneof", "map", "reserved", "extensions",
+    "extend", "optional", "required", "repeated", "to", "max", "true", "false",
+  ],
+  builtinTypes: [
+    "double", "float", "int32", "int64", "uint32", "uint64",
+    "sint32", "sint64", "fixed32", "fixed64", "sfixed32", "sfixed64",
+    "bool", "string", "bytes",
+  ],
+  tokenizer: {
+    root: [
+      [/\/\/.*$/, "comment"],
+      [/\/\*/, { token: "comment.block", next: "@blockComment" }],
+      [/"([^"\\]|\\.)*"/, "string"],
+      [/\b\d+\b/, "number"],
+      [/[=;{}()[\],<>]/, "delimiter"],
+      [/[a-zA-Z_]\w*/, {
+        cases: {
+          "@keywords": "keyword",
+          "@builtinTypes": "type",
+          "@default": "identifier",
+        },
+      }],
+      [/\s+/, "white"],
+    ],
+    blockComment: [
+      [/\*\//, { token: "comment.block", next: "@pop" }],
+      [/./, "comment.block"],
+    ],
+  },
+});
+
 // Use local monaco instead of CDN
 loader.config({ monaco });
 

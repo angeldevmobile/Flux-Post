@@ -381,6 +381,62 @@ export async function getMockStatus(): Promise<MockStatus> {
   return invoke("get_mock_status");
 }
 
+// ── gRPC ──────────────────────────────────────────────────────────────────────
+
+export interface GrpcField {
+  name: string;
+  kind: string;
+  typeName: string;
+  repeated: boolean;
+  optional: boolean;
+}
+
+export interface GrpcMethod {
+  name: string;
+  inputType: string;
+  outputType: string;
+  clientStreaming: boolean;
+  serverStreaming: boolean;
+  inputFields: GrpcField[];
+}
+
+export interface GrpcService {
+  name: string;
+  fullName: string;
+  methods: GrpcMethod[];
+}
+
+export interface GrpcProtoInfo {
+  id: string;
+  services: GrpcService[];
+}
+
+export interface GrpcResponse {
+  body: string;
+  durationMs: number;
+  trailers: Record<string, string>;
+}
+
+export async function grpcImportProto(protoContent: string): Promise<GrpcProtoInfo> {
+  return invoke("grpc_import_proto", { protoContent });
+}
+
+export async function grpcReflect(endpoint: string, useTls: boolean): Promise<GrpcProtoInfo> {
+  return invoke("grpc_reflect", { endpoint, useTls });
+}
+
+export async function grpcInvoke(
+  endpoint: string,
+  service: string,
+  method: string,
+  payloadJson: string,
+  metadata: Record<string, string>,
+  useTls: boolean,
+  protoId: string,
+): Promise<GrpcResponse> {
+  return invoke("grpc_invoke", { endpoint, service, method, payloadJson, metadata, useTls, protoId });
+}
+
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

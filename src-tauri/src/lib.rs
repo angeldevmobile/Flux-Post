@@ -1,5 +1,6 @@
 ﻿mod commands;
 
+use commands::grpc::GrpcProtos;
 use commands::history::{Db, init_db};
 use commands::mock::MockServerState;
 use commands::sse::SseConnections;
@@ -14,6 +15,7 @@ pub fn run() {
     let ws = WsConnections(Mutex::new(HashMap::new()));
     let sse = SseConnections(Mutex::new(HashMap::new()));
     let mock = MockServerState::new();
+    let grpc_protos = GrpcProtos(Mutex::new(HashMap::new()));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -22,6 +24,7 @@ pub fn run() {
         .manage(ws)
         .manage(sse)
         .manage(mock)
+        .manage(grpc_protos)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()
                 .expect("failed to get app data dir");
@@ -70,6 +73,9 @@ pub fn run() {
             commands::mock::set_mock_endpoints,
             commands::mock::get_mock_endpoints,
             commands::mock::get_mock_status,
+            commands::grpc::grpc_import_proto,
+            commands::grpc::grpc_reflect,
+            commands::grpc::grpc_invoke,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

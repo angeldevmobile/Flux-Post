@@ -4,7 +4,7 @@ import "@/lib/monacoSetup";
 import { useSettingsStore } from "@/stores/settings";
 import { Sparkles, Send, Loader2, X } from "lucide-react";
 
-type Lang = "json" | "javascript" | "graphql" | "html" | "xml" | "plaintext";
+type Lang = "json" | "javascript" | "graphql" | "html" | "xml" | "plaintext" | "proto";
 
 interface CodeEditorProps {
   value: string;
@@ -82,7 +82,7 @@ function toMonacoLang(lang: Lang): string {
   if (lang === "html") return "html";
   if (lang === "xml") return "xml";
   if (lang === "graphql") return "graphql";
-  if (lang === "plaintext") return "plaintext";
+  if (lang === "plaintext" || lang === "proto") return "plaintext";
   return "javascript";
 }
 
