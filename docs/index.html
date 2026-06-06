@@ -934,6 +934,13 @@
       }
 
       /* ── DEMO ── */
+      .demo-video-wrap {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 0 80px rgba(168, 85, 247, .06), 0 30px 60px rgba(0, 0, 0, .4);
+      }
+
       .demo-section {
         padding: 80px 24px;
         max-width: 960px;
@@ -2137,72 +2144,19 @@
       <h2 class="section-title">From URL to tested API in seconds</h2>
       <p class="section-desc">No setup, no config files, no Docker. Open Flux and start testing.</p>
 
-      <!-- Step indicator -->
-      <div class="demo-steps-row">
-        <div class="demo-step-pill active" id="dpill-1"><span class="demo-step-dot"></span>Type &amp; Send</div>
-        <span class="demo-step-sep">→</span>
-        <div class="demo-step-pill" id="dpill-2"><span class="demo-step-dot"></span>View Response</div>
-        <span class="demo-step-sep">→</span>
-        <div class="demo-step-pill" id="dpill-3"><span class="demo-step-dot"></span>Generate Tests</div>
-      </div>
-
-      <!-- App window -->
-      <div class="demo-window">
-        <!-- Chrome bar -->
+      <div class="demo-video-wrap">
         <div class="demo-chrome">
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="demo-chrome-title">Flux — API Client</span>
         </div>
-
-        <div class="demo-body">
-          <!-- Nav rail -->
-          <div class="demo-rail">
-            <div class="demo-rail-icon active">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-            </div>
-            <div class="demo-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
-            </div>
-            <div class="demo-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-4)">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- Sidebar -->
-          <div class="demo-sidebar">
-            <div class="demo-sidebar-hdr">My API</div>
-            <div class="demo-sidebar-item active"><span class="demo-m get">GET</span>/users</div>
-            <div class="demo-sidebar-item"><span class="demo-m post">POST</span>/auth/login</div>
-            <div class="demo-sidebar-item"><span class="demo-m get">GET</span>/products</div>
-            <div class="demo-sidebar-item"><span class="demo-m post">POST</span>/orders</div>
-            <div class="demo-sidebar-item"><span class="demo-m del">DEL</span>/users/:id</div>
-          </div>
-
-          <!-- Main panel -->
-          <div class="demo-main">
-            <!-- URL bar -->
-            <div class="demo-url-row">
-              <span class="demo-method-pill">GET</span>
-              <div class="demo-url-field" id="d-url"><span class="demo-cursor"></span></div>
-              <button class="demo-send-btn" id="d-send">Send</button>
-            </div>
-
-            <!-- Response meta (status + tabs) -->
-            <div class="demo-meta-row" id="d-meta"></div>
-
-            <!-- Content area -->
-            <div class="demo-content" id="d-content"></div>
-          </div>
-        </div>
+        <video
+          src="grabacion-2026-06-06T02-37-13.webm"
+          autoplay
+          loop
+          muted
+          playsinline
+          style="display:block;width:100%;height:auto;"
+        ></video>
       </div>
     </section>
 
@@ -3256,138 +3210,6 @@
         document.getElementById('tab-' + id).classList.add('active');
         event.currentTarget.classList.add('active');
       }
-
-      /* ── Animated Demo ── */
-      (function () {
-        const URL_TEXT = 'https://api.example.com/users';
-        const JSON_LINES = [
-          `<span style="color:var(--fg-4)">[</span>`,
-          `&nbsp;&nbsp;<span style="color:var(--fg-4)">{</span>`,
-          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"id"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#86EFAC">1</span><span style="color:var(--fg-4)">,</span>`,
-          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"name"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"Alice Johnson"</span><span style="color:var(--fg-4)">,</span>`,
-          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"role"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#FDE68A">"developer"</span><span style="color:var(--fg-4)">,</span>`,
-          `&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">"active"</span><span style="color:var(--fg-4)">:</span>&nbsp;<span style="color:#93C5FD">true</span>`,
-          `&nbsp;&nbsp;<span style="color:var(--fg-4)">}</span>`,
-          `<span style="color:var(--fg-4)">]</span>`,
-        ];
-        const TESTS = [
-          'status == 200',
-          'body[0].id != null',
-          'body[0].name is string',
-          'body[0].active == true',
-          'duration &lt; 500',
-        ];
-
-        const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-        function setStep(n) {
-          [1, 2, 3].forEach(i => {
-            document.getElementById('dpill-' + i).classList.toggle('active', i === n);
-          });
-        }
-
-        async function runDemo() {
-          const urlField = document.getElementById('d-url');
-          const sendBtn = document.getElementById('d-send');
-          const metaRow = document.getElementById('d-meta');
-          const content = document.getElementById('d-content');
-          if (!urlField) return;
-
-          /* ── reset ── */
-          const cursor = document.createElement('span');
-          cursor.className = 'demo-cursor';
-          urlField.textContent = '';
-          urlField.appendChild(cursor);
-          metaRow.innerHTML = '';
-          content.innerHTML = '';
-          setStep(1);
-
-          await sleep(500);
-
-          /* ── phase 1: type URL ── */
-          for (let i = 0; i < URL_TEXT.length; i++) {
-            urlField.insertBefore(document.createTextNode(URL_TEXT[i]), cursor);
-            await sleep(38 + Math.random() * 22);
-          }
-
-          await sleep(350);
-
-          /* send click */
-          sendBtn.classList.add('pop');
-          await sleep(160);
-          sendBtn.classList.remove('pop');
-
-          /* spinner */
-          content.innerHTML = `<div class="demo-spinner"><div class="demo-spinner-ring"></div>Sending request…</div>`;
-          await sleep(820);
-
-          /* ── phase 2: response ── */
-          setStep(2);
-          metaRow.innerHTML = `
-          <span class="demo-status-ok">200 OK</span>
-          <span class="demo-timing">142 ms · 1.2 KB</span>
-          <div class="demo-resp-tabs">
-            <span class="demo-resp-tab active">Body</span>
-            <span class="demo-resp-tab">Headers</span>
-            <span class="demo-resp-tab" id="d-ttab">Tests</span>
-            <span class="demo-resp-tab">Timeline</span>
-          </div>`;
-
-          content.innerHTML = JSON_LINES.map(l => `<span class="demo-jline">${l}</span>`).join('<br>');
-          for (const el of content.querySelectorAll('.demo-jline')) {
-            await sleep(70);
-            el.classList.add('on');
-          }
-
-          await sleep(1800);
-
-          /* ── phase 3: tests ── */
-          setStep(3);
-
-          /* activate Tests tab */
-          const ttab = document.getElementById('d-ttab');
-          if (ttab) {
-            metaRow.querySelectorAll('.demo-resp-tab').forEach(t => t.classList.remove('active'));
-            ttab.classList.add('active');
-          }
-
-          /* show AI button + test lines */
-          content.innerHTML = `
-          <div class="demo-ai-bar" id="d-aibar">
-            <button class="demo-ai-btn" id="d-aibtn">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              Generate Tests with AI
-            </button>
-          </div>
-          ${TESTS.map(t => `<div class="demo-tline"><span class="demo-tcheck">✓</span><span class="demo-tname">${t}</span></div>`).join('')}`;
-
-          await sleep(150);
-          document.getElementById('d-aibar').classList.add('on');
-
-          await sleep(550);
-          const aibtn = document.getElementById('d-aibtn');
-          if (aibtn) { aibtn.classList.add('pop'); await sleep(200); aibtn.classList.remove('pop'); }
-
-          await sleep(250);
-          for (const el of content.querySelectorAll('.demo-tline')) {
-            await sleep(190);
-            el.classList.add('on');
-          }
-          if (ttab) ttab.textContent = 'Tests ✓5';
-
-          /* pause then loop */
-          await sleep(3200);
-          runDemo();
-        }
-
-        /* start when section enters viewport */
-        const section = document.getElementById('demo');
-        if (section) {
-          new IntersectionObserver((entries, obs) => {
-            if (entries[0].isIntersecting) { obs.disconnect(); runDemo(); }
-          }, { threshold: 0.25 }).observe(section);
-        }
-      })();
 
       /* ── Apply Demo ── */
       (function () {
