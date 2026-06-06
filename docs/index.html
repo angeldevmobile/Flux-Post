@@ -1711,86 +1711,6 @@
         .why-grid { grid-template-columns: 1fr; }
       }
 
-      /* ── COMPARE TABLE ── */
-      .compare-wrap {
-        overflow-x: auto;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-      }
-
-      .compare-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-
-      .compare-table th {
-        padding: 13px 20px;
-        text-align: left;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        color: var(--fg-4);
-        background: var(--bg-raised);
-        border-bottom: 1px solid var(--border);
-        white-space: nowrap;
-      }
-
-      .compare-table th.flux-col {
-        color: var(--accent);
-        background: var(--accent-10);
-        border-bottom-color: var(--accent-20);
-      }
-
-      .compare-table td {
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--border);
-        color: var(--fg-3);
-        vertical-align: middle;
-        white-space: nowrap;
-      }
-
-      .compare-table tbody tr:last-child td { border-bottom: none; }
-
-      .compare-table tbody tr:hover td { background: var(--bg-raised); }
-
-      .compare-table td.flux-col {
-        background: rgba(168,85,247,.04);
-        color: var(--fg-2);
-      }
-
-      .compare-table tr:hover td.flux-col { background: rgba(168,85,247,.08); }
-
-      .compare-table td.feat-name {
-        font-weight: 500;
-        color: var(--fg-2);
-        white-space: nowrap;
-      }
-
-      .ct-yes   { color: #22C55E; font-size: 15px; font-weight: 700; }
-      .ct-part  { color: #F59E0B; font-size: 15px; }
-      .ct-no    { color: var(--fg-4); font-size: 15px; }
-      .ct-note  { font-size: 11px; color: var(--fg-4); margin-left: 4px; }
-      .ct-ram   { font-family: var(--mono); font-size: 12px; font-weight: 600; }
-      .ct-ram.good { color: #22C55E; }
-      .ct-ram.meh  { color: var(--fg-4); }
-
-      .compare-legend {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        margin-top: 12px;
-        font-size: 12px;
-        color: var(--fg-4);
-        align-items: center;
-      }
-
-      .compare-legend-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
 
       /* ── WHO IS FLUX FOR ── */
       .who-grid {
@@ -2130,129 +2050,28 @@
     <!-- ── WHY FLUX ── -->
     <section id="why">
       <div class="section-label">Why Flux?</div>
-      <h2 class="section-title">Why switch from Postman, Bruno or Insomnia?</h2>
+      <h2 class="section-title">What makes Flux different?</h2>
       <p class="section-desc">Most API clients are Electron wrappers consuming hundreds of MB of RAM. Flux is different — and the difference is obvious from the first request.</p>
 
       <div class="why-grid">
         <div class="why-card">
           <span class="why-card-eyebrow">Performance</span>
           <h3>Native binary, not a browser wrapper</h3>
-          <p>Postman and Insomnia bundle a full Chromium engine and Node.js runtime. Flux is built with Tauri and Rust — a true native binary with no web runtime overhead.</p>
+          <p>Most API clients bundle a full Chromium engine and Node.js runtime. Flux is built with Tauri and Rust — a true native binary with no web runtime overhead.</p>
           <span class="why-metric">&lt; 30 MB RAM · ~ 5 MB installer</span>
         </div>
         <div class="why-card">
           <span class="why-card-eyebrow">All-in-one</span>
           <h3>Load testing and mock servers, built in</h3>
-          <p>With Postman you need k6 or wrk for load testing. Bruno needs a separate mock tool. With Flux, both are native features — no extra installs, no Docker, no config files.</p>
+          <p>Other tools need third-party integrations for load testing and mocking. With Flux, both are native features — no extra installs, no Docker, no config files.</p>
           <span class="why-metric">AI · Load Testing · Mock Server</span>
         </div>
         <div class="why-card">
           <span class="why-card-eyebrow">Privacy</span>
           <h3>Local-first, no account required to start</h3>
-          <p>Postman requires an account and routes data through their cloud by default. Flux stores everything locally. Cloud sync is opt-in and uses your own Supabase instance — you own your data.</p>
+          <p>Many API clients require an account and route your data through their cloud by default. Flux stores everything locally. Cloud sync is opt-in and uses your own Supabase instance — you own your data.</p>
           <span class="why-metric">No account · No vendor lock-in</span>
         </div>
-      </div>
-    </section>
-
-    <hr class="divider" />
-
-    <!-- ── COMPARISON TABLE ── -->
-    <section id="compare">
-      <div class="section-label">Comparison</div>
-      <h2 class="section-title">Flux vs the alternatives</h2>
-      <p class="section-desc">A direct look at what sets Flux apart from the tools you may already be using.</p>
-
-      <div class="compare-wrap">
-        <table class="compare-table">
-          <thead>
-            <tr>
-              <th style="min-width:200px">Feature</th>
-              <th class="flux-col">Flux</th>
-              <th>Postman</th>
-              <th>Bruno</th>
-              <th>Insomnia</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="feat-name">AI Test Generation</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">paid plan</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">limited</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">Built-in Load Testing</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-no">✕</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">Built-in Mock Server</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">cloud only</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">limited</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">Rust Native (no Electron)</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-no">✕</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">RAM Usage</td>
-              <td class="flux-col"><span class="ct-ram good">&lt; 30 MB</span></td>
-              <td><span class="ct-ram meh">~ 500 MB</span></td>
-              <td><span class="ct-ram meh">~ 200 MB</span></td>
-              <td><span class="ct-ram meh">~ 400 MB</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">Installer Size</td>
-              <td class="flux-col"><span class="ct-ram good">~ 5 MB</span></td>
-              <td><span class="ct-ram meh">~ 150 MB</span></td>
-              <td><span class="ct-ram meh">~ 80 MB</span></td>
-              <td><span class="ct-ram meh">~ 130 MB</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">WebSocket + SSE Support</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">WS only</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">limited</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">WS only</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">No Account Required</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-yes">✓</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">some features</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">Open Source</td>
-              <td class="flux-col"><span class="ct-yes">✓</span></td>
-              <td><span class="ct-no">✕</span></td>
-              <td><span class="ct-yes">✓</span></td>
-              <td><span class="ct-part">⚠</span><span class="ct-note">partially</span></td>
-            </tr>
-            <tr>
-              <td class="feat-name">Price</td>
-              <td class="flux-col"><span style="color:#22C55E;font-weight:600">Free forever</span></td>
-              <td><span style="font-size:12px;color:var(--fg-4)">Free / $14/mo+</span></td>
-              <td><span style="font-size:12px;color:var(--fg-4)">Free</span></td>
-              <td><span style="font-size:12px;color:var(--fg-4)">Free / $8/mo+</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="compare-legend">
-        <span class="compare-legend-item"><span class="ct-yes" style="font-size:14px">✓</span> Fully supported</span>
-        <span class="compare-legend-item"><span class="ct-part" style="font-size:14px">⚠</span> Partial or paid</span>
-        <span class="compare-legend-item"><span class="ct-no" style="font-size:14px">✕</span> Not available</span>
-        <span style="margin-left:auto;font-size:11px;font-style:italic">RAM figures are approximate and may vary by workload.</span>
       </div>
     </section>
 
