@@ -30,6 +30,12 @@ interface GitHubContentItem {
 type Step = "connect" | "repos" | "sync";
 type Status = { kind: "idle" } | { kind: "loading"; msg: string } | { kind: "ok"; msg: string } | { kind: "error"; msg: string };
 
+interface DiffStatus {
+  localOnly: string[];   // files only local → new on push
+  remoteOnly: string[];  // files only on GitHub → missing locally
+  common: string[];      // files in both
+}
+
 function ghFetch(token: string, path: string, opts?: RequestInit) {
   return fetch(`https://api.github.com${path}`, {
     ...opts,
@@ -56,6 +62,8 @@ export function GitHubSyncModal({ open, onClose, collectionsDir, onReload }: {
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
   const [repoPath, setRepoPath] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [diffStatus, setDiffStatus] = useState<DiffStatus | null>(null);
+  const [commitMsg, setCommitMsg] = useState("sync: update collections via Flux");
 
   if (!open) return null;
 
@@ -95,8 +103,41 @@ export function GitHubSyncModal({ open, onClose, collectionsDir, onReload }: {
 
   function handleSelectRepo(repo: GitHubRepo) {
     setSelectedRepo(repo);
+    setDiffStatus(null);
+    setRepoPath("");
     setStep("sync");
     setStatus({ kind: "idle" });
+  }
+
+  async function handleCheckStatus() {
+    if (!selectedRepo || !collectionsDir) return;
+    setDiffStatus(null);
+    setStatus({ kind: "loading", msg: "Checking status…" });
+    try {
+      const path = repoPath.trim();
+      const url = `/repos/${selectedRepo.full_name}/contents/${path}`;
+      const res = await ghFetch(token, url);
+
+      let remoteNames: string[] = [];
+      if (res.ok) {
+        const items: GitHubContentItem[] = await res.json();
+        remoteNames = items
+          .filter(i => i.type === "file" && (i.name.endsWith(".yaml") || i.name.endsWith(".yml")))
+          .map(i => i.name);
+      }
+
+      const localFiles = await githubListYamlFiles(collectionsDir);
+      const localNames = localFiles.map(f => f.name);
+
+      setDiffStatus({
+        localOnly: localNames.filter(n => !remoteNames.includes(n)),
+        remoteOnly: remoteNames.filter(n => !localNames.includes(n)),
+        common: localNames.filter(n => remoteNames.includes(n)),
+      });
+      setStatus({ kind: "idle" });
+    } catch (e) {
+      setStatus({ kind: "error", msg: String(e) });
+    }
   }
 
   async function handlePull() {
@@ -151,7 +192,7 @@ export function GitHubSyncModal({ open, onClose, collectionsDir, onReload }: {
         const sha = checkRes.ok ? (await checkRes.json()).sha as string : undefined;
 
         const body: Record<string, string> = {
-          message: `sync: update ${file.name} via Flux`,
+          message: commitMsg.trim() || "sync: update collections via Flux",
           content: contentB64,
           branch: selectedRepo.default_branch,
         };
@@ -320,21 +361,74 @@ export function GitHubSyncModal({ open, onClose, collectionsDir, onReload }: {
               </button>
             </div>
 
-            {/* Path */}
+            {/* Path + Check */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[11px] font-medium" style={{ color: "var(--color-fg-3)" }}>Folder path in repo</label>
+              <div className="flex gap-2">
+                <input
+                  value={repoPath}
+                  onChange={e => { setRepoPath(e.target.value); setDiffStatus(null); }}
+                  placeholder="collections"
+                  className="flex-1 px-3 rounded-lg text-[12px]"
+                  style={{
+                    height: 34, background: "var(--color-input)",
+                    border: "1px solid var(--color-border)", color: "var(--color-fg-2)",
+                    fontFamily: "Geist Mono, monospace",
+                  }}
+                />
+                <button
+                  onClick={handleCheckStatus}
+                  disabled={!collectionsDir || status.kind === "loading"}
+                  className="px-3 rounded-lg text-[12px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{ height: 34, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)", whiteSpace: "nowrap" }}
+                >
+                  {status.kind === "loading" && status.msg === "Checking status…"
+                    ? <Loader2 size={12} className="animate-spin" />
+                    : "Check status"}
+                </button>
+              </div>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>Leave blank to use the repo root</span>
+            </div>
+
+            {/* Diff status */}
+            {diffStatus && (
+              <div className="flex flex-wrap gap-2">
+                {diffStatus.common.length > 0 && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px]" style={{ background: "#3B82F615", border: "1px solid #3B82F630", color: "#3B82F6" }}>
+                    <span style={{ fontFamily: "Geist Mono, monospace" }}>{diffStatus.common.length}</span> in sync
+                  </span>
+                )}
+                {diffStatus.localOnly.length > 0 && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px]" style={{ background: "#A855F715", border: "1px solid #A855F730", color: "#A855F7" }}>
+                    <ArrowUp size={10} /> {diffStatus.localOnly.length} only local
+                  </span>
+                )}
+                {diffStatus.remoteOnly.length > 0 && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px]" style={{ background: "#F59E0B15", border: "1px solid #F59E0B30", color: "#F59E0B" }}>
+                    <ArrowDown size={10} /> {diffStatus.remoteOnly.length} only on GitHub
+                  </span>
+                )}
+                {diffStatus.localOnly.length === 0 && diffStatus.remoteOnly.length === 0 && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px]" style={{ background: "#22C55E15", border: "1px solid #22C55E30", color: "#22C55E" }}>
+                    <Check size={10} /> Already in sync
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Commit message */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-medium" style={{ color: "var(--color-fg-3)" }}>Commit message</label>
               <input
-                value={repoPath}
-                onChange={e => setRepoPath(e.target.value)}
-                placeholder="collections"
+                value={commitMsg}
+                onChange={e => setCommitMsg(e.target.value)}
+                placeholder="sync: update collections via Flux"
                 className="w-full px-3 rounded-lg text-[12px]"
                 style={{
                   height: 34, background: "var(--color-input)",
                   border: "1px solid var(--color-border)", color: "var(--color-fg-2)",
-                  fontFamily: "Geist Mono, monospace",
                 }}
               />
-              <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>Leave blank to use the repo root</span>
             </div>
 
             {!collectionsDir && (
