@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network } from "lucide-react";
+import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
 import { useGrpcStore } from "@/stores/grpcStore";
@@ -10,6 +10,7 @@ import { exportPostman, exportOpenAPI } from "@/lib/exporters";
 import { exportDataAsJson } from "@/lib/tauri";
 import { ImportModal } from "./ImportModal";
 import { CollectionRunner } from "./CollectionRunner";
+import { GitHubSyncModal } from "./GitHubSyncModal";
 import type { HttpMethod } from "@/lib/tauri";
 import type { CollectionRequest } from "@/stores/collections";
 
@@ -116,6 +117,7 @@ export function CollectionsSidebar() {
   const [importOpen, setImportOpen] = useState(false);
   const [runnerOpen, setRunnerOpen] = useState(false);
   const [exportMenuId, setExportMenuId] = useState<string | null>(null);
+  const [githubOpen, setGithubOpen] = useState(false);
 
   const reload = useCallback(async (d: string) => {
     setLoading(true);
@@ -235,6 +237,15 @@ export function CollectionsSidebar() {
           </>
         )}
         <button
+          onClick={() => setGithubOpen(true)}
+          title="GitHub Sync"
+          className="flex items-center justify-center rounded transition-colors"
+          style={{ width: 24, height: 24, background: "var(--color-card)", color: "var(--color-fg-3)" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--color-accent)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "var(--color-fg-3)")}>
+          <GitBranch size={13} />
+        </button>
+        <button
           onClick={() => setRunnerOpen(true)}
           title="Run collection"
           className="flex items-center justify-center rounded transition-colors"
@@ -262,6 +273,7 @@ export function CollectionsSidebar() {
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
       <CollectionRunner open={runnerOpen} onClose={() => setRunnerOpen(false)} />
+      <GitHubSyncModal open={githubOpen} onClose={() => setGithubOpen(false)} collectionsDir={dir} />
 
       {!dir ? (
         <FolderSetup onSet={handleSetDir} />

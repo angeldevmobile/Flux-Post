@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { Play, Square, X, CheckCircle, XCircle, Loader, ChevronDown, ChevronRight } from "lucide-react";
+import { Play, Square, X, CheckCircle, XCircle, Loader, ChevronDown, ChevronRight, Network } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
-import { sendRequest } from "@/lib/tauri";
+import { sendRequest, grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
 import { evaluateAssertions, type AssertionResult } from "@/lib/assertionEvaluator";
 import { methodColor, methodBg } from "@/lib/methods";
 import type { CollectionRequest } from "@/stores/collections";
@@ -12,6 +12,7 @@ interface RunResult {
   statusCode?: number;
   durationMs?: number;
   error?: string;
+  body?: string;
   assertions: AssertionResult[];
   expanded: boolean;
 }
@@ -26,6 +27,15 @@ function MethodPill({ method }: { method: string }) {
     <span className="inline-flex items-center justify-center shrink-0 font-bold"
       style={{ width: 36, height: 16, borderRadius: 3, fontSize: 9, fontFamily: "Geist Mono, monospace", color: methodColor(method), background: methodBg(method) }}>
       {method}
+    </span>
+  );
+}
+
+function GrpcPill() {
+  return (
+    <span className="inline-flex items-center gap-1 shrink-0 font-bold"
+      style={{ height: 16, borderRadius: 3, fontSize: 9, paddingInline: 5, color: "#A855F7", background: "#A855F715", fontFamily: "Geist Mono, monospace" }}>
+      <Network size={8} />gRPC
     </span>
   );
 }
@@ -74,25 +84,41 @@ export function CollectionRunner({ open, onClose }: Props) {
       setResults(prev => prev.map((r, idx) => idx === i ? { ...r, status: "running" } : r));
 
       const req = reqs[i];
-      const url = col.baseUrl && !req.path.startsWith("http")
-        ? col.baseUrl.replace(/\/$/, "") + "/" + req.path.replace(/^\//, "")
-        : req.path;
 
       try {
-        const resp = await sendRequest({
-          method: req.method,
-          url,
-          headers: req.headers ?? {},
-          body: req.body,
-        });
-
-        const assertions = req.tests?.length
-          ? evaluateAssertions(req.tests.map(t => t.assert), resp.status, resp.body, resp.headers)
-          : [];
-
-        setResults(prev => prev.map((r, idx) =>
-          idx === i ? { ...r, status: "done", statusCode: resp.status, durationMs: resp.durationMs, assertions } : r
-        ));
+        if (req.kind === "grpc" && req.grpc) {
+          const g = req.grpc;
+          if (g.protoId) await grpcLoadProtoById(g.protoId);
+          const useTls = g.endpoint?.startsWith("https") ?? false;
+          const resp = await grpcInvoke(
+            g.endpoint ?? "",
+            g.service ?? "",
+            g.method ?? "",
+            g.payload ?? "{}",
+            g.metadata ?? {},
+            useTls,
+            g.protoId ?? "",
+          );
+          setResults(prev => prev.map((r, idx) =>
+            idx === i ? { ...r, status: "done", durationMs: resp.durationMs, body: resp.body, assertions: [] } : r
+          ));
+        } else {
+          const url = col.baseUrl && !req.path.startsWith("http")
+            ? col.baseUrl.replace(/\/$/, "") + "/" + req.path.replace(/^\//, "")
+            : req.path;
+          const resp = await sendRequest({
+            method: req.method,
+            url,
+            headers: req.headers ?? {},
+            body: req.body,
+          });
+          const assertions = req.tests?.length
+            ? evaluateAssertions(req.tests.map(t => t.assert), resp.status, resp.body, resp.headers)
+            : [];
+          setResults(prev => prev.map((r, idx) =>
+            idx === i ? { ...r, status: "done", statusCode: resp.status, durationMs: resp.durationMs, body: resp.body, assertions } : r
+          ));
+        }
       } catch (err) {
         setResults(prev => prev.map((r, idx) =>
           idx === i ? { ...r, status: "error", error: String(err), assertions: [] } : r
@@ -206,7 +232,7 @@ export function CollectionRunner({ open, onClose }: Props) {
                 <div key={req.id} className="flex items-center gap-2 px-4"
                   style={{ height: 30 }}>
                   <span className="text-[11px]" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace", width: 20 }}>{i + 1}</span>
-                  <MethodPill method={req.method} />
+                  {req.kind === "grpc" ? <GrpcPill /> : <MethodPill method={req.method} />}
                   <span className="text-[12px] truncate" style={{ color: "var(--color-fg-2)" }}>{req.name || req.path}</span>
                 </div>
               ))}
@@ -228,13 +254,13 @@ export function CollectionRunner({ open, onClose }: Props) {
                 <button
                   className="flex items-center gap-2 w-full px-4 transition-colors text-left"
                   style={{ height: 36, minHeight: 36 }}
-                  onClick={() => r.assertions.length > 0 && toggleExpanded(i)}
+                  onClick={() => (r.status === "done" || r.status === "error") && toggleExpanded(i)}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
 
                   {/* expand toggle */}
                   <span style={{ width: 14, flexShrink: 0 }}>
-                    {r.assertions.length > 0
+                    {(r.status === "done" || r.status === "error")
                       ? r.expanded ? <ChevronDown size={11} style={{ color: "var(--color-fg-4)" }} /> : <ChevronRight size={11} style={{ color: "var(--color-fg-4)" }} />
                       : null}
                   </span>
@@ -246,7 +272,7 @@ export function CollectionRunner({ open, onClose }: Props) {
                   {isFail && <XCircle size={14} className="shrink-0" style={{ color: "#EF4444" }} />}
 
                   <span className="text-[11px] shrink-0" style={{ color: "var(--color-fg-4)", fontFamily: "Geist Mono, monospace", width: 18 }}>{i + 1}</span>
-                  <MethodPill method={r.req.method} />
+                  {r.req.kind === "grpc" ? <GrpcPill /> : <MethodPill method={r.req.method} />}
                   <span className="text-[12px] flex-1 truncate" style={{ color: "var(--color-fg-2)" }}>{r.req.name || r.req.path}</span>
 
                   {r.statusCode !== undefined && <StatusBadge code={r.statusCode} />}
@@ -265,18 +291,40 @@ export function CollectionRunner({ open, onClose }: Props) {
                   )}
                 </button>
 
-                {/* Assertion detail */}
-                {r.expanded && r.assertions.map((a, ai) => (
-                  <div key={ai} className="flex items-start gap-2 px-4 py-1"
-                    style={{ background: "var(--color-card)", paddingLeft: 54 }}>
-                    {a.pass
-                      ? <CheckCircle size={11} className="shrink-0 mt-0.5" style={{ color: "#22C55E" }} />
-                      : <XCircle size={11} className="shrink-0 mt-0.5" style={{ color: "#EF4444" }} />}
-                    <span className="text-[11px]" style={{ fontFamily: "Geist Mono, monospace", color: a.pass ? "var(--color-fg-2)" : "#EF4444" }}>
-                      {a.message}
-                    </span>
+                {/* Expanded detail: body + assertions */}
+                {r.expanded && (
+                  <div style={{ background: "var(--color-card)", borderTop: "1px solid var(--color-border)" }}>
+                    {r.error && (
+                      <div className="px-4 py-2" style={{ paddingLeft: 54 }}>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "#EF4444" }}>Error</span>
+                        <pre className="mt-1 text-[11px] whitespace-pre-wrap break-all"
+                          style={{ fontFamily: "Geist Mono, monospace", color: "#EF4444", lineHeight: 1.6 }}>
+                          {r.error}
+                        </pre>
+                      </div>
+                    )}
+                    {r.body && (
+                      <div className="px-4 py-2" style={{ paddingLeft: 54 }}>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-fg-4)" }}>Response</span>
+                        <pre className="mt-1 text-[11px] whitespace-pre-wrap break-all max-h-40 overflow-y-auto"
+                          style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)", lineHeight: 1.6 }}>
+                          {(() => { try { return JSON.stringify(JSON.parse(r.body), null, 2); } catch { return r.body; } })()}
+                        </pre>
+                      </div>
+                    )}
+                    {r.assertions.map((a, ai) => (
+                      <div key={ai} className="flex items-start gap-2 px-4 py-1"
+                        style={{ paddingLeft: 54, borderTop: "1px solid var(--color-border)" }}>
+                        {a.pass
+                          ? <CheckCircle size={11} className="shrink-0 mt-0.5" style={{ color: "#22C55E" }} />
+                          : <XCircle size={11} className="shrink-0 mt-0.5" style={{ color: "#EF4444" }} />}
+                        <span className="text-[11px]" style={{ fontFamily: "Geist Mono, monospace", color: a.pass ? "var(--color-fg-2)" : "#EF4444" }}>
+                          {a.message}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             );
           })}

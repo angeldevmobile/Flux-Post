@@ -17,7 +17,7 @@ interface CodeEditorProps {
   onAiEdit?: (instruction: string) => Promise<string>;
 }
 
-function defineThemes(monaco: typeof import("monaco-editor")) {
+export function defineThemes(monaco: typeof import("monaco-editor")) {
   monaco.editor.defineTheme("flux-dark", {
     base: "vs-dark",
     inherit: true,

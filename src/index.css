@@ -76,3 +76,9 @@ html.no-animations *, html.no-animations *::before, html.no-animations *::after 
 /* Light theme overrides for elements that use var() */
 html[data-theme="light"] body { color-scheme: light; }
 html[data-theme="dark"]  body { color-scheme: dark; }
+
+/* Monaco compare diff line highlighting */
+.compare-diff-line {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-left: 2px solid #F59E0B !important;
+}

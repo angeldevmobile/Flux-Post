@@ -1,6 +1,6 @@
-import { Send, FolderOpen, Globe, FlaskConical, Clock, Settings, Columns2, Wifi, Radio, Gauge, Server, Network } from "lucide-react";
+import { Send, FolderOpen, Globe, FlaskConical, Clock, Settings, Columns2, Wifi, Radio, Gauge, Server, Network, GitBranch } from "lucide-react";
 
-export type Route = "requests" | "collections" | "environments" | "tests" | "history" | "compare" | "websocket" | "sse" | "loadtest" | "mock" | "grpc" | "settings";
+export type Route = "requests" | "collections" | "environments" | "tests" | "history" | "compare" | "websocket" | "sse" | "loadtest" | "mock" | "grpc" | "github" | "settings";
 
 const NAV_ITEMS: { id: Route; icon: React.ElementType; label: string }[] = [
   { id: "requests",     icon: Send,         label: "Requests"     },
@@ -14,6 +14,7 @@ const NAV_ITEMS: { id: Route; icon: React.ElementType; label: string }[] = [
   { id: "loadtest",     icon: Gauge,        label: "Load Test"    },
   { id: "mock",         icon: Server,       label: "Mock Server"  },
   { id: "grpc",         icon: Network,      label: "gRPC"         },
+  { id: "github",       icon: GitBranch,    label: "GitHub"       },
 ];
 
 interface NavRailProps {

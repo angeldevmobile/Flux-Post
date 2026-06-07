@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { grpcLoadProtos, grpcSaveProto, grpcDeleteProto, type SavedProtoMeta } from "@/lib/tauri";
+import { grpcLoadProtos, grpcSaveProto, grpcDeleteProto, grpcRenameProto, type SavedProtoMeta } from "@/lib/tauri";
 
 interface ProtoLibraryStore {
   protos: SavedProtoMeta[];
@@ -8,6 +8,7 @@ interface ProtoLibraryStore {
   load: () => Promise<void>;
   save: (name: string, source: string, protoId: string) => Promise<SavedProtoMeta>;
   remove: (id: string) => Promise<void>;
+  rename: (id: string, name: string) => Promise<void>;
 }
 
 export const useProtoLibraryStore = create<ProtoLibraryStore>((set, get) => ({
@@ -29,5 +30,10 @@ export const useProtoLibraryStore = create<ProtoLibraryStore>((set, get) => ({
   remove: async (id) => {
     await grpcDeleteProto(id);
     set((s) => ({ protos: s.protos.filter((p) => p.id !== id) }));
+  },
+
+  rename: async (id, name) => {
+    await grpcRenameProto(id, name);
+    set((s) => ({ protos: s.protos.map((p) => p.id === id ? { ...p, name } : p) }));
   },
 }));

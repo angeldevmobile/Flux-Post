@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Network, Play, RefreshCw, Upload, Trash2, Plus, X, ChevronRight, ChevronDown, Lock, Unlock, BookMarked, Check, Bookmark } from "lucide-react";
+import { Network, Play, RefreshCw, Upload, Trash2, Plus, X, ChevronRight, ChevronDown, Lock, Unlock, BookMarked, Check, Bookmark, Pencil } from "lucide-react";
 import { useGrpcStore, type GrpcMetadataEntry } from "@/stores/grpcStore";
 import { grpcImportProto, grpcReflect, grpcInvoke, grpcLoadProtoById, saveHistory, saveCollection, type GrpcService } from "@/lib/tauri";
 import { useProtoLibraryStore } from "@/stores/protoLibraryStore";
@@ -13,6 +13,41 @@ import { toast } from "sonner";
 const DIR_KEY = "flux_collections_dir";
 
 type Tab = "payload" | "metadata" | "proto";
+
+function generateProtoFromServices(services: GrpcService[]): string {
+  const lines: string[] = ['syntax = "proto3";', ""];
+  const messagesSeen = new Set<string>();
+
+  for (const svc of services) {
+    lines.push(`service ${svc.name} {`);
+    for (const m of svc.methods) {
+      const inp = m.clientStreaming ? `stream ${m.inputType.split(".").pop()}` : m.inputType.split(".").pop();
+      const out = m.serverStreaming ? `stream ${m.outputType.split(".").pop()}` : m.outputType.split(".").pop();
+      lines.push(`  rpc ${m.name} (${inp}) returns (${out}) {}`);
+    }
+    lines.push("}");
+    lines.push("");
+  }
+
+  for (const svc of services) {
+    for (const m of svc.methods) {
+      if (!messagesSeen.has(m.inputType) && m.inputFields.length > 0) {
+        messagesSeen.add(m.inputType);
+        const msgName = m.inputType.split(".").pop() ?? m.inputType;
+        lines.push(`message ${msgName} {`);
+        m.inputFields.forEach((f, i) => {
+          const mod = f.repeated ? "repeated " : f.optional ? "optional " : "";
+          const typeName = f.kind === "message" ? f.typeName.split(".").pop() : f.kind;
+          lines.push(`  ${mod}${typeName} ${f.name} = ${i + 1};`);
+        });
+        lines.push("}");
+        lines.push("");
+      }
+    }
+  }
+
+  return lines.join("\n");
+}
 
 function now() {
   return new Date().toLocaleTimeString("en-US", { hour12: false });
@@ -60,7 +95,7 @@ function ServiceTree({
               const isActive = selectedService === svc.fullName && selectedMethod === m.name;
               return (
                 <button
-                  key={m.name}
+                  key={`${svc.fullName}-${m.name}`}
                   className="flex items-center gap-1.5 w-full px-3 py-1 text-left transition-colors hover:opacity-80 pl-7"
                   onClick={() => onSelectMethod(svc.fullName, m.name)}
                   style={{
@@ -258,7 +293,7 @@ export function GrpcRoute() {
   } = useGrpcStore();
 
   const { resolveVariable } = useEnvironmentStore();
-  const { protos, load: loadProtos, save: saveProto, remove: removeProto } = useProtoLibraryStore();
+  const { protos, load: loadProtos, save: saveProto, remove: removeProto, rename: renameProto } = useProtoLibraryStore();
 
   const [tab, setTab] = useState<Tab>("payload");
   const [invokedAt, setInvokedAt] = useState<string | null>(null);
@@ -269,6 +304,8 @@ export function GrpcRoute() {
   const [savingName, setSavingName] = useState("");
   const [saveMode, setSaveMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameText, setRenameText] = useState("");
 
   // Save to collection popover
   const [showSave, setShowSave] = useState(false);
@@ -516,23 +553,67 @@ export function GrpcRoute() {
               )}
               {protos.map((p) => {
                 const isActive = protoId === p.id;
+                const isRenaming = renamingId === p.id;
+
+                function startRename(e: React.MouseEvent) {
+                  e.stopPropagation();
+                  setRenamingId(p.id);
+                  setRenameText(p.name);
+                }
+
+                async function commitRename() {
+                  const trimmed = renameText.trim();
+                  if (trimmed && trimmed !== p.name) await renameProto(p.id, trimmed);
+                  setRenamingId(null);
+                }
+
+                function onRenameKey(e: React.KeyboardEvent) {
+                  if (e.key === "Enter") commitRename();
+                  if (e.key === "Escape") setRenamingId(null);
+                }
+
                 return (
                   <div key={p.id} className="flex items-center gap-1 px-2 group">
-                    <button
-                      className="flex items-center gap-1.5 flex-1 py-1 text-left rounded transition-colors hover:opacity-80 truncate"
-                      style={{ fontSize: 11, color: isActive ? "var(--color-accent)" : "var(--color-fg-2)" }}
-                      onClick={() => handleLoadSavedProto(p.id)}
-                    >
-                      <BookMarked size={10} style={{ flexShrink: 0, color: isActive ? "var(--color-accent)" : "var(--color-fg-4)" }} />
-                      <span className="truncate">{p.name}</span>
-                    </button>
-                    <button
-                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                      style={{ color: "var(--color-fg-4)" }}
-                      onClick={() => removeProto(p.id)}
-                    >
-                      <X size={10} />
-                    </button>
+                    <BookMarked size={10} style={{ flexShrink: 0, color: isActive ? "var(--color-accent)" : "var(--color-fg-4)" }} />
+                    {isRenaming ? (
+                      <input
+                        autoFocus
+                        value={renameText}
+                        onChange={e => setRenameText(e.target.value)}
+                        onBlur={commitRename}
+                        onKeyDown={onRenameKey}
+                        className="flex-1 py-1 bg-transparent outline-none"
+                        style={{ fontSize: 11, color: "var(--color-fg)", borderBottom: "1px solid var(--color-accent)" }}
+                      />
+                    ) : (
+                      <button
+                        className="flex-1 py-1 text-left truncate"
+                        style={{ fontSize: 11, color: isActive ? "var(--color-accent)" : "var(--color-fg-2)" }}
+                        onClick={() => handleLoadSavedProto(p.id)}
+                      >
+                        <span className="truncate">{p.name}</span>
+                      </button>
+                    )}
+                    {!isRenaming && (
+                      <>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          style={{ color: "var(--color-fg-4)" }}
+                          onClick={startRename}
+                          title="Rename"
+                        >
+                          <Pencil size={10} />
+                        </button>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          style={{ color: "var(--color-fg-4)" }}
+                          onClick={() => removeProto(p.id)}
+                          title="Delete"
+                        >
+                          <X size={10} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -562,9 +643,9 @@ export function GrpcRoute() {
               // Pre-fill payload scaffold from input fields
               const svcDesc = services.find((s) => s.fullName === svc);
               const mthDesc = svcDesc?.methods.find((me) => me.name === m);
-              if (mthDesc && mthDesc.inputFields.length > 0) {
+              if (mthDesc && mthDesc.inputFields?.length > 0) {
                 const scaffold: Record<string, unknown> = {};
-                for (const f of mthDesc.inputFields) {
+                for (const f of mthDesc.inputFields ?? []) {
                   scaffold[f.name] = f.repeated ? [] : f.kind === "bool" ? false : f.kind === "string" ? "" : f.kind === "bytes" ? "" : f.kind === "message" ? {} : 0;
                 }
                 setPayload(JSON.stringify(scaffold, null, 2));
@@ -730,8 +811,9 @@ export function GrpcRoute() {
             {tab === "proto" && (
               <CodeEditor
                 lang="proto"
-                value={protoText}
-                onChange={setProtoText}
+                value={protoText.trim() ? protoText : generateProtoFromServices(services)}
+                onChange={protoText.trim() ? setProtoText : () => {}}
+                readOnly={!protoText.trim()}
               />
             )}
           </div>

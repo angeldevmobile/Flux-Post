@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod github;
 pub mod cli;
 pub mod grpc;
 pub mod collections;

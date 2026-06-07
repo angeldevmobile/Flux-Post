@@ -26,6 +26,7 @@ pub struct GrpcProtos(pub Mutex<HashMap<String, (DescriptorPool, Vec<u8>)>>);
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct GrpcField {
     pub name: String,
     pub kind: String,
@@ -35,6 +36,7 @@ pub struct GrpcField {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct GrpcMethod {
     pub name: String,
     pub input_type: String,
@@ -45,6 +47,7 @@ pub struct GrpcMethod {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct GrpcService {
     pub name: String,
     pub full_name: String,
@@ -52,12 +55,14 @@ pub struct GrpcService {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProtoInfo {
     pub id: String,
     pub services: Vec<GrpcService>,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GrpcResponse {
     pub body: String,
     pub duration_ms: u64,
@@ -67,6 +72,7 @@ pub struct GrpcResponse {
 // ── Proto Library ─────────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct SavedProtoMeta {
     pub id: String,
     pub name: String,
@@ -482,6 +488,16 @@ pub async fn grpc_delete_proto(id: String, app: AppHandle) -> Result<(), String>
     }
     let mut index = read_index(&dir);
     index.retain(|m| m.id != id);
+    write_index(&dir, &index)
+}
+
+#[tauri::command]
+pub async fn grpc_rename_proto(id: String, name: String, app: AppHandle) -> Result<(), String> {
+    let dir = protos_dir(&app)?;
+    let mut index = read_index(&dir);
+    if let Some(entry) = index.iter_mut().find(|m| m.id == id) {
+        entry.name = name;
+    }
     write_index(&dir, &index)
 }
 

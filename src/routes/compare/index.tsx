@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Send, ChevronDown } from "lucide-react";
+import Editor from "@monaco-editor/react";
+import type { OnMount } from "@monaco-editor/react";
+import "@/lib/monacoSetup";
+import { defineThemes } from "@/components/CodeEditor";
 import { useEnvironmentStore } from "@/stores/environment";
 import { useRequestStore } from "@/stores/request";
 import { useSettingsStore } from "@/stores/settings";
 import { sendRequest } from "@/lib/tauri";
 import { methodColor, methodBg } from "@/lib/methods";
 import type { HttpMethod } from "@/lib/tauri";
+import type { editor as EditorNS } from "monaco-editor";
+import type { Monaco } from "@monaco-editor/react";
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
@@ -30,9 +36,97 @@ function prettyBody(body: string): string {
   try { return JSON.stringify(JSON.parse(body), null, 2); } catch { return body; }
 }
 
+function detectLang(value: string): string {
+  try { JSON.parse(value); return "json"; } catch { return "plaintext"; }
+}
+
+// ── Monaco read-only editor with optional line-diff highlighting ──────────────
+function CompareEditor({ value, baseline, isDark }: {
+  value: string;
+  baseline?: string;
+  isDark: boolean;
+}) {
+  const editorRef = useRef<EditorNS.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
+  const decorationsRef = useRef<string[]>([]);
+
+  function applyDecorations(val: string, base: string | undefined) {
+    const ed = editorRef.current;
+    const m = monacoRef.current;
+    if (!ed || !m) return;
+
+    const decs: EditorNS.IModelDeltaDecoration[] = [];
+    if (base !== undefined) {
+      const valLines = val.split("\n");
+      const baseLines = base.split("\n");
+      const maxLen = Math.max(valLines.length, baseLines.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (valLines[i] !== baseLines[i]) {
+          decs.push({
+            range: new m.Range(i + 1, 1, i + 1, 1),
+            options: { isWholeLine: true, className: "compare-diff-line" },
+          });
+        }
+      }
+    }
+    decorationsRef.current = ed.deltaDecorations(decorationsRef.current, decs);
+  }
+
+  const onMount: OnMount = (ed, m) => {
+    editorRef.current = ed;
+    monacoRef.current = m;
+    applyDecorations(value, baseline);
+  };
+
+  useEffect(() => {
+    const ed = editorRef.current;
+    const m = monacoRef.current;
+    if (!ed || !m) return;
+    const model = ed.getModel();
+    if (model) {
+      const lang = detectLang(value);
+      m.editor.setModelLanguage(model, lang);
+      if (model.getValue() !== value) model.setValue(value);
+    }
+    applyDecorations(value, baseline);
+  }, [value, baseline]);
+
+  return (
+    <Editor
+      defaultValue={value}
+      language={detectLang(value)}
+      theme={isDark ? "flux-dark" : "flux-light"}
+      beforeMount={defineThemes}
+      onMount={onMount}
+      options={{
+        readOnly: true,
+        domReadOnly: true,
+        fontSize: 12,
+        fontFamily: "Geist Mono, JetBrains Mono, Fira Code, monospace",
+        lineHeight: 20,
+        lineNumbers: "on",
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        wordWrap: "off",
+        folding: true,
+        renderLineHighlight: "none",
+        overviewRulerLanes: 0,
+        scrollbar: { verticalScrollbarSize: 5, horizontalScrollbarSize: 5 },
+        padding: { top: 12, bottom: 12 },
+        bracketPairColorization: { enabled: false },
+        automaticLayout: true,
+      }}
+      height="100%"
+    />
+  );
+}
+
+// ── Main Compare route ────────────────────────────────────────────────────────
 export function CompareRoute() {
   const { environments } = useEnvironmentStore();
   const { method: storeMethod, url: storeUrl, headers, params, body, bodyType, formFields, graphqlQuery, graphqlVariables } = useRequestStore();
+  const { theme } = useSettingsStore();
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const [method, setMethod] = useState<HttpMethod>(storeMethod);
   const [url, setUrl] = useState(storeUrl);
@@ -113,6 +207,11 @@ export function CompareRoute() {
   const selectedEnvs = environments.filter(e => selectedEnvIds.includes(e.id));
   const canRun = !!url.trim() && selectedEnvIds.length >= 1 && !isRunning;
 
+  // baseline = pretty body of the first selected env's result (for diff)
+  const baselineBody = selectedEnvs.length > 0 && results[selectedEnvs[0].id] && !results[selectedEnvs[0].id].error
+    ? prettyBody(results[selectedEnvs[0].id].body)
+    : undefined;
+
   return (
     <div className="flex flex-col flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
 
@@ -185,6 +284,11 @@ export function CompareRoute() {
         {selectedEnvIds.length === 0 && (
           <span className="text-[11px] text-red">Select at least one environment</span>
         )}
+        {selectedEnvIds.length > 1 && baselineBody !== undefined && (
+          <span className="ml-auto text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+            <span style={{ color: "#F59E0B" }}>●</span> lines differ from first column
+          </span>
+        )}
       </div>
 
       {/* Results grid */}
@@ -198,6 +302,10 @@ export function CompareRoute() {
         ) : (
           selectedEnvs.map((env, i) => {
             const result = results[env.id];
+            const pretty = result && !result.error ? prettyBody(result.body) : "";
+            // col 0 = baseline, others diff against it
+            const diffBaseline = i > 0 && baselineBody !== undefined ? baselineBody : undefined;
+
             return (
               <div key={env.id} className="flex flex-col flex-1 overflow-hidden min-w-0"
                 style={{ borderRight: i < selectedEnvs.length - 1 ? "1px solid var(--color-border)" : "none" }}>
@@ -205,10 +313,17 @@ export function CompareRoute() {
                 {/* Column header */}
                 <div className="flex items-center gap-2 shrink-0 px-4"
                   style={{ height: 38, borderBottom: "1px solid var(--color-border)", background: "var(--color-sidebar)" }}>
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--color-accent)" }} />
+                  <span className="w-2 h-2 rounded-full shrink-0"
+                    style={{ background: i === 0 ? "var(--color-fg-3)" : "var(--color-accent)" }} />
                   <span className="text-[12px] font-medium truncate" style={{ color: "var(--color-fg)" }}>
                     {env.name}
                   </span>
+                  {i === 0 && selectedEnvs.length > 1 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded shrink-0"
+                      style={{ background: "var(--color-card)", color: "var(--color-fg-4)", border: "1px solid var(--color-border)" }}>
+                      baseline
+                    </span>
+                  )}
                   {result && !result.error && (
                     <div className="flex items-center gap-2 ml-auto shrink-0">
                       <span className="text-[11px] font-bold" style={{ color: statusColor(result.status) }}>
@@ -226,18 +341,23 @@ export function CompareRoute() {
                 </div>
 
                 {/* Column body */}
-                <div className="flex-1 overflow-auto p-4">
+                <div className="flex-1 overflow-hidden relative">
                   {!result && !isRunning && (
-                    <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Hit Compare to run</p>
+                    <div className="absolute inset-0 flex items-start p-4">
+                      <p className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Hit Compare to run</p>
+                    </div>
                   )}
                   {result?.error && (
-                    <p className="text-[12px] text-red">{result.error}</p>
+                    <div className="absolute inset-0 flex items-start p-4">
+                      <p className="text-[12px] text-red">{result.error}</p>
+                    </div>
                   )}
                   {result && !result.error && (
-                    <pre className="text-[12px] whitespace-pre-wrap break-all"
-                      style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)", lineHeight: 1.6 }}>
-                      {prettyBody(result.body)}
-                    </pre>
+                    <CompareEditor
+                      value={pretty}
+                      baseline={diffBaseline}
+                      isDark={isDark}
+                    />
                   )}
                 </div>
               </div>

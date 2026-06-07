@@ -2,13 +2,13 @@
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
-  ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie, Terminal,
+  ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie, Terminal, GitBranch,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settings";
 import { clearHistory, getHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, type CookieEntry } from "@/lib/tauri";
 
-type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "cli" | "about";
+type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "cli" | "github" | "about";
 
 const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "general",    label: "General",        icon: Settings2 },
@@ -19,6 +19,7 @@ const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "cookies",    label: "Cookie Jar",      icon: Cookie    },
   { id: "privacy",    label: "Data & Privacy",  icon: Shield    },
   { id: "cli",        label: "CLI Tools",        icon: Terminal  },
+  { id: "github",     label: "GitHub",           icon: GitBranch },
   { id: "about",      label: "About",            icon: Info      },
 ];
 
@@ -961,6 +962,92 @@ function AboutSection() {
   );
 }
 
+
+const GH_TOKEN_KEY = "flux_github_token";
+const GH_USER_KEY  = "flux_github_user";
+
+function GitHubSection() {
+  const [user, setUser] = useState<{ login: string; avatar_url: string; name: string | null } | null>(() => {
+    const raw = localStorage.getItem(GH_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  });
+  const [token, setToken] = useState(() => localStorage.getItem(GH_TOKEN_KEY) ?? "");
+  const [showToken, setShowToken] = useState(false);
+
+  async function openTokenPage() {
+    const { openUrl } = await import("@tauri-apps/plugin-opener");
+    await openUrl("https://github.com/settings/tokens/new?scopes=repo&description=Flux+API+Client");
+  }
+
+  function handleDisconnect() {
+    localStorage.removeItem(GH_TOKEN_KEY);
+    localStorage.removeItem(GH_USER_KEY);
+    setToken("");
+    setUser(null);
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card title="Account">
+        {user ? (
+          <SettingRow label="Connected account" last>
+            <div className="flex items-center gap-2">
+              <img src={user.avatar_url} alt="" className="rounded-full" style={{ width: 22, height: 22 }} />
+              <span className="text-[13px]" style={{ color: "var(--color-fg-2)" }}>{user.login}</span>
+              <button
+                onClick={handleDisconnect}
+                className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-80"
+                style={{ height: 28, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
+              >
+                <LogOut size={12} /> Disconnect
+              </button>
+            </div>
+          </SettingRow>
+        ) : (
+          <SettingRow label="Not connected" description="Go to the GitHub screen to connect your account" last>
+            <button
+              onClick={openTokenPage}
+              className="flex items-center gap-1.5 px-3 rounded-md text-[12px] transition-opacity hover:opacity-80"
+              style={{ height: 28, background: "var(--color-accent-10)", border: "1px solid var(--color-accent-20)", color: "var(--color-accent)" }}
+            >
+              <ExternalLink size={12} /> Create token
+            </button>
+          </SettingRow>
+        )}
+      </Card>
+
+      <Card title="Token">
+        <div className="flex flex-col gap-3 p-4">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center px-3 rounded-md overflow-hidden"
+              style={{ height: 34, background: "var(--color-input)", border: `1px solid ${token ? "var(--color-accent-50)" : "var(--color-border)"}` }}>
+              <span className="flex-1 text-[12px] truncate" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)" }}>
+                {token ? (showToken ? token : "ghp_" + "•".repeat(Math.min(token.length - 4, 20))) : "No token saved"}
+              </span>
+              {token && (
+                <button onClick={() => setShowToken(p => !p)} className="shrink-0 ml-2" style={{ color: "var(--color-fg-4)" }}>
+                  {showToken ? <EyeOff size={13} /> : <Eye size={13} />}
+                </button>
+              )}
+            </div>
+            {token && (
+              <button
+                onClick={handleDisconnect}
+                className="flex items-center justify-center rounded-md shrink-0"
+                style={{ width: 34, height: 34, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-4)" }}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+          <p className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+            Token is stored locally on this device only. Needs <code style={{ background: "var(--color-card)", padding: "0 4px", borderRadius: 3 }}>repo</code> scope.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 function CliSection() {
   const [status, setStatus] = useState<{ installed: boolean; path: string | null; version: string | null } | null>(null);

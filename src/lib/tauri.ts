@@ -460,6 +460,10 @@ export async function grpcDeleteProto(id: string): Promise<void> {
   return invoke("grpc_delete_proto", { id });
 }
 
+export async function grpcRenameProto(id: string, name: string): Promise<void> {
+  return invoke("grpc_rename_proto", { id, name });
+}
+
 export async function grpcLoadProtoById(id: string): Promise<GrpcProtoInfo> {
   return invoke("grpc_load_proto_by_id", { id });
 }
@@ -474,6 +478,19 @@ export async function grpcInvoke(
   protoId: string,
 ): Promise<GrpcResponse> {
   return invoke("grpc_invoke", { endpoint, service, method, payloadJson, metadata, useTls, protoId });
+}
+
+export interface GitHubFileEntry {
+  name: string;
+  content: string;
+}
+
+export async function githubListYamlFiles(dir: string): Promise<GitHubFileEntry[]> {
+  return invoke("github_list_yaml_files", { dir });
+}
+
+export async function githubWriteYamlFile(dir: string, name: string, content: string): Promise<void> {
+  return invoke("github_write_yaml_file", { dir, name, content });
 }
 
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {
