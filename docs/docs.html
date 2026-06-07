@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flux Docs — API Client Documentation</title>
+  <meta name="description" content="Full documentation for Flux — the local-first, AI-powered desktop API client built with Tauri and React." />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A0A0A;
+      --topbar:    #111111;
+      --sidebar:   #0F0F0F;
+      --card:      #1A1A1A;
+      --elevated:  #141414;
+      --border:    #27272A;
+      --accent:    #A855F7;
+      --accent-10: rgba(168,85,247,.10);
+      --accent-20: rgba(168,85,247,.20);
+      --accent-50: rgba(168,85,247,.50);
+      --fg:        #FFFFFF;
+      --fg-2:      #E4E4E7;
+      --fg-3:      #A1A1AA;
+      --fg-4:      #71717A;
+      --green:     #22C55E;
+      --amber:     #F59E0B;
+      --red:       #EF4444;
+      --blue:      #3B82F6;
+      --sidebar-w: 260px;
+      --topbar-h:  52px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--topbar-h);
+      background: var(--topbar);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-logo { font-size: 16px; font-weight: 700; color: var(--fg); text-decoration: none; }
+    .topbar-version {
+      font-size: 11px; font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-10);
+      border: 1px solid var(--accent-20);
+      border-radius: 6px;
+      padding: 2px 8px;
+    }
+    .topbar-sep { width: 1px; height: 20px; background: var(--border); }
+    .topbar-title { font-size: 13px; color: var(--fg-3); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .topbar-link {
+      font-size: 13px; color: var(--fg-3);
+      text-decoration: none; padding: 6px 10px; border-radius: 6px;
+      transition: color .15s, background .15s;
+    }
+    .topbar-link:hover { color: var(--fg); background: var(--card); }
+
+    /* ── SEARCH (decorative) ── */
+    .topbar-search {
+      display: flex; align-items: center; gap: 8px;
+      height: 32px; padding: 0 12px; border-radius: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      cursor: pointer; transition: border-color .15s;
+    }
+    .topbar-search:hover { border-color: var(--accent-50); }
+    .topbar-search span { font-size: 12px; color: var(--fg-4); }
+    .topbar-search kbd {
+      font-size: 11px; color: var(--fg-4);
+      background: var(--border); border-radius: 4px;
+      padding: 1px 5px; font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: flex;
+      margin-top: var(--topbar-h);
+      min-height: calc(100vh - var(--topbar-h));
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position: fixed;
+      top: var(--topbar-h); bottom: 0; left: 0;
+      width: var(--sidebar-w);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 20px 0 40px;
+      z-index: 50;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .sidebar-group { margin-bottom: 4px; }
+    .sidebar-group-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--fg-4); text-transform: uppercase; letter-spacing: .07em;
+      padding: 12px 20px 6px;
+    }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 20px;
+      font-size: 13px; color: var(--fg-3);
+      cursor: pointer; border-radius: 0;
+      transition: color .15s, background .15s;
+      border: none; background: none; width: 100%; text-align: left;
+      text-decoration: none;
+    }
+    .sidebar-item:hover { color: var(--fg); background: rgba(255,255,255,.03); }
+    .sidebar-item.active {
+      color: var(--accent);
+      background: var(--accent-10);
+      font-weight: 500;
+      border-right: 2px solid var(--accent);
+    }
+    .sidebar-item svg { flex-shrink: 0; opacity: .7; }
+    .sidebar-item.active svg { opacity: 1; }
+
+    .sidebar-sub { padding-left: 40px; font-size: 12px; color: var(--fg-4); }
+    .sidebar-sub:hover { color: var(--fg-3); }
+    .sidebar-sub.active { color: var(--accent); border-right: 2px solid var(--accent); }
+
+    /* ── CONTENT ── */
+    .content {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      max-width: 900px;
+      padding: 48px 56px;
+    }
+
+    /* ── RIGHT TOC ── */
+    .toc {
+      position: fixed;
+      top: calc(var(--topbar-h) + 40px);
+      right: 24px; width: 180px;
+    }
+    .toc-label { font-size: 11px; font-weight: 600; color: var(--fg-4); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+    .toc-item { display: block; font-size: 12px; color: var(--fg-4); text-decoration: none; padding: 3px 0; transition: color .15s; }
+    .toc-item:hover { color: var(--fg-3); }
+    .toc-item.active { color: var(--accent); }
+
+    /* ── DOC SECTIONS ── */
+    .doc-section { display: none; }
+    .doc-section.visible { display: block; }
+
+    /* ── TYPOGRAPHY ── */
+    .page-eyebrow { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+    .page-title { font-size: 32px; font-weight: 700; color: var(--fg); line-height: 1.2; margin-bottom: 16px; }
+    .page-lead { font-size: 16px; color: var(--fg-3); line-height: 1.7; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 32px; }
+
+    h2 { font-size: 20px; font-weight: 600; color: var(--fg); margin: 40px 0 12px; scroll-margin-top: 80px; }
+    h3 { font-size: 15px; font-weight: 600; color: var(--fg-2); margin: 28px 0 10px; scroll-margin-top: 80px; }
+    p { color: var(--fg-3); margin-bottom: 14px; line-height: 1.75; }
+    p:last-child { margin-bottom: 0; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    ul, ol { padding-left: 20px; margin-bottom: 14px; }
+    li { color: var(--fg-3); margin-bottom: 6px; line-height: 1.7; }
+    li strong { color: var(--fg-2); font-weight: 500; }
+
+    /* ── CODE ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--fg-2);
+    }
+    pre {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+    pre code {
+      background: none; border: none; padding: 0;
+      font-size: 13px; color: var(--fg-2); line-height: 1.7;
+    }
+    .token-key   { color: #E879F9; }
+    .token-str   { color: #A3E635; }
+    .token-num   { color: #FB923C; }
+    .token-bool  { color: #38BDF8; }
+    .token-cmt   { color: var(--fg-4); font-style: italic; }
+    .token-kw    { color: #F472B6; }
+    .token-fn    { color: #60A5FA; }
+    .token-var   { color: #A855F7; }
+
+    /* ── CALLOUTS ── */
+    .callout {
+      display: flex; gap: 12px;
+      padding: 14px 16px; border-radius: 8px; margin: 20px 0;
+    }
+    .callout-icon { flex-shrink: 0; margin-top: 1px; font-size: 15px; }
+    .callout-body { flex: 1; }
+    .callout-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .callout-text { font-size: 13px; line-height: 1.65; }
+    .callout.info  { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); }
+    .callout.info .callout-icon, .callout.info .callout-title { color: #60A5FA; }
+    .callout.info .callout-text { color: #93C5FD; }
+    .callout.tip   { background: var(--accent-10); border: 1px solid var(--accent-20); }
+    .callout.tip .callout-icon, .callout.tip .callout-title { color: var(--accent); }
+    .callout.tip .callout-text { color: #D8B4FE; }
+    .callout.warn  { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); }
+    .callout.warn .callout-icon, .callout.warn .callout-title { color: var(--amber); }
+    .callout.warn .callout-text { color: #FCD34D; }
+    .callout.success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25); }
+    .callout.success .callout-icon, .callout.success .callout-title { color: var(--green); }
+    .callout.success .callout-text { color: #86EFAC; }
+
+    /* ── CARDS GRID ── */
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+    .card {
+      padding: 20px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .card:hover { border-color: var(--accent-50); }
+    .card-icon { font-size: 22px; margin-bottom: 10px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 4px; }
+    .card-desc { font-size: 13px; color: var(--fg-4); line-height: 1.55; }
+
+    /* ── TABLE ── */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--fg-4); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; font-size: 13px; color: var(--fg-3); border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { color: var(--fg-2); font-weight: 500; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--elevated); }
+
+    /* ── BADGE ── */
+    .badge-sm {
+      display: inline-flex; align-items: center;
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .badge-sm.purple { background: var(--accent-10); color: var(--accent); border: 1px solid var(--accent-20); }
+    .badge-sm.green  { background: rgba(34,197,94,.1); color: var(--green); border: 1px solid rgba(34,197,94,.25); }
+    .badge-sm.amber  { background: rgba(245,158,11,.1); color: var(--amber); border: 1px solid rgba(245,158,11,.25); }
+    .badge-sm.blue   { background: rgba(59,130,246,.1); color: var(--blue); border: 1px solid rgba(59,130,246,.25); }
+    .badge-sm.gray   { background: var(--card); color: var(--fg-4); border: 1px solid var(--border); }
+
+    /* ── KBD ── */
+    kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-style: normal;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px; color: var(--fg-3);
+    }
+
+    /* ── STEP LIST ── */
+    .steps { counter-reset: steps; margin: 20px 0; }
+    .step { display: flex; gap: 16px; margin-bottom: 24px; }
+    .step-num {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-10); border: 1px solid var(--accent-20);
+      color: var(--accent); font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 2px;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 6px; }
+    .step-desc { font-size: 13px; color: var(--fg-3); line-height: 1.65; }
+
+    /* ── PILL TABS (for body types etc) ── */
+    .pill-tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+    .pill-tab {
+      font-size: 12px; font-weight: 500;
+      padding: 5px 12px; border-radius: 6px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--fg-4); cursor: default;
+    }
+    .pill-tab.active { background: var(--accent-10); border-color: var(--accent-20); color: var(--accent); }
+
+    /* ── DIVIDER ── */
+    .divider { height: 1px; background: var(--border); margin: 36px 0; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1200px) { .toc { display: none; } .content { max-width: 100%; } }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform .25s; }
+      .sidebar.open { transform: translateX(0); }
+      .content { margin-left: 0; padding: 32px 24px; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="topbar-logo">Flux</a>
+    <span class="topbar-version">v0.1.6</span>
+    <div class="topbar-sep"></div>
+    <span class="topbar-title">Documentation</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-search" onclick="document.querySelector('#search-input')?.focus()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Search docs...</span>
+      <kbd>Ctrl K</kbd>
+    </div>
+    <a href="index.html" class="topbar-link">Home</a>
+    <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="topbar-link">GitHub</a>
+  </div>
+</header>
+
+<!-- ── LAYOUT ── -->
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Getting Started</div>
+      <button class="sidebar-item active" onclick="show('intro')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Introduction
+      </button>
+      <button class="sidebar-item" onclick="show('install')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Installation
+      </button>
+      <button class="sidebar-item" onclick="show('quickstart')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Quick Start
+      </button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Request Builder</div>
+      <button class="sidebar-item" onclick="show('request')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 14a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.9 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17.92z"/></svg>
+        URL Bar & Method
+      </button>
+      <button class="sidebar-item sidebar-sub" onclick="show('params')">Params</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('headers')">Headers</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('auth')">Auth</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('body')">Body</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('prereq')">Pre-request Script</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('postreq')">Post-response Script</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('extract')">Extract</button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Response Panel</div>
+      <button class="sidebar-item" onclick="show('response')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Overview
+      </button>
+      <button class="sidebar-item sidebar-sub" onclick="show('resp-body')">Body</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('resp-headers')">Headers & Cookies</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('resp-tests')">Tests</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('resp-timeline')">Timeline</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('resp-console')">Console</button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Core Features</div>
+      <button class="sidebar-item" onclick="show('collections')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Collections
+      </button>
+      <button class="sidebar-item" onclick="show('environments')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Environments
+      </button>
+      <button class="sidebar-item" onclick="show('history')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+        History
+      </button>
+      <button class="sidebar-item" onclick="show('ai')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>
+        AI Features
+      </button>
+      <button class="sidebar-item" onclick="show('github')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/></svg>
+        GitHub Sync
+      </button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Protocols</div>
+      <button class="sidebar-item" onclick="show('grpc')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg>
+        gRPC
+      </button>
+      <button class="sidebar-item" onclick="show('websocket')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        WebSocket
+      </button>
+      <button class="sidebar-item" onclick="show('sse')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        SSE
+      </button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Tools</div>
+      <button class="sidebar-item" onclick="show('loadtest')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Load Test
+      </button>
+      <button class="sidebar-item" onclick="show('mock')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"/><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"/></svg>
+        Mock Server
+      </button>
+      <button class="sidebar-item" onclick="show('compare')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+        Compare
+      </button>
+      <button class="sidebar-item" onclick="show('cli')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        CLI
+      </button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Settings</div>
+      <button class="sidebar-item" onclick="show('settings')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 14.14M4.93 4.93A10 10 0 0 0 3.52 19.07"/></svg>
+        All Settings
+      </button>
+      <button class="sidebar-item sidebar-sub" onclick="show('settings-proxy')">Proxy & Network</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('settings-cookies')">Cookie Jar</button>
+      <button class="sidebar-item sidebar-sub" onclick="show('settings-privacy')">Data & Privacy</button>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="content" id="main">
+
+    <!-- ═══════════════ INTRODUCTION ═══════════════ -->
+    <section class="doc-section visible" id="sec-intro">
+      <div class="page-eyebrow">Getting Started</div>
+      <h1 class="page-title">Introduction to Flux</h1>
+      <p class="page-lead">
+        Flux is a local-first, AI-powered desktop API client built on <strong style="color:var(--fg-2)">Tauri 2.0</strong> and <strong style="color:var(--fg-2)">React 18</strong>.
+        It stores everything on disk, uses under 30 MB RAM, and ships zero Electron. Collections are plain YAML you can commit to Git.
+      </p>
+
+      <div class="cards">
+        <div class="card" onclick="show('quickstart')">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Quick Start</div>
+          <div class="card-desc">Send your first request in under 60 seconds.</div>
+        </div>
+        <div class="card" onclick="show('install')">
+          <div class="card-icon">📦</div>
+          <div class="card-title">Installation</div>
+          <div class="card-desc">Download and install Flux on Windows, macOS, or Linux.</div>
+        </div>
+        <div class="card" onclick="show('collections')">
+          <div class="card-icon">📁</div>
+          <div class="card-title">Collections</div>
+          <div class="card-desc">Organize requests in YAML collections and share them via Git.</div>
+        </div>
+        <div class="card" onclick="show('ai')">
+          <div class="card-icon">✨</div>
+          <div class="card-title">AI Features</div>
+          <div class="card-desc">Generate tests, debug errors, and autocomplete with Claude.</div>
+        </div>
+      </div>
+
+      <h2>Why Flux?</h2>
+      <table>
+        <thead><tr><th>Feature</th><th>Flux</th><th>Others</th></tr></thead>
+        <tbody>
+          <tr><td>Memory usage</td><td><span class="badge-sm green">~28 MB</span></td><td>200–400 MB (Electron)</td></tr>
+          <tr><td>Storage format</td><td>Plain YAML — Git-friendly</td><td>Proprietary JSON / cloud-only</td></tr>
+          <tr><td>AI integration</td><td>BYOK — your key, your data</td><td>Subscription or none</td></tr>
+          <tr><td>gRPC support</td><td>Proto files + server reflection</td><td>Varies</td></tr>
+          <tr><td>Offline first</td><td>Fully offline</td><td>Requires cloud sync</td></tr>
+          <tr><td>Protocols</td><td>HTTP, gRPC, WebSocket, SSE</td><td>Usually HTTP only</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <span class="callout-icon">✨</span>
+        <div class="callout-body">
+          <div class="callout-title">BYOK — Bring Your Own Key</div>
+          <div class="callout-text">Flux never stores your Claude API key on any server. It lives only on your device and is sent directly to Anthropic when you use AI features.</div>
+        </div>
+      </div>
+
+      <h2>Tech stack</h2>
+      <ul>
+        <li><strong>Frontend:</strong> React 18, TypeScript, Vite, Tailwind CSS v4, Zustand, Radix UI</li>
+        <li><strong>Backend:</strong> Rust + Tauri 2.0, reqwest (HTTP engine), rusqlite (history)</li>
+        <li><strong>Code editor:</strong> Monaco Editor with local workers — no CDN dependency</li>
+        <li><strong>AI:</strong> Anthropic Claude API (BYOK) — Sonnet, Opus, Haiku selectable</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════ INSTALLATION ═══════════════ -->
+    <section class="doc-section" id="sec-install">
+      <div class="page-eyebrow">Getting Started</div>
+      <h1 class="page-title">Installation</h1>
+      <p class="page-lead">Flux ships as a single native binary — no runtime, no Electron, no Node.js required on the host machine.</p>
+
+      <h2>Download</h2>
+      <p>Go to the <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank">latest release</a> on GitHub and download the installer for your platform.</p>
+
+      <table>
+        <thead><tr><th>Platform</th><th>File</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Windows</td><td><code>Flux_x64-setup.exe</code></td><td>x64 NSIS installer</td></tr>
+          <tr><td>macOS (Apple Silicon)</td><td><code>Flux_aarch64.dmg</code></td><td>M1/M2/M3</td></tr>
+          <tr><td>macOS (Intel)</td><td><code>Flux_x64.dmg</code></td><td>Intel Macs</td></tr>
+          <tr><td>Linux</td><td><code>Flux_amd64.deb</code></td><td>Debian/Ubuntu</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <div class="callout-title">macOS Gatekeeper</div>
+          <div class="callout-text">If macOS blocks the app, go to <strong>System Settings → Privacy & Security</strong> and click "Open Anyway" after the first failed launch.</div>
+        </div>
+      </div>
+
+      <h2>Account</h2>
+      <p>A free account is required to sync collections. Sign up with your email or with GitHub OAuth directly inside the app on first launch. No credit card needed.</p>
+
+      <h2>System requirements</h2>
+      <ul>
+        <li><strong>Windows:</strong> Windows 10 / 11 (x64)</li>
+        <li><strong>macOS:</strong> 11.0+ (Big Sur or later)</li>
+        <li><strong>Linux:</strong> Ubuntu 20.04+ or equivalent (GTK 3 required)</li>
+        <li><strong>RAM:</strong> 30 MB typical, 60 MB peak</li>
+        <li><strong>Disk:</strong> ~15 MB installed</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════ QUICK START ═══════════════ -->
+    <section class="doc-section" id="sec-quickstart">
+      <div class="page-eyebrow">Getting Started</div>
+      <h1 class="page-title">Quick Start</h1>
+      <p class="page-lead">Send your first request and save it to a collection in under two minutes.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Open the Request Builder</div>
+            <div class="step-desc">Click the <strong>Requests</strong> icon (top of the NavRail on the left). The main panel shows the URL bar, method selector, and tab strip.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Enter a URL and hit Send</div>
+            <div class="step-desc">Type <code>https://jsonplaceholder.typicode.com/todos/1</code>, select <code>GET</code>, then press <kbd>Enter</kbd> or click <strong>Send</strong>. The Response Panel on the right fills with the JSON response.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Save to a collection</div>
+            <div class="step-desc">Press the <strong>Save</strong> button (top-right of the request panel). Choose an existing collection or create a new one by typing a name. The request is saved as a YAML file on disk.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Generate tests with AI</div>
+            <div class="step-desc">After a response arrives, click <strong>Generate Tests</strong> in the Response Panel. Flux sends the response shape to Claude and inserts ready-to-run JavaScript tests in the Tests tab.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <div class="callout-title">Command Palette</div>
+          <div class="callout-text">Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to open the Command Palette. It searches across all collections and history in real time.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ REQUEST BUILDER ═══════════════ -->
+    <section class="doc-section" id="sec-request">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">URL Bar & Method</h1>
+      <p class="page-lead">The URL bar is the primary entry point for every request. It supports environment variable interpolation, a method picker, and a one-click Send button.</p>
+
+      <h2>Method selector</h2>
+      <p>Click the method badge to the left of the URL field. Supported methods:</p>
+      <div class="pill-tabs">
+        <span class="pill-tab active">GET</span><span class="pill-tab">POST</span><span class="pill-tab">PUT</span>
+        <span class="pill-tab">PATCH</span><span class="pill-tab">DELETE</span><span class="pill-tab">HEAD</span>
+        <span class="pill-tab">OPTIONS</span>
+      </div>
+
+      <h2>Environment interpolation</h2>
+      <p>Use <code>&#123;&#123;variableName&#125;&#125;</code> syntax anywhere in the URL. Active environment variables and global variables are resolved at send time.</p>
+      <pre><code>https://&#123;&#123;baseUrl&#125;&#125;/api/users/&#123;&#123;userId&#125;&#125;</code></pre>
+
+      <h2>Keyboard shortcuts</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+        <tbody>
+          <tr><td>Send request</td><td><kbd>Enter</kbd> (while URL focused)</td></tr>
+          <tr><td>Command palette</td><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td></tr>
+          <tr><td>New request tab</td><td><kbd>Ctrl</kbd> + <kbd>T</kbd></td></tr>
+          <tr><td>Close tab</td><td><kbd>Ctrl</kbd> + <kbd>W</kbd></td></tr>
+          <tr><td>Format body</td><td><kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd></td></tr>
+          <tr><td>Toggle sidebar</td><td><kbd>Ctrl</kbd> + <kbd>B</kbd></td></tr>
+          <tr><td>Go to History</td><td><kbd>Ctrl</kbd> + <kbd>H</kbd></td></tr>
+          <tr><td>Go to Collections</td><td><kbd>Ctrl</kbd> + <kbd>L</kbd></td></tr>
+          <tr><td>Go to Environments</td><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═══════════════ PARAMS ═══════════════ -->
+    <section class="doc-section" id="sec-params">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Params</h1>
+      <p class="page-lead">Query parameters are managed in the <strong>Params</strong> tab. They are appended to the URL automatically.</p>
+
+      <h2>Adding parameters</h2>
+      <p>Click <strong>+ Add param</strong> and fill in a key and value. Toggle the checkbox to include or exclude a parameter without deleting it. The URL bar updates live as you type.</p>
+
+      <h2>Bulk edit</h2>
+      <p>Switch to <strong>Bulk Edit</strong> mode to paste a raw query string directly:</p>
+      <pre><code>page=1&limit=20&sort=createdAt&order=desc</code></pre>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <div class="callout-title">Environment variables in params</div>
+          <div class="callout-text">Values support <code>&#123;&#123;variable&#125;&#125;</code> interpolation just like the URL field.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ HEADERS ═══════════════ -->
+    <section class="doc-section" id="sec-headers">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Headers</h1>
+      <p class="page-lead">Add, remove, and toggle HTTP request headers. Smart autocomplete surfaces common header names and values as you type.</p>
+
+      <h2>Common headers</h2>
+      <table>
+        <thead><tr><th>Header</th><th>Example value</th></tr></thead>
+        <tbody>
+          <tr><td>Content-Type</td><td><code>application/json</code></td></tr>
+          <tr><td>Authorization</td><td><code>Bearer &#123;&#123;accessToken&#125;&#125;</code></td></tr>
+          <tr><td>Accept</td><td><code>application/json</code></td></tr>
+          <tr><td>X-Request-ID</td><td><code>&#123;&#123;$uuid&#125;&#125;</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Header inheritance</h2>
+      <p>Headers defined at the collection or folder level are automatically merged into every child request. A request-level header with the same name takes precedence.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <div class="callout-title">AI smart autocomplete</div>
+          <div class="callout-text">When <strong>Smart Autocomplete</strong> is enabled in Settings → AI, Flux suggests header names and values based on your API context using Claude.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ AUTH ═══════════════ -->
+    <section class="doc-section" id="sec-auth">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Auth</h1>
+      <p class="page-lead">The Auth tab provides structured authentication configuration so you never have to manually compose Authorization headers.</p>
+
+      <h2>Auth types</h2>
+      <table>
+        <thead><tr><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>None</td><td>No authentication header added.</td></tr>
+          <tr><td>Bearer Token</td><td>Adds <code>Authorization: Bearer &lt;token&gt;</code>. Supports <code>&#123;&#123;variables&#125;&#125;</code>.</td></tr>
+          <tr><td>Basic Auth</td><td>Encodes username and password as Base64 in the Authorization header.</td></tr>
+          <tr><td>API Key</td><td>Injects a key-value pair into headers or query params.</td></tr>
+          <tr><td>OAuth 2.0</td><td>Client credentials, authorization code, and password grant flows.</td></tr>
+          <tr><td>AWS Sig v4</td><td>Signs the request with AWS credentials for SigV4-protected services.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <div class="callout-title">Store tokens in environments</div>
+          <div class="callout-text">Set your token as an environment variable (e.g., <code>accessToken</code>) and reference it as <code>&#123;&#123;accessToken&#125;&#125;</code> in the Bearer field. Switching environments automatically swaps the token.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ BODY ═══════════════ -->
+    <section class="doc-section" id="sec-body">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Body</h1>
+      <p class="page-lead">The Body tab opens when the selected method supports a request payload (POST, PUT, PATCH, etc.). Monaco Editor powers all text-based body types.</p>
+
+      <h2>Body types</h2>
+      <div class="pill-tabs">
+        <span class="pill-tab active">JSON</span>
+        <span class="pill-tab">Form URL-encoded</span>
+        <span class="pill-tab">Multipart Form</span>
+        <span class="pill-tab">XML</span>
+        <span class="pill-tab">GraphQL</span>
+        <span class="pill-tab">Binary</span>
+        <span class="pill-tab">Raw text</span>
+      </div>
+
+      <h3>JSON</h3>
+      <p>Full Monaco Editor with syntax highlighting, error detection, and inline linting. Press <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd> to auto-format.</p>
+      <pre><code><span class="token-key">"name"</span>: <span class="token-str">"Alice"</span>,
+<span class="token-key">"age"</span>:  <span class="token-num">30</span>,
+<span class="token-key">"admin"</span>: <span class="token-bool">false</span></code></pre>
+
+      <h3>GraphQL</h3>
+      <p>Split view with a <strong>Query</strong> editor and a <strong>Variables</strong> editor side by side. Both use Monaco with GraphQL language support.</p>
+      <pre><code><span class="token-kw">query</span> <span class="token-fn">GetUser</span>(<span class="token-var">$id</span>: ID!) {
+  user(id: <span class="token-var">$id</span>) {
+    name
+    email
+  }
+}</code></pre>
+
+      <h3>Form URL-encoded</h3>
+      <p>Key-value table editor, identical to the Params tab. Encoded as <code>application/x-www-form-urlencoded</code>.</p>
+
+      <h3>Multipart Form</h3>
+      <p>Supports text fields and file uploads. Each part can be individually named and typed.</p>
+
+      <h3>Binary</h3>
+      <p>Upload any file from disk. The <code>Content-Type</code> header is inferred from the file extension.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">✨</span>
+        <div class="callout-body">
+          <div class="callout-title">AI body editing</div>
+          <div class="callout-text">Right-click inside the JSON body editor and select <strong>Edit with AI</strong>. Describe the change in plain English and Claude rewrites the body for you.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PRE-REQUEST ═══════════════ -->
+    <section class="doc-section" id="sec-prereq">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Pre-request Script</h1>
+      <p class="page-lead">JavaScript that runs before each request is sent. Use it to compute dynamic values, set variables, or conditionally modify the request.</p>
+
+      <h2>Available globals</h2>
+      <table>
+        <thead><tr><th>Object</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>flux.request</code></td><td>The current request object. Mutate headers, URL, body, params.</td></tr>
+          <tr><td><code>flux.env</code></td><td>Read/write environment variables: <code>flux.env.set("token", val)</code></td></tr>
+          <tr><td><code>flux.globals</code></td><td>Read/write global variables.</td></tr>
+          <tr><td><code>fetch</code></td><td>Standard Fetch API — call external endpoints to retrieve tokens.</td></tr>
+          <tr><td><code>console.log</code></td><td>Output appears in the Console tab of the Response Panel.</td></tr>
+          <tr><td><code>CryptoJS</code></td><td>Common hashing and encoding utilities.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Example — dynamic HMAC signature</h2>
+      <pre><code><span class="token-kw">const</span> body    = flux.request.body.raw;
+<span class="token-kw">const</span> secret  = flux.env.<span class="token-fn">get</span>(<span class="token-str">"apiSecret"</span>);
+<span class="token-kw">const</span> sig     = CryptoJS.HmacSHA256(body, secret).toString();
+flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"X-Signature"</span>, sig);</code></pre>
+    </section>
+
+    <!-- ═══════════════ POST-RESPONSE ═══════════════ -->
+    <section class="doc-section" id="sec-postreq">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Post-response Script</h1>
+      <p class="page-lead">JavaScript that runs after a response is received. Ideal for extracting values from responses and writing them to environment variables for use in subsequent requests.</p>
+
+      <h2>Available globals</h2>
+      <table>
+        <thead><tr><th>Object</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>flux.response</code></td><td>The full response: <code>.status</code>, <code>.headers</code>, <code>.body</code> (parsed JSON or raw text)</td></tr>
+          <tr><td><code>flux.env</code></td><td>Write extracted values back to the environment</td></tr>
+          <tr><td><code>flux.test()</code></td><td>Programmatic test assertion (same as the Tests tab)</td></tr>
+          <tr><td><code>console.log</code></td><td>Output to Console tab</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Example — extract JWT after login</h2>
+      <pre><code><span class="token-kw">const</span> data = flux.response.body;
+<span class="token-kw">if</span> (data?.token) {
+  flux.env.<span class="token-fn">set</span>(<span class="token-str">"accessToken"</span>, data.token);
+  console.<span class="token-fn">log</span>(<span class="token-str">"Token saved:"</span>, data.token.slice(0, 20) + <span class="token-str">"..."</span>);
+}</code></pre>
+    </section>
+
+    <!-- ═══════════════ EXTRACT ═══════════════ -->
+    <section class="doc-section" id="sec-extract">
+      <div class="page-eyebrow">Request Builder</div>
+      <h1 class="page-title">Extract</h1>
+      <p class="page-lead">The Extract tab provides a no-code UI for pulling values from a response body and storing them in environment variables — no scripting required.</p>
+
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Define an extraction rule</div><div class="step-desc">Click <strong>+ Add extraction</strong>. Choose the source type: JSON path, Header, or Cookie.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Enter the path</div><div class="step-desc">For JSON: use dot notation like <code>data.user.id</code> or bracket syntax <code>items[0].id</code>.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Name the target variable</div><div class="step-desc">The extracted value is written to the active environment under this name after each successful response.</div></div></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ RESPONSE OVERVIEW ═══════════════ -->
+    <section class="doc-section" id="sec-response">
+      <div class="page-eyebrow">Response Panel</div>
+      <h1 class="page-title">Response Panel</h1>
+      <p class="page-lead">The Response Panel occupies the right third of the main screen and shows everything Flux receives back from the server.</p>
+
+      <h2>Status bar</h2>
+      <p>At the top of the panel, three numbers are always visible after a request completes:</p>
+      <table>
+        <thead><tr><th>Metric</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Status</td><td>HTTP status code with color indicator — green (2xx), amber (3xx/4xx), red (5xx)</td></tr>
+          <tr><td>Time</td><td>Total round-trip time in ms or seconds</td></tr>
+          <tr><td>Size</td><td>Response body size in bytes / KB / MB</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Tabs</h2>
+      <div class="pill-tabs">
+        <span class="pill-tab active">Body</span>
+        <span class="pill-tab">Headers</span>
+        <span class="pill-tab">Cookies</span>
+        <span class="pill-tab">Tests</span>
+        <span class="pill-tab">Timeline</span>
+        <span class="pill-tab">Console</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════ RESP BODY ═══════════════ -->
+    <section class="doc-section" id="sec-resp-body">
+      <div class="page-eyebrow">Response Panel</div>
+      <h1 class="page-title">Body</h1>
+      <p class="page-lead">The Body tab renders the response payload with automatic format detection and syntax highlighting.</p>
+
+      <h2>View modes</h2>
+      <table>
+        <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Pretty</td><td>Auto-formatted JSON, XML, or HTML with Monaco syntax highlighting. Read-only.</td></tr>
+          <tr><td>Raw</td><td>Unformatted response bytes as-is.</td></tr>
+          <tr><td>Preview</td><td>HTML responses rendered in an isolated webview.</td></tr>
+          <tr><td>Binary</td><td>Hex dump for binary content types (images, PDFs, etc.).</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Copy & Save</h2>
+      <p>Click <strong>Copy</strong> to put the entire body on your clipboard. Click <strong>Save to file</strong> to write it to disk — useful for binary responses like file downloads.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">✨</span>
+        <div class="callout-body">
+          <div class="callout-title">Generate Tests from this response</div>
+          <div class="callout-text">Click <strong>Generate Tests</strong> (visible below the body when AI is configured). Claude analyzes the response shape and writes assertions that are immediately saved to the Tests tab.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ RESP HEADERS COOKIES ═══════════════ -->
+    <section class="doc-section" id="sec-resp-headers">
+      <div class="page-eyebrow">Response Panel</div>
+      <h1 class="page-title">Headers & Cookies</h1>
+      <p class="page-lead">Inspect every header and cookie the server returned, with one-click copy for any value.</p>
+
+      <h2>Headers tab</h2>
+      <p>All response headers are shown in a searchable table. Click any row to copy the value. Common headers like <code>Content-Type</code>, <code>Cache-Control</code>, and <code>X-Request-Id</code> are highlighted.</p>
+
+      <h2>Cookies tab</h2>
+      <p>Cookies set by the response (via <code>Set-Cookie</code>) appear here with all attributes: name, value, domain, path, expiry, Secure, and HttpOnly. They are automatically stored in the <a href="#" onclick="show('settings-cookies')">Cookie Jar</a> for subsequent requests.</p>
+    </section>
+
+    <!-- ═══════════════ RESP TESTS ═══════════════ -->
+    <section class="doc-section" id="sec-resp-tests">
+      <div class="page-eyebrow">Response Panel</div>
+      <h1 class="page-title">Tests</h1>
+      <p class="page-lead">Write and run JavaScript assertions against every response. Tests run automatically after each request and show pass / fail indicators inline.</p>
+
+      <h2>Writing tests</h2>
+      <pre><code><span class="token-fn">flux.test</span>(<span class="token-str">"Status is 200"</span>, () => {
+  <span class="token-fn">expect</span>(flux.response.status).<span class="token-fn">toBe</span>(<span class="token-num">200</span>);
+});
+
+<span class="token-fn">flux.test</span>(<span class="token-str">"Body has id"</span>, () => {
+  <span class="token-kw">const</span> body = flux.response.body;
+  <span class="token-fn">expect</span>(body).toHaveProperty(<span class="token-str">"id"</span>);
+  <span class="token-fn">expect</span>(<span class="token-kw">typeof</span> body.id).<span class="token-fn">toBe</span>(<span class="token-str">"number"</span>);
+});
+
+<span class="token-fn">flux.test</span>(<span class="token-str">"Response time under 500ms"</span>, () => {
+  <span class="token-fn">expect</span>(flux.response.responseTime).<span class="token-fn">toBeLessThan</span>(<span class="token-num">500</span>);
+});</code></pre>
+
+      <h2>AI-generated tests</h2>
+      <p>Click <strong>Generate Tests</strong> in the Body tab. Flux sends the response schema to Claude, which returns a full set of meaningful assertions. The generated code is placed directly in this editor, ready to run.</p>
+
+      <h2>Test suite integration</h2>
+      <p>Tests saved per-request are also visible and runnable from the <a href="#" onclick="show('collections')">Collection Runner</a> and from the <strong>Tests</strong> screen in the NavRail.</p>
+    </section>
+
+    <!-- ═══════════════ RESP TIMELINE ═══════════════ -->
+    <section class="doc-section" id="sec-resp-timeline">
+      <div class="page-eyebrow">Response Panel</div>
+      <h1 class="page-title">Timeline</h1>
+      <p class="page-lead">A waterfall view of the request lifecycle, broken into phases so you can identify exactly where time is spent.</p>
+
+      <h2>Phases</h2>
+      <table>
+        <thead><tr><th>Phase</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>DNS Lookup</td><td>Time to resolve the hostname to an IP address</td></tr>
+          <tr><td>TCP Connect</td><td>Time to establish the TCP connection</td></tr>
+          <tr><td>TLS Handshake</td><td>Time to negotiate TLS (HTTPS only)</td></tr>
+          <tr><td>Time to First Byte</td><td>Time from sending the request to receiving the first byte of the response</td></tr>
+          <tr><td>Download</td><td>Time to receive the full response body</td></tr>
+          <tr><td>Total</td><td>Sum of all phases</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═══════════════ RESP CONSOLE ═══════════════ -->
+    <section class="doc-section" id="sec-resp-console">
+      <div class="page-eyebrow">Response Panel</div>
+      <h1 class="page-title">Console</h1>
+      <p class="page-lead">All <code>console.log</code> calls from Pre-request and Post-response scripts appear here, along with any script errors.</p>
+
+      <h2>Log levels</h2>
+      <table>
+        <thead><tr><th>Method</th><th>Color</th></tr></thead>
+        <tbody>
+          <tr><td><code>console.log()</code></td><td>White — general output</td></tr>
+          <tr><td><code>console.info()</code></td><td>Blue — informational</td></tr>
+          <tr><td><code>console.warn()</code></td><td>Amber — warnings</td></tr>
+          <tr><td><code>console.error()</code></td><td>Red — errors</td></tr>
+        </tbody>
+      </table>
+
+      <p>Script errors (syntax, runtime, uncaught exceptions) are always shown in red with a stack trace.</p>
+    </section>
+
+    <!-- ═══════════════ COLLECTIONS ═══════════════ -->
+    <section class="doc-section" id="sec-collections">
+      <div class="page-eyebrow">Core Features</div>
+      <h1 class="page-title">Collections</h1>
+      <p class="page-lead">Collections are folders of requests stored as plain YAML on disk. Every collection maps directly to a directory tree — commit them to Git and collaborate without any Flux-specific tooling.</p>
+
+      <h2>Collection structure</h2>
+      <pre><code><span class="token-key">my-api/</span>
+  <span class="token-key">flux.yml</span>            <span class="token-cmt"># collection metadata</span>
+  <span class="token-key">auth/</span>
+    <span class="token-key">login.yml</span>
+    <span class="token-key">refresh.yml</span>
+  <span class="token-key">users/</span>
+    <span class="token-key">list-users.yml</span>
+    <span class="token-key">create-user.yml</span></code></pre>
+
+      <h2>Request YAML schema</h2>
+      <pre><code><span class="token-key">name</span>: <span class="token-str">Create User</span>
+<span class="token-key">method</span>: <span class="token-str">POST</span>
+<span class="token-key">url</span>: <span class="token-str">&#123;&#123;baseUrl&#125;&#125;/api/users</span>
+<span class="token-key">headers</span>:
+  <span class="token-key">Content-Type</span>: <span class="token-str">application/json</span>
+  <span class="token-key">Authorization</span>: <span class="token-str">Bearer &#123;&#123;accessToken&#125;&#125;</span>
+<span class="token-key">body</span>:
+  <span class="token-key">mode</span>: <span class="token-str">json</span>
+  <span class="token-key">raw</span>: <span class="token-str">'{"name":"Alice","email":"alice@example.com"}'</span>
+<span class="token-key">kind</span>: <span class="token-str">http</span></code></pre>
+
+      <h2>Mixed HTTP and gRPC collections</h2>
+      <p>Collections support both HTTP and gRPC requests in the same folder. gRPC requests include an extra <code>kind: grpc</code> field and a <code>grpc:</code> block. Clicking a gRPC request in the sidebar automatically navigates to the gRPC screen.</p>
+
+      <h2>Collection Runner</h2>
+      <p>Select a collection in the sidebar and click <strong>Run Collection</strong>. The runner executes all requests in sequence, shows pass/fail for each test, and produces a summary report. Currently supports HTTP requests — gRPC runner is on the roadmap.</p>
+
+      <h2>Import</h2>
+      <p>Flux can import collections from <strong>Postman v2.1</strong> and <strong>OpenAPI 3.0</strong>. Go to <strong>File → Import</strong> or drag a file onto the sidebar.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <div class="callout-title">GitHub Sync</div>
+          <div class="callout-text">Collections can be automatically pushed and pulled from a GitHub repository. See <a href="#" onclick="show('github')">GitHub Sync</a> for setup.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ ENVIRONMENTS ═══════════════ -->
+    <section class="doc-section" id="sec-environments">
+      <div class="page-eyebrow">Core Features</div>
+      <h1 class="page-title">Environments</h1>
+      <p class="page-lead">Environments hold key-value variable sets that are injected into requests at send time. Switch between environments instantly without editing any request.</p>
+
+      <h2>Variable scopes</h2>
+      <table>
+        <thead><tr><th>Scope</th><th>Description</th><th>Precedence</th></tr></thead>
+        <tbody>
+          <tr><td>Global</td><td>Available in all environments and all collections</td><td>Lowest</td></tr>
+          <tr><td>Environment</td><td>Active only when the environment is selected in the top bar</td><td>Middle</td></tr>
+          <tr><td>Script (runtime)</td><td>Set via <code>flux.env.set()</code> during pre/post scripts — not persisted</td><td>Highest</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Creating an environment</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Open the Environments screen</div><div class="step-desc">Click the <strong>Environments</strong> icon in the NavRail, or press <kbd>Ctrl</kbd> + <kbd>E</kbd>.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Click + New Environment</div><div class="step-desc">Give it a name like <strong>Production</strong>, <strong>Staging</strong>, or <strong>Local</strong>.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Add variables</div><div class="step-desc">Add <code>baseUrl</code>, <code>accessToken</code>, and any other variables specific to that environment.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Select it in the top bar</div><div class="step-desc">Use the environment dropdown in the TopBar to activate any environment for all requests.</div></div></div>
+      </div>
+
+      <h2>Secret variables</h2>
+      <p>Mark a variable as <strong>Secret</strong> (lock icon) to mask its value in the UI. Secret variables are stored in the OS keychain and excluded from exports and GitHub sync.</p>
+    </section>
+
+    <!-- ═══════════════ HISTORY ═══════════════ -->
+    <section class="doc-section" id="sec-history">
+      <div class="page-eyebrow">Core Features</div>
+      <h1 class="page-title">History</h1>
+      <p class="page-lead">Flux persists every request you send to a local SQLite database. The History screen lets you browse, search, replay, and export your request history.</p>
+
+      <h2>Searching history</h2>
+      <p>Use the search bar at the top to filter by URL, method, or status code. The search is instant and works fully offline.</p>
+
+      <h2>Replaying a request</h2>
+      <p>Click any history entry to load its full request (URL, method, headers, body) back into the Request Builder. Click <strong>Replay</strong> to send it again immediately.</p>
+
+      <h2>Exporting history</h2>
+      <p>Click <strong>Export</strong> to download your full request history as a JSON file. Useful for auditing, sharing, or importing into analytics tools.</p>
+
+      <h2>Clearing history</h2>
+      <p>Click <strong>Clear History</strong> in the Settings → Data & Privacy section or from the History screen's overflow menu. This action is irreversible.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <div class="callout-title">History is local only</div>
+          <div class="callout-text">Request history is stored exclusively in a local SQLite file on your machine. It is never uploaded to any server, even with GitHub Sync enabled.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ AI FEATURES ═══════════════ -->
+    <section class="doc-section" id="sec-ai">
+      <div class="page-eyebrow">Core Features</div>
+      <h1 class="page-title">AI Features</h1>
+      <p class="page-lead">Flux integrates Claude (Anthropic) to accelerate testing, debugging, and body authoring. All AI features are BYOK — your key is stored locally and sent directly to Anthropic.</p>
+
+      <h2>Setup</h2>
+      <p>Go to <strong>Settings → AI & Claude</strong>, paste your API key (starts with <code>sk-ant-</code>), and select a model. That's it.</p>
+
+      <h2>Available models</h2>
+      <table>
+        <thead><tr><th>Model</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><code>claude-sonnet-4-6</code> <span class="badge-sm purple">Recommended</span></td><td>Best balance of speed and quality for all AI features</td></tr>
+          <tr><td><code>claude-opus-4-7</code> <span class="badge-sm amber">Most capable</span></td><td>Complex test generation and deeply structured responses</td></tr>
+          <tr><td><code>claude-haiku-4-5</code> <span class="badge-sm green">Fastest</span></td><td>Quick autocomplete and simple debug suggestions</td></tr>
+        </tbody>
+      </table>
+
+      <h2>AI features</h2>
+
+      <h3>Test generation</h3>
+      <p>After any successful response, click <strong>Generate Tests</strong>. Claude analyzes the response schema and generates a complete test suite covering status codes, field types, required keys, and response time. Generated tests appear directly in the Tests tab, ready to run and save.</p>
+
+      <h3>AI debug assist</h3>
+      <p>When a request fails (4xx/5xx or connection error), the <strong>Debug with AI</strong> button appears below the status badge. Clicking it sends the request configuration and error to Claude, which returns a plain-English diagnosis and suggested fixes.</p>
+
+      <h3>Smart autocomplete</h3>
+      <p>With Smart Autocomplete enabled, Flux suggests completions for header names, path segments, and JSON body fields as you type. Suggestions are ranked by frequency and contextual relevance.</p>
+
+      <h3>Body editing</h3>
+      <p>Right-click inside any Monaco body editor to access <strong>Edit with AI</strong>. Type a natural language instruction (e.g., "add a nested address object" or "convert this array to paginated format") and Claude rewrites the body in place.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <div class="callout-title">Usage tracking</div>
+          <div class="callout-text">Settings → AI & Claude shows your cumulative token usage. The meter is informational only — Flux does not enforce a limit.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ GITHUB SYNC ═══════════════ -->
+    <section class="doc-section" id="sec-github">
+      <div class="page-eyebrow">Core Features</div>
+      <h1 class="page-title">GitHub Sync</h1>
+      <p class="page-lead">Connect a GitHub repository to push and pull collections automatically. Teams use this to share a single source of truth for API requests without any proprietary cloud backend.</p>
+
+      <h2>Connecting a repository</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Go to Settings → GitHub</div><div class="step-desc">Or navigate directly to the GitHub screen via the NavRail.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Authorize GitHub OAuth</div><div class="step-desc">Flux opens a browser window for GitHub OAuth. Grant the minimum required permissions (repo read/write).</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Select a repository and branch</div><div class="step-desc">Choose an existing repository or create a new one. Optionally specify a sub-folder where Flux collections live.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Pull or Push</div><div class="step-desc">Click <strong>Pull</strong> to download the latest collections from GitHub, or <strong>Push</strong> to upload local changes.</div></div></div>
+      </div>
+
+      <h2>Auto-sync</h2>
+      <p>Enable <strong>Auto-sync on launch</strong> to pull the latest version from GitHub every time Flux starts. Changes you make locally are queued and pushed when you click <strong>Sync</strong>.</p>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <div class="callout-title">Secret variables are not synced</div>
+          <div class="callout-text">Variables marked as Secret are excluded from GitHub Sync. Never commit credentials to a repository.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ gRPC ═══════════════ -->
+    <section class="doc-section" id="sec-grpc">
+      <div class="page-eyebrow">Protocols</div>
+      <h1 class="page-title">gRPC</h1>
+      <p class="page-lead">Flux has a dedicated gRPC screen with support for proto files, server reflection, unary invocations, metadata, and a persistent proto library.</p>
+
+      <h2>Getting started</h2>
+      <p>Click the <strong>gRPC</strong> icon in the NavRail (grid of squares). The screen is split into a left panel (service browser) and a right panel (invocation and response).</p>
+
+      <h2>Loading a proto</h2>
+      <div class="pill-tabs">
+        <span class="pill-tab active">Import .proto file</span>
+        <span class="pill-tab">Server reflection</span>
+      </div>
+
+      <h3>Import .proto file</h3>
+      <p>Click <strong>Import Proto</strong> and select a <code>.proto</code> file from disk. Flux compiles it into a <code>FileDescriptorSet</code> using the embedded protoc and lists all services and methods in the left panel.</p>
+
+      <h3>Server reflection</h3>
+      <p>Enter the server address and click <strong>Reflect</strong>. If the server exposes the gRPC Reflection API, Flux fetches all service descriptors automatically — no proto file needed.</p>
+
+      <h2>Proto Library</h2>
+      <p>Click the <strong>Bookmark</strong> icon next to a loaded proto to save it to the Proto Library. Saved protos persist on disk across sessions in <code>{app_data}/protos/</code> and appear in the <strong>Library</strong> section at the bottom of the left panel. Click any saved proto to reload it instantly.</p>
+
+      <h2>Invoking a method</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Select a service and method</div><div class="step-desc">Click any method in the left panel. The payload editor auto-populates with a scaffold based on the proto message definition.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Edit the payload (JSON)</div><div class="step-desc">Modify the JSON payload in the Monaco editor. Flux converts it to the protobuf binary format before sending.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Add metadata (optional)</div><div class="step-desc">Metadata (gRPC equivalent of HTTP headers) can be added in the Metadata tab as key-value pairs.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Click Invoke</div><div class="step-desc">The response message appears in the right panel, formatted as JSON. Error codes and trailers are displayed separately.</div></div></div>
+      </div>
+
+      <h2>Stream types</h2>
+      <table>
+        <thead><tr><th>Type</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Unary</td><td><span class="badge-sm green">Available</span></td></tr>
+          <tr><td>Server streaming</td><td><span class="badge-sm amber">Roadmap</span></td></tr>
+          <tr><td>Client streaming</td><td><span class="badge-sm amber">Roadmap</span></td></tr>
+          <tr><td>Bidirectional streaming</td><td><span class="badge-sm amber">Roadmap</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Saving to a collection</h2>
+      <p>Click <strong>Save to Collection</strong> in the top-right of the gRPC screen. The request is saved as a YAML entry with <code>kind: grpc</code>. Clicking it in the Collections sidebar navigates back to the gRPC screen with the request loaded.</p>
+    </section>
+
+    <!-- ═══════════════ WEBSOCKET ═══════════════ -->
+    <section class="doc-section" id="sec-websocket">
+      <div class="page-eyebrow">Protocols</div>
+      <h1 class="page-title">WebSocket</h1>
+      <p class="page-lead">The WebSocket screen lets you open persistent bidirectional connections and send and receive messages in real time.</p>
+
+      <h2>Connecting</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Enter the WebSocket URL</div><div class="step-desc">Use a <code>ws://</code> or <code>wss://</code> URL. Environment variables are interpolated: <code>wss://&#123;&#123;wsHost&#125;&#125;/events</code>.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Add headers (optional)</div><div class="step-desc">Connection-phase headers like <code>Authorization</code> are sent during the HTTP upgrade handshake.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Click Connect</div><div class="step-desc">The status badge turns green and the message log becomes active.</div></div></div>
+      </div>
+
+      <h2>Message log</h2>
+      <p>All sent and received messages appear in a scrollable log. Received messages are shown with a left indicator; sent messages with a right indicator. Each entry shows timestamp, direction, and byte count.</p>
+
+      <h2>Sending messages</h2>
+      <p>Type a message (plain text or JSON) in the composer at the bottom and press <kbd>Enter</kbd> or click <strong>Send</strong>. Click <strong>Disconnect</strong> to close the connection.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <div class="callout-title">Connection stays alive while navigating</div>
+          <div class="callout-text">Switching to another screen does not close the WebSocket connection. Return to the WebSocket screen to see new messages that arrived while you were away.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ SSE ═══════════════ -->
+    <section class="doc-section" id="sec-sse">
+      <div class="page-eyebrow">Protocols</div>
+      <h1 class="page-title">Server-Sent Events</h1>
+      <p class="page-lead">The SSE screen connects to event streams and displays each event in real time — useful for monitoring push notifications, live data feeds, and AI streaming endpoints.</p>
+
+      <h2>Connecting</h2>
+      <p>Enter an <code>http://</code> or <code>https://</code> URL that returns <code>text/event-stream</code>, add any required headers (e.g., <code>Authorization</code>), and click <strong>Connect</strong>.</p>
+
+      <h2>Event log</h2>
+      <p>Each SSE event appears as a row in the log showing its <code>event</code> type, <code>id</code>, and <code>data</code>. The data field is auto-formatted if it contains JSON.</p>
+
+      <h2>Filtering</h2>
+      <p>Use the event type filter to show only specific event types (e.g., only <code>update</code> events, ignoring <code>ping</code> events).</p>
+
+      <h2>Export</h2>
+      <p>Click <strong>Export</strong> to download all received events as a newline-delimited JSON file for offline analysis.</p>
+    </section>
+
+    <!-- ═══════════════ LOAD TEST ═══════════════ -->
+    <section class="doc-section" id="sec-loadtest">
+      <div class="page-eyebrow">Tools</div>
+      <h1 class="page-title">Load Test</h1>
+      <p class="page-lead">Fire a configurable number of concurrent requests against any endpoint and see latency distribution, throughput, and error rates in real time.</p>
+
+      <h2>Configuration</h2>
+      <table>
+        <thead><tr><th>Parameter</th><th>Description</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td>Total requests</td><td>Total number of requests to send</td><td>100</td></tr>
+          <tr><td>Concurrency</td><td>Number of requests in flight simultaneously</td><td>10</td></tr>
+          <tr><td>Timeout</td><td>Per-request timeout in milliseconds</td><td>5000</td></tr>
+          <tr><td>Method</td><td>HTTP method to use</td><td>From active request</td></tr>
+          <tr><td>URL</td><td>Target URL (environment variables resolved)</td><td>From active request</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Results</h2>
+      <p>After the run completes, Flux shows:</p>
+      <ul>
+        <li><strong>Throughput</strong> — requests per second</li>
+        <li><strong>Success rate</strong> — percentage of 2xx responses</li>
+        <li><strong>P50 / P95 / P99 latency</strong> — percentile breakdown</li>
+        <li><strong>Latency histogram</strong> — bucketed bar chart (&lt;50ms, 50–100ms, 100–250ms, 250–500ms, 500ms–1s, &gt;1s)</li>
+        <li><strong>Error count</strong> — total failed requests with status codes</li>
+      </ul>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <div class="callout-title">Respect rate limits</div>
+          <div class="callout-text">Always get permission before load testing a production endpoint. Flux does not add any throttling beyond the concurrency setting you configure.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ MOCK SERVER ═══════════════ -->
+    <section class="doc-section" id="sec-mock">
+      <div class="page-eyebrow">Tools</div>
+      <h1 class="page-title">Mock Server</h1>
+      <p class="page-lead">Run a local HTTP server that returns predefined responses — ideal for frontend development when the real API is unavailable or not yet built.</p>
+
+      <h2>Creating a mock route</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Click + New Route</div><div class="step-desc">Specify the HTTP method, path (e.g., <code>GET /api/users</code>), and status code.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Define the response body</div><div class="step-desc">Enter JSON (or any other content type) in the body editor. Supports dynamic values like <code>&#123;&#123;$uuid&#125;&#125;</code> and <code>&#123;&#123;$timestamp&#125;&#125;</code>.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Start the server</div><div class="step-desc">Click <strong>Start</strong>. The mock listens on <code>http://localhost:&lt;port&gt;</code> (port configurable, default 3001).</div></div></div>
+      </div>
+
+      <h2>Response configuration</h2>
+      <table>
+        <thead><tr><th>Option</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Status code</td><td>Any valid HTTP status (200, 201, 400, 404, 500, …)</td></tr>
+          <tr><td>Response headers</td><td>Custom headers returned with the mock response</td></tr>
+          <tr><td>Delay</td><td>Artificial latency in ms to simulate slow APIs</td></tr>
+          <tr><td>Body</td><td>Static JSON, XML, plain text, or dynamic templates</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Request log</h2>
+      <p>Every request the mock server receives appears in the log panel with timestamp, method, path, and matched route. Unmatched requests return <code>404</code> and are logged in red.</p>
+    </section>
+
+    <!-- ═══════════════ COMPARE ═══════════════ -->
+    <section class="doc-section" id="sec-compare">
+      <div class="page-eyebrow">Tools</div>
+      <h1 class="page-title">Compare</h1>
+      <p class="page-lead">Send the same request against multiple environments simultaneously and compare the responses side by side.</p>
+
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Enter a URL</div><div class="step-desc">Type the request URL in the top bar. Use <code>&#123;&#123;baseUrl&#125;&#125;</code> to reference the base URL of each environment.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Select environments</div><div class="step-desc">Toggle the environment pills below the URL bar. Each selected environment gets its own response column.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Click Compare</div><div class="step-desc">Flux fires one request per selected environment in parallel. Columns fill with status, latency, and body as each response arrives.</div></div></div>
+      </div>
+
+      <h2>Use cases</h2>
+      <ul>
+        <li><strong>Regression check:</strong> Verify that staging and production return identical responses after a deploy</li>
+        <li><strong>Migration validation:</strong> Compare old and new API versions endpoint by endpoint</li>
+        <li><strong>Multi-region testing:</strong> Hit <code>us-east</code>, <code>eu-west</code>, and <code>ap-south</code> in one shot</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════ CLI ═══════════════ -->
+    <section class="doc-section" id="sec-cli">
+      <div class="page-eyebrow">Tools</div>
+      <h1 class="page-title">CLI</h1>
+      <p class="page-lead">The Flux CLI lets you run collections, single requests, and tests from the terminal — ideal for CI/CD pipelines.</p>
+
+      <h2>Installation</h2>
+      <p>The CLI is bundled with the desktop app. After installing Flux, add it to your PATH from <strong>Settings → CLI Tools → Add to PATH</strong>.</p>
+
+      <h2>Commands</h2>
+      <pre><code><span class="token-cmt"># Run an entire collection</span>
+flux run ./my-api --env production
+
+<span class="token-cmt"># Run a single request file</span>
+flux run ./my-api/users/create-user.yml --env staging
+
+<span class="token-cmt"># Run and output results as JSON (CI-friendly)</span>
+flux run ./my-api --env production --reporter json > results.json
+
+<span class="token-cmt"># List all collections</span>
+flux collections list</code></pre>
+
+      <h2>Exit codes</h2>
+      <table>
+        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>All requests succeeded and all tests passed</td></tr>
+          <tr><td><code>1</code></td><td>One or more tests failed</td></tr>
+          <tr><td><code>2</code></td><td>One or more requests failed to connect</td></tr>
+          <tr><td><code>3</code></td><td>Configuration error (missing env, bad path, etc.)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <div class="callout-title">Environment files in CI</div>
+          <div class="callout-text">Use <code>--env-file .env.ci</code> to load environment variables from a <code>.env</code> file. Secret variables can be injected via OS environment variables: any <code>FLUX_VAR_*</code> env var is automatically mapped.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ SETTINGS ═══════════════ -->
+    <section class="doc-section" id="sec-settings">
+      <div class="page-eyebrow">Settings</div>
+      <h1 class="page-title">All Settings</h1>
+      <p class="page-lead">Open Settings from the gear icon in the NavRail (or <kbd>Ctrl</kbd> + <kbd>,</kbd>). Settings are organized into sections accessible from the sidebar.</p>
+
+      <h2>General</h2>
+      <table>
+        <thead><tr><th>Setting</th><th>Description</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td>Default Timeout</td><td>Time in ms before a request is cancelled</td><td>30000</td></tr>
+          <tr><td>Follow Redirects</td><td>Automatically follow HTTP 3xx redirects</td><td>On</td></tr>
+          <tr><td>SSL Verification</td><td>Verify SSL certificates (disable only for local dev)</td><td>On</td></tr>
+        </tbody>
+      </table>
+
+      <h2>AI & Claude</h2>
+      <table>
+        <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Claude API Key</td><td>Your Anthropic API key — stored locally, never sent to Flux servers</td></tr>
+          <tr><td>Model</td><td>claude-sonnet-4-6 (recommended), claude-opus-4-7, claude-haiku-4-5</td></tr>
+          <tr><td>Auto-generate tests</td><td>Show "Generate Tests" button after each response</td></tr>
+          <tr><td>AI debug assist</td><td>Show "Debug with AI" button on failed requests</td></tr>
+          <tr><td>Smart autocomplete</td><td>Autocomplete headers, paths, and body fields using AI</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Appearance</h2>
+      <p>Choose between <strong>Dark</strong> (default), <strong>Light</strong>, and <strong>System</strong> themes. The accent color is always Flux Purple (<code>#A855F7</code>).</p>
+
+      <h2>Keyboard Shortcuts</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+        <tbody>
+          <tr><td>Send request</td><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td></tr>
+          <tr><td>Command Palette</td><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td></tr>
+          <tr><td>New request tab</td><td><kbd>Ctrl</kbd> + <kbd>T</kbd></td></tr>
+          <tr><td>Close tab</td><td><kbd>Ctrl</kbd> + <kbd>W</kbd></td></tr>
+          <tr><td>Format body</td><td><kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd></td></tr>
+          <tr><td>Toggle sidebar</td><td><kbd>Ctrl</kbd> + <kbd>B</kbd></td></tr>
+          <tr><td>Go to History</td><td><kbd>Ctrl</kbd> + <kbd>H</kbd></td></tr>
+          <tr><td>Go to Environments</td><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td></tr>
+          <tr><td>Go to Collections</td><td><kbd>Ctrl</kbd> + <kbd>L</kbd></td></tr>
+          <tr><td>Go to Settings</td><td><kbd>Ctrl</kbd> + <kbd>,</kbd></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═══════════════ PROXY ═══════════════ -->
+    <section class="doc-section" id="sec-settings-proxy">
+      <div class="page-eyebrow">Settings</div>
+      <h1 class="page-title">Proxy & Network</h1>
+      <p class="page-lead">Route Flux traffic through an HTTP or SOCKS5 proxy. Useful for corporate environments, VPNs, or traffic inspection tools like Charles or mitmproxy.</p>
+
+      <h2>Proxy configuration</h2>
+      <table>
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Proxy URL</td><td>Full proxy URL, e.g. <code>http://proxy.corp.com:8080</code> or <code>socks5://127.0.0.1:1080</code></td></tr>
+          <tr><td>No Proxy</td><td>Comma-separated list of hostnames to bypass the proxy (e.g. <code>localhost,127.0.0.1</code>)</td></tr>
+          <tr><td>Proxy Auth</td><td>Username and password for authenticated proxies</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <div class="callout-title">Inspect traffic with mitmproxy</div>
+          <div class="callout-text">Set the proxy URL to <code>http://127.0.0.1:8080</code> and disable SSL verification to inspect all Flux requests through mitmproxy running locally.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ COOKIES ═══════════════ -->
+    <section class="doc-section" id="sec-settings-cookies">
+      <div class="page-eyebrow">Settings</div>
+      <h1 class="page-title">Cookie Jar</h1>
+      <p class="page-lead">Flux maintains a persistent cookie jar. Cookies set by responses are automatically sent with subsequent requests to the same domain.</p>
+
+      <h2>Viewing cookies</h2>
+      <p>Go to <strong>Settings → Cookie Jar</strong> to see all stored cookies grouped by domain. Each entry shows name, value, path, expiry, Secure, and HttpOnly flags.</p>
+
+      <h2>Managing cookies</h2>
+      <ul>
+        <li>Click the <strong>delete</strong> icon on any row to remove a single cookie.</li>
+        <li>Click <strong>Clear All Cookies</strong> to wipe the entire jar.</li>
+        <li>Cookies with an expired <code>Expires</code> date are automatically excluded from requests.</li>
+      </ul>
+
+      <h2>Per-request control</h2>
+      <p>To disable cookie sending for a specific request, add the <code>Cookie</code> header manually with an empty value, or use the Pre-request Script to delete specific cookies before sending.</p>
+    </section>
+
+    <!-- ═══════════════ PRIVACY ═══════════════ -->
+    <section class="doc-section" id="sec-settings-privacy">
+      <div class="page-eyebrow">Settings</div>
+      <h1 class="page-title">Data & Privacy</h1>
+      <p class="page-lead">Flux stores all data locally. This page explains what is stored, where, and how to delete it.</p>
+
+      <h2>What Flux stores</h2>
+      <table>
+        <thead><tr><th>Data</th><th>Location</th><th>Shared?</th></tr></thead>
+        <tbody>
+          <tr><td>Collections</td><td>Selected directory on disk (YAML files)</td><td>Only via GitHub Sync if enabled</td></tr>
+          <tr><td>History</td><td><code>{app_data}/history.db</code> (SQLite)</td><td>Never</td></tr>
+          <tr><td>Settings</td><td><code>{app_data}/settings.json</code></td><td>Never</td></tr>
+          <tr><td>Cookies</td><td><code>{app_data}/cookies.db</code> (SQLite)</td><td>Never</td></tr>
+          <tr><td>Claude API key</td><td>OS keychain / <code>{app_data}/settings.json</code> (encrypted)</td><td>Sent only to Anthropic</td></tr>
+          <tr><td>Proto library</td><td><code>{app_data}/protos/</code></td><td>Never</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Deleting your data</h2>
+      <ul>
+        <li><strong>Clear history:</strong> Settings → Data & Privacy → Clear History</li>
+        <li><strong>Clear cookies:</strong> Settings → Cookie Jar → Clear All Cookies</li>
+        <li><strong>Delete all app data:</strong> Uninstall Flux and delete the <code>{app_data}/flux</code> directory</li>
+      </ul>
+
+      <h2>Telemetry</h2>
+      <p>Flux collects anonymous crash reports (via Tauri's built-in crash reporter) to improve stability. No request data, URLs, headers, or response bodies are ever included. You can opt out by toggling <strong>Send crash reports</strong> in this section.</p>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body">
+          <div class="callout-title">Your requests stay on your machine</div>
+          <div class="callout-text">Flux never proxies, logs, or stores request or response data on any Flux server. Every request goes directly from your machine to the target API.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── RIGHT TOC (hidden on narrow screens) ── -->
+  <div class="toc" id="toc"></div>
+
+</div><!-- /layout -->
+
+<script>
+  // ── Navigation ──────────────────────────────────────────────────
+  const sections = document.querySelectorAll('.doc-section');
+  const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+  const tocMap = {
+    'intro':            ['Why Flux?', 'Tech stack'],
+    'install':          ['Download', 'Account', 'System requirements'],
+    'quickstart':       [],
+    'request':          ['Method selector', 'Environment interpolation', 'Keyboard shortcuts'],
+    'params':           ['Adding parameters', 'Bulk edit'],
+    'headers':          ['Common headers', 'Header inheritance'],
+    'auth':             ['Auth types'],
+    'body':             ['Body types'],
+    'prereq':           ['Available globals'],
+    'postreq':          ['Available globals'],
+    'extract':          ['How it works'],
+    'response':         ['Status bar', 'Tabs'],
+    'resp-body':        ['View modes', 'Copy & Save'],
+    'resp-headers':     ['Headers tab', 'Cookies tab'],
+    'resp-tests':       ['Writing tests', 'AI-generated tests'],
+    'resp-timeline':    ['Phases'],
+    'resp-console':     ['Log levels'],
+    'collections':      ['Collection structure', 'Mixed HTTP and gRPC', 'Collection Runner', 'Import'],
+    'environments':     ['Variable scopes', 'Creating an environment', 'Secret variables'],
+    'history':          ['Searching history', 'Replaying a request', 'Exporting history'],
+    'ai':               ['Setup', 'Available models', 'AI features'],
+    'github':           ['Connecting a repository', 'Auto-sync'],
+    'grpc':             ['Loading a proto', 'Proto Library', 'Invoking a method', 'Stream types'],
+    'websocket':        ['Connecting', 'Message log', 'Sending messages'],
+    'sse':              ['Connecting', 'Event log', 'Filtering', 'Export'],
+    'loadtest':         ['Configuration', 'Results'],
+    'mock':             ['Creating a mock route', 'Response configuration', 'Request log'],
+    'compare':          ['How it works', 'Use cases'],
+    'cli':              ['Installation', 'Commands', 'Exit codes'],
+    'settings':         ['General', 'AI & Claude', 'Appearance', 'Keyboard Shortcuts'],
+    'settings-proxy':   ['Proxy configuration'],
+    'settings-cookies': ['Viewing cookies', 'Managing cookies'],
+    'settings-privacy': ['What Flux stores', 'Deleting your data', 'Telemetry'],
+  };
+
+  function show(id) {
+    sections.forEach(s => s.classList.toggle('visible', s.id === 'sec-' + id));
+    sidebarItems.forEach(btn => {
+      const onclick = btn.getAttribute('onclick') || '';
+      btn.classList.toggle('active', onclick.includes("'" + id + "'"));
+    });
+    buildToc(id);
+    window.scrollTo({ top: 0 });
+  }
+
+  function buildToc(id) {
+    const toc = document.getElementById('toc');
+    const headings = tocMap[id] || [];
+    if (!headings.length) { toc.innerHTML = ''; return; }
+    toc.innerHTML = '<div class="toc-label">On this page</div>' +
+      headings.map(h =>
+        `<a class="toc-item" href="#">${h}</a>`
+      ).join('');
+  }
+
+  // ── Active section highlight on scroll ────────────────────────
+  // (simple — just marks first toc item active)
+  buildToc('intro');
+</script>
+
+</body>
+</html>
