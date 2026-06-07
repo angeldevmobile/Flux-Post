@@ -7,6 +7,22 @@ import { useEnvironmentStore, type Environment } from "@/stores/environment";
 // Keys that should never leave the device
 const DEVICE_ONLY_KEYS = ["claudeApiKey", "clientCertPem", "clientKeyPem"];
 
+// Stop all sync attempts if we detect a definitively invalid session
+let _sessionInvalid = false;
+
+function markSessionInvalid() {
+  if (_sessionInvalid) return;
+  _sessionInvalid = true;
+  stopSettingsSync();
+  stopEnvironmentsSync();
+  // Trigger sign-out so onAuthStateChange redirects to login
+  supabase.auth.signOut({ scope: "local" }).catch(() => {});
+}
+
+function isSupabase401(error: unknown): boolean {
+  return (error as { status?: number } | null)?.status === 401;
+}
+
 //                                          
 // HISTORY
 //                                          
@@ -100,6 +116,7 @@ export function pushSettingsDebounced(userId: string) {
 }
 
 async function pushSettings(userId: string) {
+  if (_sessionInvalid) return;
   try {
     const raw = localStorage.getItem("flux-settings");
     if (!raw) return;
@@ -115,7 +132,10 @@ async function pushSettings(userId: string) {
       data: syncable,
       updated_at: new Date().toISOString(),
     });
-    if (error) toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    if (error) {
+      if (isSupabase401(error)) { markSessionInvalid(); return; }
+      toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    }
   } catch {
     toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
   }
@@ -151,6 +171,7 @@ export function pushEnvironmentsDebounced(userId: string) {
 }
 
 async function pushEnvironments(userId: string) {
+  if (_sessionInvalid) return;
   try {
     const { environments, globalVariables, globalSecretKeys } = useEnvironmentStore.getState();
     const syncable = environments.filter((e) => e.id !== "default");
@@ -170,6 +191,10 @@ async function pushEnvironments(userId: string) {
         updated_at: new Date().toISOString(),
       }),
     ]);
+    const any401 = results.some(r =>
+      r.status === "fulfilled" && isSupabase401((r.value as { error: unknown }).error)
+    );
+    if (any401) { markSessionInvalid(); return; }
     const anyFailed = results.some(r => r.status === "rejected" || (r.status === "fulfilled" && (r.value as { error: unknown }).error));
     if (anyFailed) toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
   } catch {
@@ -244,14 +269,37 @@ export function stopEnvironmentsSync() {
 // ON LOGIN — pull everything
 //                                          
 
+let _syncInProgress = false;
+
 export async function syncOnLogin(userId: string) {
-  // Pull first, then start subscriptions (avoids echoing pulled data back immediately)
-  await Promise.allSettled([
-    pullSettings(userId),
-    pullCollections(userId),
-    pullHistory(userId),
-    pullEnvironments(userId),
-  ]);
-  startSettingsSync(userId);
-  startEnvironmentsSync(userId);
+  // Prevent concurrent syncs (e.g. SIGNED_IN firing while restoreSession also calls this)
+  if (_syncInProgress) return;
+  _syncInProgress = true;
+  _sessionInvalid = false;
+
+  try {
+    // Verify the session is still valid before making any API calls
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== userId) {
+      // Session gone or mismatched — try a refresh
+      const { error } = await supabase.auth.refreshSession();
+      if (error) {
+        // Refresh also failed: token is truly expired → sign out cleanly
+        await supabase.auth.signOut({ scope: "local" });
+        return;
+      }
+    }
+
+    // Pull first, then start subscriptions (avoids echoing pulled data back immediately)
+    await Promise.allSettled([
+      pullSettings(userId),
+      pullCollections(userId),
+      pullHistory(userId),
+      pullEnvironments(userId),
+    ]);
+    startSettingsSync(userId);
+    startEnvironmentsSync(userId);
+  } finally {
+    _syncInProgress = false;
+  }
 }

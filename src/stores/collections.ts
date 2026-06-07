@@ -17,6 +17,7 @@ export interface Collection {
   requests: CollectionRequest[];
   folders: CollectionFolder[];
   expanded: boolean;
+  group?: string;
 }
 
 interface CollectionsStore {

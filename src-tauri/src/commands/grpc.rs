@@ -18,12 +18,12 @@ use tonic_reflection::pb::v1::{
     server_reflection_request, server_reflection_response, ServerReflectionRequest,
 };
 
-// ── State ─────────────────────────────────────────────────────────────────────
+//    State                                                                      
 
 // Each entry: (pool, serialized FileDescriptorSet bytes for persistence)
 pub struct GrpcProtos(pub Mutex<HashMap<String, (DescriptorPool, Vec<u8>)>>);
 
-// ── DTOs ──────────────────────────────────────────────────────────────────────
+//    DTOs                                                                       
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -69,7 +69,7 @@ pub struct GrpcResponse {
     pub trailers: HashMap<String, String>,
 }
 
-// ── Proto Library ─────────────────────────────────────────────────────────────
+//    Proto Library                                                              
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -103,7 +103,7 @@ fn write_index(dir: &Path, index: &[SavedProtoMeta]) -> Result<(), String> {
     std::fs::write(dir.join("index.json"), content).map_err(|e| e.to_string())
 }
 
-// ── Raw-bytes codec for dynamic gRPC calls ────────────────────────────────────
+//    Raw-bytes codec for dynamic gRPC calls                                     
 
 #[derive(Clone, Default)]
 struct BytesCodec;
@@ -148,7 +148,7 @@ impl Codec for BytesCodec {
     }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+//    Helpers                                                                    
 
 fn kind_name(k: &Kind) -> String {
     match k {
@@ -228,7 +228,7 @@ async fn build_channel(endpoint: &str, use_tls: bool) -> Result<Channel, String>
     ep.connect().await.map_err(|e| e.to_string())
 }
 
-// ── Commands ──────────────────────────────────────────────────────────────────
+//    Commands                                                                   
 
 #[tauri::command]
 pub async fn grpc_import_proto(
@@ -434,7 +434,7 @@ pub async fn grpc_invoke(
     })
 }
 
-// ── Proto Library Commands ────────────────────────────────────────────────────
+//    Proto Library Commands                                                     
 
 #[tauri::command]
 pub async fn grpc_load_protos(app: AppHandle) -> Result<Vec<SavedProtoMeta>, String> {

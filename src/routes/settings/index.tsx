@@ -211,7 +211,7 @@ function AiSection() {
                 type={showKey ? "text" : "password"}
                 value={s.claudeApiKey}
                 onChange={e => handleKeyChange(e.target.value)}
-                placeholder="sk-ant-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="sk-ant-••••••••••••••••"
                 className="flex-1 text-[12px] bg-transparent"
                 style={{ color: s.claudeApiKey ? "var(--color-fg-2)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}
               />
@@ -583,7 +583,7 @@ function CertFilePicker({ label, value, accept, onLoad, onClear }: {
         <div className="flex-1 flex items-center px-3 rounded-md overflow-hidden"
           style={{ height: 32, background: "var(--color-input)", border: `1px solid ${value ? "var(--color-accent-50)" : "var(--color-border)"}` }}>
           <span className="flex-1 text-[11px] truncate" style={{ fontFamily: "Geist Mono, monospace", color: value ? "var(--color-fg)" : "var(--color-fg-4)" }}>
-            {value ? `${value.split("\n")[0].slice(0, 40)}â€¦` : "No file loaded"}
+            {value ? `${value.split("\n")[0].slice(0, 40)}…` : "No file loaded"}
           </span>
           {value && (
             <button onClick={onClear} className="shrink-0 hover:opacity-70 transition-opacity ml-2" style={{ color: "var(--color-fg-3)" }}>
@@ -666,7 +666,7 @@ function PrivacySection() {
             className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40 shrink-0"
             style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
             <Download size={13} style={{ color: "var(--color-fg-2)" }} />
-            {exporting ? "Exportingâ€¦" : "Export .json"}
+            {exporting ? "Exporting…" : "Export .json"}
           </button>
         </div>
 
@@ -674,14 +674,14 @@ function PrivacySection() {
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Request history</span>
             <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
-              {historyCount === null ? "Loadingâ€¦" : `${historyCount} request${historyCount !== 1 ? "s" : ""} stored locally`}
+              {historyCount === null ? "Loading…" : `${historyCount} request${historyCount !== 1 ? "s" : ""} stored locally`}
             </span>
           </div>
           <button onClick={handleClearHistory} disabled={clearing}
             className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 disabled:opacity-40 shrink-0"
             style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
             <History size={13} style={{ color: "var(--color-fg-2)" }} />
-            {clearing ? "Clearingâ€¦" : "Clear history"}
+            {clearing ? "Clearing…" : "Clear history"}
           </button>
         </div>
 
@@ -822,7 +822,7 @@ function CookiesSection() {
                 style={{ height: 28, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
               >
                 <Trash2 size={12} />
-                {clearing ? "Clearingâ€¦" : "Clear all"}
+                {clearing ? "Clearing…" : "Clear all"}
               </button>
             </div>
 
@@ -893,10 +893,10 @@ function AboutSection() {
             </div>
           </div>
           <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 520 }}>
-            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM â€” no Electron, no account required to start.
+            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM — no Electron, no account required to start.
           </p>
           <p className="text-[12px]" style={{ color: "var(--color-fg-4)", lineHeight: 1.6 }}>
-            Built with Tauri 2 Â· React Â· Rust Â· Claude Â· MIT License
+            Built with Tauri 2 · React · Rust · Claude · MIT License
           </p>
         </div>
 
@@ -944,7 +944,7 @@ function AboutSection() {
           { label: "GitHub",         desc: "Source code, issues and contributions",      url: "https://github.com/angeldevmobile/Flux-Post" },
           { label: "Releases",       desc: "Download installers for all platforms",       url: "https://github.com/angeldevmobile/Flux-Post/releases" },
           { label: "Report an issue",desc: "Found a bug? Open an issue on GitHub",       url: "https://github.com/angeldevmobile/Flux-Post/issues" },
-          { label: "License",        desc: "MIT License â€” free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
+          { label: "License",        desc: "MIT License — free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
         ].map((link, i, arr) => (
           <button key={link.label} onClick={() => openUrl(link.url)}
             className="flex items-center gap-4 w-full px-4 transition-opacity hover:opacity-80 text-left"

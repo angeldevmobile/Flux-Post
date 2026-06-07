@@ -83,6 +83,9 @@ pub fn run() {
             commands::grpc::grpc_load_proto_by_id,
             commands::github::github_list_yaml_files,
             commands::github::github_write_yaml_file,
+            commands::github::github_write_yaml_file_subdir,
+            commands::github::delete_yaml_file,
+            commands::github::clear_root_yaml_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

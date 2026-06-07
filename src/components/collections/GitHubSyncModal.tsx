@@ -42,10 +42,11 @@ function ghFetch(token: string, path: string, opts?: RequestInit) {
   });
 }
 
-export function GitHubSyncModal({ open, onClose, collectionsDir }: {
+export function GitHubSyncModal({ open, onClose, collectionsDir, onReload }: {
   open: boolean;
   onClose: () => void;
   collectionsDir: string | null;
+  onReload?: () => void;
 }) {
   const [step, setStep] = useState<Step>(() => localStorage.getItem(GH_TOKEN_KEY) ? "repos" : "connect");
   const [token, setToken] = useState(() => localStorage.getItem(GH_TOKEN_KEY) ?? "");
@@ -53,7 +54,7 @@ export function GitHubSyncModal({ open, onClose, collectionsDir }: {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [repoSearch, setRepoSearch] = useState("");
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
-  const [repoPath, setRepoPath] = useState("collections");
+  const [repoPath, setRepoPath] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   if (!open) return null;
@@ -121,6 +122,7 @@ export function GitHubSyncModal({ open, onClose, collectionsDir }: {
         count++;
       }
       setStatus({ kind: "ok", msg: `${count} file${count !== 1 ? "s" : ""} pulled successfully` });
+      onReload?.();
     } catch (e) {
       setStatus({ kind: "error", msg: String(e) });
     }

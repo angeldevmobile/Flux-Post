@@ -111,13 +111,16 @@ export function TestsRoute() {
     [collections]
   );
 
-  const [activeId, setActiveId] = useState<string | null>(suites[0]?.id ?? null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, TestResult[]>>({});
   const [running, setRunning] = useState<Record<string, boolean>>({});
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
-  const activeCollection = suites.find(c => c.id === activeId);
+  const effectiveActiveId = (activeId && suites.find(s => s.id === activeId))
+    ? activeId
+    : (suites[0]?.id ?? null);
+  const activeCollection = suites.find(c => c.id === effectiveActiveId);
 
   async function runSuite(collectionId: string) {
     const col = suites.find(c => c.id === collectionId);
@@ -188,8 +191,8 @@ export function TestsRoute() {
     }
   }
 
-  const activeResults = activeId ? results[activeId] ?? null : null;
-  const isRunning = activeId ? running[activeId] ?? false : false;
+  const activeResults = effectiveActiveId ? results[effectiveActiveId] ?? null : null;
+  const isRunning = effectiveActiveId ? running[effectiveActiveId] ?? false : false;
 
   const totalPassed = activeResults?.flatMap(r => r.assertions).filter(a => a.passed).length ?? 0;
   const totalFailed = activeResults?.flatMap(r => r.assertions).filter(a => !a.passed).length ?? 0;
@@ -230,7 +233,7 @@ export function TestsRoute() {
               key={s.id}
               name={s.name}
               results={results[s.id] ?? null}
-              active={activeId === s.id}
+              active={effectiveActiveId === s.id}
               onClick={() => setActiveId(s.id)}
             />
           ))}
@@ -280,7 +283,7 @@ export function TestsRoute() {
               )}
 
               <button
-                onClick={() => activeId && runSuite(activeId)}
+                onClick={() => effectiveActiveId && runSuite(effectiveActiveId)}
                 disabled={isRunning}
                 className="flex items-center gap-1.5 px-4 rounded-md text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0"
                 style={{ height: 32, background: "var(--color-accent)" }}>

@@ -57,7 +57,10 @@ export function CollectionRunner({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const col = collections.find(c => c.id === selectedColId);
+  const effectiveColId = (selectedColId && collections.find(c => c.id === selectedColId))
+    ? selectedColId
+    : (collections[0]?.id ?? "");
+  const col = collections.find(c => c.id === effectiveColId);
 
   function flatRequests(): CollectionRequest[] {
     if (!col) return [];
@@ -159,7 +162,7 @@ export function CollectionRunner({ open, onClose }: Props) {
 
           {/* Collection selector */}
           <select
-            value={selectedColId}
+            value={effectiveColId}
             onChange={e => { setSelectedColId(e.target.value); setResults([]); }}
             disabled={running}
             className="text-[12px] rounded px-2"

@@ -79,7 +79,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
-// ── Variable row ─────────────────────────────────────────────────────────────
+//    Variable row                                                              
 
 function VarRow({
   varKey, value, isSecret, isEnabled, autoFocus,
@@ -159,7 +159,7 @@ function VarRow({
   );
 }
 
-// ── Environment Variables panel ───────────────────────────────────────────────
+//    Environment Variables panel                                                
 
 function EnvContent() {
   const { environments, activeId, updateEnvironment, addEnvironment, setActive, toggleSecretKey, deleteEnvironment } = useEnvironmentStore();
@@ -306,7 +306,7 @@ function EnvContent() {
   );
 }
 
-// ── Global Variables panel ────────────────────────────────────────────────────
+//    Global Variables panel                                                     
 
 function GlobalContent() {
   const { globalVariables, globalSecretKeys, setGlobalVariable, deleteGlobalVariable, toggleGlobalSecretKey } = useEnvironmentStore();
@@ -386,7 +386,7 @@ function GlobalContent() {
   );
 }
 
-// ── Route ─────────────────────────────────────────────────────────────────────
+//    Route                                                                      
 
 export function EnvironmentsRoute() {
   const [tab, setTab] = useState<"env" | "global">("env");

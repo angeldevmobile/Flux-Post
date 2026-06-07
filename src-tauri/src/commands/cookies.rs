@@ -219,7 +219,7 @@ pub fn get_cookie_header_for_url(conn: &Connection, request_url: &str) -> SqlRes
     Ok(header)
 }
 
-// ── Tauri commands ──────────────────────────────────────────────────────────
+//    Tauri commands                                                           
 
 #[tauri::command]
 pub fn get_all_cookies(db: tauri::State<Db>) -> Result<Vec<CookieEntry>, String> {

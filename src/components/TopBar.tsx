@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, Bell, Settings, Check, Plus, LogOut } from "lucide-react";
+import { GitHubIcon } from "@/components/GitHubIcon";
 import { FluxLogoMark } from "@/components/FluxLogo";
 import { useEnvironmentStore } from "@/stores/environment";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -163,6 +164,19 @@ export function TopBar({ onNavigate }: TopBarProps) {
 
         {/* Right controls */}
         <div className="flex items-center gap-1">
+          {/* GitHub */}
+          <button
+            title="GitHub Sync"
+            onClick={() => onNavigate("github")}
+            className="flex items-center gap-1.5 rounded-md transition-colors"
+            style={{ height: 28, padding: "0 10px", background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--color-accent)"; e.currentTarget.style.borderColor = "var(--color-accent-50)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--color-fg-3)"; e.currentTarget.style.borderColor = "var(--color-border)"; }}
+          >
+            <GitHubIcon size={14} />
+            <span className="text-[12px] font-medium">GitHub</span>
+          </button>
+
           {/* Search */}
           <IconBtn title="Search (Ctrl+K)" onClick={() => setSearchOpen(true)}>
             <Search size={16} />

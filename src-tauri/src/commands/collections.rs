@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-// ── YAML schema ───────────────────────────────────────────────────────────────
+//    YAML schema                                                                
 
 #[derive(Debug, Deserialize, Serialize)]
 struct YamlTest {
@@ -77,7 +77,7 @@ struct YamlCollection {
     folders: Vec<YamlFolder>,
 }
 
-// ── Output DTOs (sent to / received from TypeScript) ─────────────────────────
+//    Output DTOs (sent to / received from TypeScript)                          
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TestAssertion {
@@ -137,9 +137,10 @@ pub struct CollectionOut {
     pub requests: Vec<RequestOut>,
     pub folders: Vec<FolderOut>,
     pub expanded: bool,
+    pub group: Option<String>,
 }
 
-// ── Conversions ───────────────────────────────────────────────────────────────
+//    Conversions                                                                
 
 fn yaml_req_to_out(r: YamlRequest, id: String) -> RequestOut {
     let grpc = r.grpc.map(|g| GrpcRequestFields {
@@ -188,7 +189,39 @@ fn out_to_yaml_req(r: RequestOut) -> YamlRequest {
     }
 }
 
-// ── Commands ──────────────────────────────────────────────────────────────────
+//    Commands                                                                   
+
+fn load_yaml_files_from(scan_path: &Path, group: Option<String>) -> Vec<CollectionOut> {
+    let Ok(entries) = fs::read_dir(scan_path) else { return vec![] };
+    let mut cols: Vec<CollectionOut> = entries
+        .filter_map(|e| e.ok())
+        .filter(|e| matches!(e.path().extension().and_then(|x| x.to_str()), Some("yaml") | Some("yml")))
+        .filter_map(|e| {
+            let p = e.path();
+            let content = fs::read_to_string(&p).ok()?;
+            let yaml: YamlCollection = serde_yaml::from_str(&content).ok()?;
+            let id = p.file_stem()?.to_str()?.to_string();
+            let full_id = if let Some(ref g) = group { format!("{}/{}", g, id) } else { id.clone() };
+
+            let requests = yaml.requests.into_iter().enumerate()
+                .map(|(i, r)| yaml_req_to_out(r, format!("{}-{}", full_id, i)))
+                .collect();
+            let folders = yaml.folders.into_iter().enumerate()
+                .map(|(fi, f)| {
+                    let fid = format!("{}-f{}", full_id, fi);
+                    let freq = f.requests.into_iter().enumerate()
+                        .map(|(ri, r)| yaml_req_to_out(r, format!("{}-{}", fid, ri)))
+                        .collect();
+                    FolderOut { id: fid, name: f.name, expanded: true, requests: freq }
+                })
+                .collect();
+
+            Some(CollectionOut { id: full_id, name: yaml.name, base_url: yaml.base_url, requests, folders, expanded: true, group: group.clone() })
+        })
+        .collect();
+    cols.sort_by(|a, b| a.name.cmp(&b.name));
+    cols
+}
 
 #[tauri::command]
 pub fn load_collections(dir: String) -> Result<Vec<CollectionOut>, String> {
@@ -197,44 +230,38 @@ pub fn load_collections(dir: String) -> Result<Vec<CollectionOut>, String> {
         return Err(format!("Directory not found: {}", dir));
     }
 
-    let mut collections: Vec<CollectionOut> = fs::read_dir(path)
-        .map_err(|e| e.to_string())?
-        .filter_map(|e| e.ok())
-        .filter(|e| {
-            let p = e.path();
-            matches!(p.extension().and_then(|x| x.to_str()), Some("yaml") | Some("yml"))
-        })
-        .filter_map(|e| {
-            let p = e.path();
-            let content = fs::read_to_string(&p).ok()?;
-            let yaml: YamlCollection = serde_yaml::from_str(&content).ok()?;
-            let id = p.file_stem()?.to_str()?.to_string();
+    // Root yaml files (no group)
+    let mut collections = load_yaml_files_from(path, None);
 
-            let requests = yaml.requests.into_iter().enumerate()
-                .map(|(i, r)| yaml_req_to_out(r, format!("{}-{}", id, i)))
-                .collect();
+    // One level of subdirectories — each becomes a group
+    if let Ok(entries) = fs::read_dir(path) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let sub = entry.path();
+            if sub.is_dir() {
+                let group_name = sub.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("")
+                    .to_string();
+                if !group_name.is_empty() {
+                    collections.extend(load_yaml_files_from(&sub, Some(group_name)));
+                }
+            }
+        }
+    }
 
-            let folders = yaml.folders.into_iter().enumerate()
-                .map(|(fi, f)| {
-                    let fid = format!("{}-f{}", id, fi);
-                    let freq = f.requests.into_iter().enumerate()
-                        .map(|(ri, r)| yaml_req_to_out(r, format!("{}-{}", fid, ri)))
-                        .collect();
-                    FolderOut { id: fid, name: f.name, expanded: true, requests: freq }
-                })
-                .collect();
-
-            Some(CollectionOut { id, name: yaml.name, base_url: yaml.base_url, requests, folders, expanded: true })
-        })
-        .collect();
-
-    collections.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(collections)
 }
 
 #[tauri::command]
 pub fn save_collection(dir: String, collection: CollectionOut) -> Result<(), String> {
-    let path = Path::new(&dir).join(format!("{}.yaml", collection.id));
+    // id may be "Group/stem" for grouped collections — use only the last segment as filename
+    let stem = collection.id.split('/').last().unwrap_or(&collection.id);
+    let base = if let Some(ref g) = collection.group {
+        Path::new(&dir).join(g)
+    } else {
+        Path::new(&dir).to_path_buf()
+    };
+    let path = base.join(format!("{}.yaml", stem));
 
     let yaml = YamlCollection {
         name: collection.name,

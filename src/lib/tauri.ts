@@ -317,7 +317,7 @@ export async function clearCookies(domain?: string): Promise<void> {
   return invoke("clear_cookies", { domain: domain ?? null });
 }
 
-// ── Load Test ─────────────────────────────────────────────────────────────────
+//   Load Test                                  
 
 export interface LoadRequest {
   method: string;
@@ -357,7 +357,7 @@ export async function runLoadTest(request: LoadRequest): Promise<LoadTestResult>
   return invoke("run_load_test", { request });
 }
 
-// ── Mock Server ───────────────────────────────────────────────────────────────
+//   Mock Server                                 
 
 export interface MockEndpoint {
   id: string;
@@ -396,7 +396,7 @@ export async function getMockStatus(): Promise<MockStatus> {
   return invoke("get_mock_status");
 }
 
-// ── gRPC ──────────────────────────────────────────────────────────────────────
+//   gRPC                                    
 
 export interface GrpcField {
   name: string;
@@ -491,6 +491,18 @@ export async function githubListYamlFiles(dir: string): Promise<GitHubFileEntry[
 
 export async function githubWriteYamlFile(dir: string, name: string, content: string): Promise<void> {
   return invoke("github_write_yaml_file", { dir, name, content });
+}
+
+export async function deleteYamlFile(dir: string, name: string): Promise<void> {
+  return invoke("delete_yaml_file", { dir, name });
+}
+
+export async function githubWriteYamlFileSubdir(dir: string, subdir: string, name: string, content: string): Promise<void> {
+  return invoke("github_write_yaml_file_subdir", { dir, subdir, name, content });
+}
+
+export async function clearRootYamlFiles(dir: string): Promise<void> {
+  return invoke("clear_root_yaml_files", { dir });
 }
 
 export function exportDataAsJson(data: object, filename = "flux-export.json"): void {

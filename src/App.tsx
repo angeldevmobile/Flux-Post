@@ -17,7 +17,7 @@ import { SseRoute } from "@/routes/sse";
 import { LoadTestRoute } from "@/routes/loadtest";
 import { MockRoute } from "@/routes/mock";
 import { GrpcRoute } from "@/routes/grpc";
-import { GithubRoute } from "@/routes/github";
+import { GitHubModal } from "@/routes/github";
 import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
@@ -31,9 +31,15 @@ type AuthScreen = "loading" | "login" | "signup" | "app";
 
 function AppShell() {
   const [route, setRoute] = useState<Route>("requests");
+  const [githubOpen, setGithubOpen] = useState(false);
   const tourSeen = useSettingsStore(s => s.tourSeen);
   const [showTour, setShowTour] = useState(() => !useSettingsStore.getState().tourSeen);
   useAppearance();
+
+  function handleNavigate(r: Route) {
+    if (r === "github") { setGithubOpen(true); return; }
+    setRoute(r);
+  }
 
   const { pendingRoute, clearPending } = useNavStore();
   useEffect(() => {
@@ -73,9 +79,9 @@ function AppShell() {
           style: { background: "#1A1A1A", border: "1px solid #27272A", color: "#FFFFFF" },
         }}
       />
-      <TopBar onNavigate={setRoute} />
+      <TopBar onNavigate={handleNavigate} />
       <div className="flex flex-1 overflow-hidden">
-        <NavRail active={route} onChange={setRoute} />
+        <NavRail active={route} onChange={handleNavigate} />
         <main className="flex flex-1 overflow-hidden">
           {route === "requests"     && <RequestsRoute />}
           {route === "collections"  && <RequestsRoute />}
@@ -88,10 +94,10 @@ function AppShell() {
           {route === "loadtest"     && <LoadTestRoute />}
           {route === "mock"         && <MockRoute />}
           {route === "grpc"         && <GrpcRoute />}
-          {route === "github"       && <GithubRoute />}
           {route === "settings"     && <SettingsRoute />}
         </main>
       </div>
+      <GitHubModal open={githubOpen} onClose={() => setGithubOpen(false)} />
       <ProductTour open={showTour} onDone={() => setShowTour(false)} />
     </div>
   );

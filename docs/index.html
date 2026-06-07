@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
   <head>
@@ -19,1940 +19,8 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet" />
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+    <link rel="stylesheet" href="styles.css" />
 
-      :root {
-        --bg: #0A0A0A;
-        --bg-card: #111111;
-        --bg-raised: #161616;
-        --border: #27272A;
-        --border-2: #3F3F46;
-        --fg: #FAFAFA;
-        --fg-2: #E4E4E7;
-        --fg-3: #A1A1AA;
-        --fg-4: #71717A;
-        --accent: #A855F7;
-        --accent-10: rgba(168, 85, 247, .10);
-        --accent-20: rgba(168, 85, 247, .20);
-        --accent-50: rgba(168, 85, 247, .50);
-        --mono: "JetBrains Mono", monospace;
-      }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
-      body {
-        font-family: "Inter", system-ui, sans-serif;
-        background: var(--bg);
-        color: var(--fg);
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      /* ── NAV ── */
-      nav {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 40px;
-        height: 56px;
-        background: rgba(10, 10, 10, .85);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid var(--border);
-      }
-
-      .nav-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .nav-logo {
-        font-size: 16px;
-        font-weight: 700;
-        letter-spacing: -0.3px;
-        color: var(--fg);
-      }
-
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        font-family: var(--mono);
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-        color: var(--accent);
-      }
-
-      .nav-links {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-      }
-
-      .nav-links a {
-        font-size: 13px;
-        color: var(--fg-3);
-        transition: color .15s;
-      }
-
-      .nav-links a:hover {
-        color: var(--fg);
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 0 16px;
-        height: 34px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        border: none;
-        transition: opacity .15s;
-      }
-
-      .btn:hover {
-        opacity: .85;
-      }
-
-      .btn-primary {
-        background: var(--accent);
-        color: #fff;
-      }
-
-      .btn-secondary {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        color: var(--fg-2);
-      }
-
-      .btn-lg {
-        height: 44px;
-        padding: 0 24px;
-        font-size: 14px;
-        border-radius: 10px;
-      }
-
-      /* ── HERO ── */
-      .hero {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 100px 24px 80px;
-        overflow: hidden;
-      }
-
-      .hero-glow {
-        position: absolute;
-        top: -60px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 700px;
-        height: 700px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(168, 85, 247, .12) 0%, transparent 65%);
-        pointer-events: none;
-      }
-
-      .hero-eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 500;
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-        color: var(--accent);
-        margin-bottom: 28px;
-      }
-
-      .hero h1 {
-        font-size: clamp(42px, 7vw, 72px);
-        font-weight: 800;
-        letter-spacing: -2px;
-        line-height: 1.08;
-        color: var(--fg);
-        max-width: 700px;
-        margin-bottom: 20px;
-      }
-
-      .hero h1 span {
-        color: var(--accent);
-      }
-
-      .hero p {
-        font-size: 16px;
-        color: var(--fg-3);
-        max-width: 520px;
-        line-height: 1.75;
-        margin-bottom: 36px;
-      }
-
-      .hero-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      /* stats */
-      .stats {
-        display: flex;
-        justify-content: center;
-        gap: 0;
-        margin: 64px auto 0;
-        max-width: 600px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        width: 100%;
-      }
-
-      .stat {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 24px 16px;
-        border-right: 1px solid var(--border);
-      }
-
-      .stat:last-child {
-        border-right: none;
-      }
-
-      .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-        letter-spacing: -1px;
-        font-family: var(--mono);
-        color: var(--accent);
-      }
-
-      .stat-label {
-        font-size: 12px;
-        color: var(--fg-4);
-        margin-top: 4px;
-      }
-
-      /* ── SECTIONS ── */
-      section {
-        padding: 80px 24px;
-        max-width: 900px;
-        margin: 0 auto;
-      }
-
-      .section-label {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        color: var(--accent);
-        margin-bottom: 12px;
-      }
-
-      .section-title {
-        font-size: clamp(24px, 4vw, 36px);
-        font-weight: 700;
-        letter-spacing: -0.8px;
-        color: var(--fg);
-        margin-bottom: 12px;
-      }
-
-      .section-desc {
-        font-size: 15px;
-        color: var(--fg-3);
-        max-width: 560px;
-        line-height: 1.7;
-        margin-bottom: 48px;
-      }
-
-      /* ── DIVIDER ── */
-      .divider {
-        border: none;
-        border-top: 1px solid var(--border);
-        margin: 0;
-      }
-
-      /* ── WHAT IS FLUX ── */
-      .what-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .what-item {
-        background: var(--bg-card);
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-
-      .what-item strong {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--fg);
-      }
-
-      .what-item span {
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.6;
-      }
-
-      /* ── GETTING STARTED ── */
-      .steps {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .step {
-        display: flex;
-        gap: 16px;
-        align-items: flex-start;
-        padding: 20px 24px;
-        background: var(--bg-card);
-      }
-
-      .step-num {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        flex-shrink: 0;
-        margin-top: 1px;
-        font-size: 11px;
-        font-weight: 700;
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-        color: var(--accent);
-      }
-
-      .step-body {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .step-body strong {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--fg);
-      }
-
-      .step-body p {
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.6;
-      }
-
-      /* ── FEATURES ── */
-      .features {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .feature {
-        background: var(--bg-card);
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .feature-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .feature-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        flex-shrink: 0;
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-      }
-
-      .feature-icon svg {
-        color: var(--accent);
-      }
-
-      .feature-title {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .feature-title strong {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--fg);
-      }
-
-      .feature-title span {
-        font-size: 12px;
-        color: var(--fg-3);
-      }
-
-      .feature ul {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        padding-left: 2px;
-        list-style: none;
-      }
-
-      .feature ul li {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.55;
-      }
-
-      .feature ul li::before {
-        content: "";
-        display: block;
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: var(--accent-50);
-        flex-shrink: 0;
-        margin-top: 6px;
-      }
-
-      /* ── INSTALL ── */
-      .install {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .platform {
-        background: var(--bg-card);
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .platform-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .platform-header svg {
-        color: var(--accent);
-        flex-shrink: 0;
-      }
-
-      .platform-header strong {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--fg);
-      }
-
-      .platform-file {
-        font-size: 11px;
-        font-family: var(--mono);
-        padding: 2px 8px;
-        border-radius: 4px;
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        color: var(--fg-3);
-      }
-
-      .platform ol {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        padding-left: 2px;
-        list-style: none;
-        counter-reset: steps;
-      }
-
-      .platform ol li {
-        display: flex;
-        gap: 8px;
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.6;
-        counter-increment: steps;
-      }
-
-      .platform ol li::before {
-        content: counter(steps) ".";
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--fg-4);
-        flex-shrink: 0;
-        min-width: 16px;
-        margin-top: 1px;
-      }
-
-      .install-cta {
-        padding: 16px 24px;
-        background: var(--bg-card);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border-top: 1px solid var(--border);
-      }
-
-      /* ── SHORTCUTS ── */
-      .shortcuts-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .shortcut {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 0 20px;
-        height: 44px;
-        background: var(--bg-card);
-        font-size: 13px;
-        color: var(--fg-3);
-      }
-
-      .keys {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-shrink: 0;
-      }
-
-      .key {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 7px;
-        height: 22px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 500;
-        font-family: var(--mono);
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        color: var(--fg-2);
-      }
-
-      .key-sep {
-        font-size: 10px;
-        color: var(--fg-4);
-      }
-
-      /* ── FOOTER ── */
-      footer {
-        border-top: 1px solid var(--border);
-        padding: 32px 40px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-      }
-
-      .footer-left {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .footer-left span {
-        font-size: 13px;
-        color: var(--fg-4);
-      }
-
-      .footer-left strong {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--fg-3);
-      }
-
-      .footer-links {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-
-      .footer-links a {
-        font-size: 12px;
-        color: var(--fg-4);
-        transition: color .15s;
-      }
-
-      .footer-links a:hover {
-        color: var(--fg-2);
-      }
-
-      /* ── RESPONSIVE ── */
-      @media (max-width: 640px) {
-        nav {
-          padding: 0 20px;
-        }
-
-        .nav-links {
-          display: none;
-        }
-
-        .hero {
-          padding: 72px 20px 56px;
-        }
-
-        .what-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .shortcuts-grid {
-          grid-template-columns: 1fr;
-        }
-
-        section {
-          padding: 56px 20px;
-        }
-
-        footer {
-          padding: 24px 20px;
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .stats {
-          flex-direction: column;
-        }
-
-        .stat {
-          border-right: none;
-          border-bottom: 1px solid var(--border);
-        }
-
-        .stat:last-child {
-          border-bottom: none;
-        }
-      }
-
-      /* ── AI NOTICE ── */
-      @keyframes glow-pulse {
-
-        0%,
-        100% {
-          box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
-          border-color: rgba(168, 85, 247, .25);
-        }
-
-        50% {
-          box-shadow: 0 0 28px 4px rgba(168, 85, 247, .13);
-          border-color: rgba(168, 85, 247, .55);
-        }
-      }
-
-      @keyframes dot-blink {
-
-        0%,
-        100% {
-          opacity: 1;
-        }
-
-        50% {
-          opacity: .25;
-        }
-      }
-
-      @keyframes fade-up {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes shimmer-text {
-        0% {
-          background-position: -200% center;
-        }
-
-        100% {
-          background-position: 200% center;
-        }
-      }
-
-      @keyframes ping {
-        0% {
-          transform: scale(1);
-          opacity: .8;
-        }
-
-        70% {
-          transform: scale(2.2);
-          opacity: 0;
-        }
-
-        100% {
-          transform: scale(2.2);
-          opacity: 0;
-        }
-      }
-
-      .ai-notice {
-        animation: glow-pulse 3s ease-in-out infinite, fade-up .5s ease both;
-        border: 1px solid rgba(168, 85, 247, .25);
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 36px;
-      }
-
-      .ai-notice-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 13px 20px;
-        background: linear-gradient(90deg, rgba(168, 85, 247, .13) 0%, rgba(168, 85, 247, .04) 100%);
-        border-bottom: 1px solid rgba(168, 85, 247, .2);
-      }
-
-      .ai-notice-dot-wrap {
-        position: relative;
-        width: 10px;
-        height: 10px;
-        flex-shrink: 0;
-      }
-
-      .ai-notice-dot {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        background: var(--accent);
-        animation: dot-blink 2s ease-in-out infinite;
-      }
-
-      .ai-notice-dot-ring {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        background: var(--accent);
-        animation: ping 2s cubic-bezier(0, 0, .2, 1) infinite;
-      }
-
-      .ai-notice-badge {
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        background: linear-gradient(90deg, var(--accent) 0%, #7C3AED 50%, var(--accent) 100%);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: shimmer-text 3s linear infinite;
-      }
-
-      .ai-notice-body {
-        padding: 20px;
-        background: var(--bg-card);
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-
-      .ai-notice-body>p {
-        font-size: 14px;
-        color: var(--fg-2);
-        line-height: 1.75;
-        margin: 0;
-      }
-
-      .ai-flow {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        padding: 4px 0;
-      }
-
-      .ai-flow-chip {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 12px;
-        border-radius: 8px;
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        font-size: 12px;
-        color: var(--fg-3);
-        font-family: var(--mono);
-      }
-
-      .ai-flow-chip svg {
-        color: var(--accent);
-        flex-shrink: 0;
-      }
-
-      .ai-flow-chip.blocked {
-        border-color: rgba(239, 68, 68, .3);
-        color: var(--fg-4);
-        position: relative;
-      }
-
-      .ai-flow-chip.blocked::after {
-        content: "";
-        position: absolute;
-        inset: -1px;
-        border-radius: 8px;
-        border: 1px solid rgba(239, 68, 68, .3);
-      }
-
-      .ai-flow-arrow {
-        font-size: 14px;
-        color: var(--fg-4);
-        flex-shrink: 0;
-      }
-
-      .ai-flow-arrow.blocked {
-        color: #EF4444;
-      }
-
-      .ai-features-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        margin-top: 32px;
-      }
-
-      .ai-feat {
-        background: var(--bg-card);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .ai-feat-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--fg);
-      }
-
-      .ai-feat-label svg {
-        color: var(--accent);
-        flex-shrink: 0;
-      }
-
-      .ai-feat p {
-        font-size: 12px;
-        color: var(--fg-3);
-        line-height: 1.65;
-        margin: 0;
-      }
-
-      @media (max-width: 640px) {
-        .ai-features-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .ai-flow {
-          gap: 6px;
-        }
-      }
-
-      /* SVG icon util */
-      svg {
-        display: block;
-      }
-
-      /* ── DEMO ── */
-      .demo-video-wrap {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 0 80px rgba(168, 85, 247, .06), 0 30px 60px rgba(0, 0, 0, .4);
-      }
-
-      .demo-section {
-        padding: 80px 24px;
-        max-width: 960px;
-        margin: 0 auto;
-      }
-
-      .demo-steps-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 28px;
-        flex-wrap: wrap;
-      }
-
-      .demo-step-pill {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 6px 14px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--fg-4);
-        border: 1px solid var(--border);
-        background: var(--bg-card);
-        transition: color .3s, border-color .3s, background .3s;
-        user-select: none;
-      }
-
-      .demo-step-pill.active {
-        color: var(--accent);
-        border-color: var(--accent-20);
-        background: var(--accent-10);
-      }
-
-      .demo-step-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: currentColor;
-        flex-shrink: 0;
-        transition: background .3s;
-      }
-
-      .demo-step-pill.active .demo-step-dot {
-        animation: dot-blink 1.2s ease-in-out infinite;
-      }
-
-      .demo-step-sep {
-        font-size: 14px;
-        color: var(--fg-4);
-      }
-
-      .demo-window {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 0 80px rgba(168, 85, 247, .06), 0 30px 60px rgba(0, 0, 0, .4);
-      }
-
-      .demo-chrome {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0 16px;
-        height: 36px;
-        background: #111;
-        border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
-      }
-
-      .demo-chrome-title {
-        font-size: 11px;
-        color: var(--fg-4);
-        font-family: var(--mono);
-        margin: 0 auto;
-      }
-
-      .demo-body {
-        display: flex;
-        height: 390px;
-      }
-
-      .demo-rail {
-        width: 48px;
-        background: #0F0F0F;
-        border-right: 1px solid var(--border);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 14px 0;
-        gap: 10px;
-        flex-shrink: 0;
-      }
-
-      .demo-rail-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        background: var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .demo-rail-icon.active {
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-      }
-
-      .demo-sidebar {
-        width: 190px;
-        background: #0F0F0F;
-        border-right: 1px solid var(--border);
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        overflow: hidden;
-      }
-
-      .demo-sidebar-hdr {
-        padding: 10px 14px 8px;
-        font-size: 9px;
-        font-weight: 600;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: var(--fg-4);
-        border-bottom: 1px solid var(--border);
-      }
-
-      .demo-sidebar-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 14px;
-        font-size: 11px;
-        color: var(--fg-3);
-        border-bottom: 1px solid rgba(39, 39, 42, .4);
-        white-space: nowrap;
-        overflow: hidden;
-      }
-
-      .demo-sidebar-item.active {
-        background: var(--accent-10);
-        color: var(--fg);
-        border-left: 2px solid var(--accent);
-        padding-left: 12px;
-      }
-
-      .demo-m {
-        font-family: var(--mono);
-        font-size: 8px;
-        font-weight: 700;
-        padding: 1px 4px;
-        border-radius: 3px;
-        flex-shrink: 0;
-      }
-
-      .demo-m.get {
-        background: rgba(34, 197, 94, .15);
-        color: #22C55E;
-      }
-
-      .demo-m.post {
-        background: rgba(249, 115, 22, .15);
-        color: #F97316;
-      }
-
-      .demo-m.del {
-        background: rgba(239, 68, 68, .15);
-        color: #EF4444;
-      }
-
-      .demo-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        background: #0A0A0A;
-        min-width: 0;
-      }
-
-      .demo-url-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 9px 14px;
-        border-bottom: 1px solid var(--border);
-        background: #111;
-        flex-shrink: 0;
-      }
-
-      .demo-method-pill {
-        font-family: var(--mono);
-        font-size: 10px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 5px;
-        background: rgba(34, 197, 94, .15);
-        color: #22C55E;
-        flex-shrink: 0;
-      }
-
-      .demo-url-field {
-        flex: 1;
-        font-family: var(--mono);
-        font-size: 11px;
-        color: var(--fg-2);
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        border-radius: 5px;
-        padding: 4px 10px;
-        min-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-
-      .demo-cursor {
-        display: inline-block;
-        width: 1.5px;
-        height: 12px;
-        background: var(--accent);
-        vertical-align: middle;
-        margin-left: 1px;
-        animation: cursor-blink .8s step-end infinite;
-      }
-
-      @keyframes cursor-blink {
-
-        0%,
-        100% {
-          opacity: 1;
-        }
-
-        50% {
-          opacity: 0;
-        }
-      }
-
-      .demo-send-btn {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 4px 14px;
-        border-radius: 5px;
-        background: var(--accent);
-        color: #fff;
-        flex-shrink: 0;
-        border: none;
-        cursor: default;
-        transition: transform .1s, box-shadow .15s;
-      }
-
-      .demo-send-btn.pop {
-        transform: scale(.9);
-        box-shadow: 0 0 16px rgba(168, 85, 247, .7);
-      }
-
-      .demo-meta-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 7px 14px;
-        border-bottom: 1px solid var(--border);
-        background: #0D0D0D;
-        flex-shrink: 0;
-        min-height: 34px;
-      }
-
-      .demo-status-ok {
-        font-family: var(--mono);
-        font-size: 11px;
-        font-weight: 700;
-        color: #22C55E;
-      }
-
-      .demo-timing {
-        font-family: var(--mono);
-        font-size: 10px;
-        color: var(--fg-4);
-      }
-
-      .demo-resp-tabs {
-        margin-left: auto;
-        display: flex;
-        gap: 2px;
-      }
-
-      .demo-resp-tab {
-        font-size: 10px;
-        font-family: var(--mono);
-        color: var(--fg-4);
-        padding: 2px 8px;
-        border-radius: 4px;
-        transition: color .2s, background .2s;
-        cursor: default;
-      }
-
-      .demo-resp-tab.active {
-        color: var(--accent);
-        background: var(--accent-10);
-      }
-
-      .demo-content {
-        flex: 1;
-        padding: 14px 16px;
-        font-family: var(--mono);
-        font-size: 11px;
-        line-height: 1.9;
-        overflow: hidden;
-      }
-
-      .demo-spinner {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--fg-4);
-        font-size: 12px;
-      }
-
-      .demo-spinner-ring {
-        width: 14px;
-        height: 14px;
-        border: 2px solid var(--border);
-        border-top-color: var(--accent);
-        border-radius: 50%;
-        animation: spin .7s linear infinite;
-        flex-shrink: 0;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .demo-jline {
-        display: block;
-        opacity: 0;
-        transform: translateX(-5px);
-        transition: opacity .18s ease, transform .18s ease;
-      }
-
-      .demo-jline.on {
-        opacity: 1;
-        transform: translateX(0);
-      }
-
-      .demo-ai-bar {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid var(--border);
-        margin-bottom: 8px;
-        opacity: 0;
-        transition: opacity .3s;
-      }
-
-      .demo-ai-bar.on {
-        opacity: 1;
-      }
-
-      .demo-ai-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 6px;
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-        color: var(--accent);
-        font-size: 11px;
-        font-weight: 600;
-        font-family: inherit;
-        cursor: default;
-        transition: background .15s, box-shadow .15s;
-      }
-
-      .demo-ai-btn.pop {
-        background: var(--accent-20);
-        box-shadow: 0 0 14px rgba(168, 85, 247, .45);
-      }
-
-      .demo-tline {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 0;
-        border-bottom: 1px solid rgba(39, 39, 42, .35);
-        opacity: 0;
-        transform: translateY(5px);
-        transition: opacity .2s ease, transform .2s ease;
-      }
-
-      .demo-tline.on {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      .demo-tcheck {
-        color: #22C55E;
-        font-weight: 700;
-        font-size: 12px;
-        flex-shrink: 0;
-      }
-
-      .demo-tname {
-        color: var(--fg-2);
-        font-size: 11px;
-      }
-
-      @media (max-width: 768px) {
-        .demo-sidebar {
-          display: none;
-        }
-
-        .demo-body {
-          height: 300px;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .demo-rail {
-          display: none;
-        }
-
-        .demo-body {
-          height: 260px;
-        }
-
-        .demo-section {
-          padding: 56px 20px;
-        }
-      }
-
-      /* ── APP PREVIEW ── */
-      .preview-section {
-        padding: 0 24px 80px;
-        max-width: 1000px;
-        margin: 0 auto;
-      }
-
-      .preview-dots {
-        display: flex;
-        gap: 6px;
-      }
-
-      .preview-dots span {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-      }
-
-      .preview-dots span:nth-child(1) {
-        background: #FF5F57;
-      }
-
-      .preview-dots span:nth-child(2) {
-        background: #FEBC2E;
-      }
-
-      .preview-dots span:nth-child(3) {
-        background: #28C840;
-      }
-
-      .app-screenshot {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 0 120px rgba(168, 85, 247, .08), 0 40px 80px rgba(0, 0, 0, .5);
-      }
-
-      .app-screenshot-chrome {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0 16px;
-        height: 36px;
-        background: #111;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .app-screenshot-chrome-title {
-        font-size: 11px;
-        color: var(--fg-4);
-        font-family: var(--mono);
-        margin: 0 auto;
-      }
-
-      .app-screenshot img {
-        display: block;
-        width: 100%;
-        height: auto;
-      }
-
-      /* ── FEATURE GALLERY ── */
-      .gallery-section {
-        padding: 80px 24px;
-        max-width: 960px;
-        margin: 0 auto;
-      }
-
-      .gallery-tabs {
-        display: flex;
-        gap: 2px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 4px;
-      }
-
-      .gallery-tab {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 8px 10px;
-        border-radius: 7px;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--fg-4);
-        cursor: pointer;
-        border: none;
-        background: transparent;
-        font-family: inherit;
-        transition: color .15s, background .15s;
-        white-space: nowrap;
-      }
-
-      .gallery-tab:hover {
-        color: var(--fg-2);
-      }
-
-      .gallery-tab.active {
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        color: var(--fg);
-      }
-
-      .gallery-tab svg {
-        flex-shrink: 0;
-      }
-
-      .gallery-panel {
-        display: none;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 0 80px rgba(168, 85, 247, .06), 0 30px 60px rgba(0, 0, 0, .4);
-      }
-
-      .gallery-panel.active {
-        display: block;
-      }
-
-      .gallery-panel-chrome {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0 16px;
-        height: 36px;
-        background: #111;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .gallery-panel-title {
-        font-size: 11px;
-        color: var(--fg-4);
-        font-family: var(--mono);
-        margin: 0 auto;
-      }
-
-      .gallery-panel img {
-        display: block;
-        width: 100%;
-        height: auto;
-      }
-
-      .gallery-caption {
-        padding: 14px 20px;
-        background: var(--bg-card);
-        border-top: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .gallery-caption strong {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--fg);
-      }
-
-      .gallery-caption span {
-        font-size: 12px;
-        color: var(--fg-4);
-      }
-
-      @media (max-width: 640px) {
-        .gallery-tab {
-          font-size: 11px;
-          padding: 7px 6px;
-        }
-
-        .gallery-tab span {
-          display: none;
-        }
-
-        .preview-section {
-          padding: 0 20px 56px;
-        }
-
-        .gallery-section {
-          padding: 56px 20px;
-        }
-      }
-
-      /* ── FAQ ── */
-      .faq-list {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        max-width: 760px;
-        margin: 0 auto;
-      }
-
-      .faq-item {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        overflow: hidden;
-        transition: border-color .15s;
-      }
-
-      .faq-item:hover {
-        border-color: var(--border-2);
-      }
-
-      .faq-q {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 18px 20px;
-        background: none;
-        border: none;
-        color: var(--fg-2);
-        font-size: 14px;
-        font-weight: 600;
-        font-family: inherit;
-        text-align: left;
-        cursor: pointer;
-        line-height: 1.4;
-      }
-
-      .faq-q:hover {
-        color: var(--fg);
-      }
-
-      .faq-chevron {
-        flex-shrink: 0;
-        color: var(--fg-4);
-        transition: transform .2s;
-      }
-
-      .faq-item.open .faq-chevron {
-        transform: rotate(180deg);
-      }
-
-      .faq-a {
-        display: none;
-        padding: 0 20px 18px;
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.7;
-        border-top: 1px solid var(--border);
-      }
-
-      .faq-item.open .faq-a {
-        display: block;
-      }
-
-      .faq-a p {
-        margin-bottom: 10px;
-      }
-
-      .faq-a p:last-child {
-        margin-bottom: 0;
-      }
-
-      .faq-a ul {
-        padding-left: 18px;
-        margin: 8px 0;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .faq-tag {
-        display: inline-block;
-        padding: 1px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        background: var(--accent-10);
-        color: var(--accent);
-        border: 1px solid var(--accent-20);
-        margin-right: 4px;
-        vertical-align: middle;
-      }
-
-      /* ── WHY FLUX ── */
-      .why-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .why-card {
-        background: var(--bg-card);
-        padding: 28px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .why-card-eyebrow {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 1.2px;
-        text-transform: uppercase;
-        color: var(--accent);
-      }
-
-      .why-card h3 {
-        font-size: 17px;
-        font-weight: 700;
-        letter-spacing: -0.4px;
-        color: var(--fg);
-        line-height: 1.3;
-        margin: 0;
-      }
-
-      .why-card p {
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.65;
-        margin: 0;
-      }
-
-      .why-metric {
-        font-family: var(--mono);
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--accent);
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-        border-radius: 6px;
-        padding: 4px 10px;
-        align-self: flex-start;
-        margin-top: 4px;
-      }
-
-      @media (max-width: 768px) {
-        .why-grid { grid-template-columns: 1fr; }
-      }
-
-
-      /* ── WHO IS FLUX FOR ── */
-      .who-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1px;
-        background: var(--border);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .who-card {
-        background: var(--bg-card);
-        padding: 28px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .who-card-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        background: var(--accent-10);
-        border: 1px solid var(--accent-20);
-        flex-shrink: 0;
-      }
-
-      .who-card-icon svg { color: var(--accent); }
-
-      .who-card h3 {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--fg);
-        margin: 0;
-      }
-
-      .who-card > p {
-        font-size: 13px;
-        color: var(--fg-3);
-        line-height: 1.65;
-        margin: 0;
-      }
-
-      .who-card ul {
-        list-style: none;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        margin: 0;
-      }
-
-      .who-card ul li {
-        font-size: 12px;
-        color: var(--fg-3);
-        display: flex;
-        align-items: flex-start;
-        gap: 7px;
-        line-height: 1.5;
-      }
-
-      .who-card ul li::before {
-        content: "→";
-        color: var(--accent);
-        flex-shrink: 0;
-        font-size: 11px;
-        margin-top: 1px;
-      }
-
-      @media (max-width: 768px) {
-        .who-grid { grid-template-columns: 1fr; }
-      }
-
-      /* ── APPLY DEMO ── */
-      .apd-section { padding: 80px 24px; max-width: 960px; margin: 0 auto; }
-
-      .apd-window {
-        border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-        box-shadow: 0 0 80px rgba(168,85,247,.06), 0 30px 60px rgba(0,0,0,.4);
-      }
-
-      .apd-body { display: flex; height: 320px; }
-
-      .apd-left {
-        width: 230px; flex-shrink: 0;
-        border-right: 1px solid var(--border);
-        display: flex; flex-direction: column; background: #0A0A0A;
-      }
-
-      .apd-req-tabs {
-        display: flex; flex-shrink: 0; height: 34px;
-        background: #111; border-bottom: 1px solid var(--border);
-      }
-
-      .apd-req-tab {
-        padding: 0 10px; font-size: 11px;
-        display: flex; align-items: center; color: var(--fg-4); position: relative;
-      }
-
-      .apd-req-tab.active { color: var(--fg); }
-
-      .apd-req-tab.active::after {
-        content: ""; position: absolute; bottom: 0; left: 0; right: 0;
-        height: 2px; border-radius: 2px; background: var(--accent);
-      }
-
-      .apd-left-body {
-        flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 6px;
-      }
-
-      .apd-left-empty { font-size: 11px; color: var(--fg-4); font-style: italic; transition: opacity .3s; }
-
-      .apd-hrow {
-        display: flex; align-items: center;
-        padding: 5px 8px; border-radius: 5px;
-        background: var(--bg-card); border: 1px solid var(--border);
-        opacity: 0; transform: translateY(-8px);
-        transition: opacity .35s ease, transform .35s ease;
-      }
-
-      .apd-hrow.on { opacity: 1; transform: translateY(0); }
-      .apd-hkey { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 600; }
-      .apd-hsep { font-family: var(--mono); font-size: 11px; color: var(--fg-4); margin: 0 4px; }
-      .apd-hval { font-family: var(--mono); font-size: 11px; color: var(--fg-2); }
-      .apd-henabled { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; margin-left: auto; flex-shrink: 0; }
-
-      .apd-right {
-        flex: 1; display: flex; flex-direction: column;
-        background: #0A0A0A; min-width: 0; overflow: hidden;
-      }
-
-      .apd-resp-header {
-        display: flex; align-items: center; gap: 8px;
-        padding: 0 14px; height: 38px;
-        background: #111; border-bottom: 1px solid var(--border); flex-shrink: 0;
-      }
-
-      .apd-resp-tabs-row {
-        display: flex; flex-shrink: 0;
-        height: 32px; border-bottom: 1px solid var(--border); background: #0D0D0D;
-      }
-
-      .apd-resp-tab {
-        padding: 0 10px; font-size: 11px;
-        display: flex; align-items: center; color: var(--fg-4); position: relative;
-      }
-
-      .apd-resp-tab.active { color: var(--fg); }
-
-      .apd-resp-tab.active::after {
-        content: ""; position: absolute; bottom: 0; left: 0; right: 0;
-        height: 2px; background: var(--accent);
-      }
-
-      .apd-resp-body-text {
-        padding: 10px 14px; font-family: var(--mono);
-        font-size: 11px; color: #EF4444; line-height: 1.7;
-        flex: 1; overflow: hidden;
-      }
-
-      .apd-ai-wrap {
-        border-top: 1px solid var(--border);
-        padding: 10px 12px; background: rgba(239,68,68,.04);
-        display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
-      }
-
-      .apd-ai-hdr { display: flex; align-items: center; gap: 6px; }
-      .apd-ai-title { font-size: 12px; font-weight: 600; color: var(--fg); flex: 1; }
-      .apd-ai-model { font-family: var(--mono); font-size: 10px; color: var(--fg-4); }
-
-      .apd-loading { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--fg-4); }
-
-      .apd-result { display: flex; flex-direction: column; gap: 5px; }
-
-      .apd-rline { font-size: 11px; line-height: 1.5; opacity: 0; transition: opacity .3s; }
-      .apd-rline.on { opacity: 1; }
-      .apd-rline.what { color: #EF4444; font-weight: 600; }
-      .apd-rline.cause { color: var(--fg-3); }
-      .apd-rline.step { color: var(--fg-3); display: flex; gap: 5px; }
-      .apd-step-n { color: #EF4444; font-weight: 700; flex-shrink: 0; }
-
-      .apd-fix-box {
-        border-top: 1px solid rgba(239,68,68,.18);
-        padding-top: 8px; display: flex; flex-direction: column; gap: 5px;
-        opacity: 0; transform: translateY(5px); transition: opacity .3s, transform .3s;
-      }
-
-      .apd-fix-box.on { opacity: 1; transform: translateY(0); }
-      .apd-fix-lbl { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #EF4444; }
-
-      .apd-fix-row {
-        display: flex; align-items: center; gap: 8px;
-        padding: 6px 8px; border-radius: 6px;
-        background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.18);
-      }
-
-      .apd-fix-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-      .apd-fix-name { font-size: 11px; font-weight: 600; color: var(--fg-2); }
-      .apd-fix-code { font-family: var(--mono); font-size: 10px; color: #EF4444; }
-
-      .apd-apply-btn {
-        flex-shrink: 0; display: flex; align-items: center; gap: 4px;
-        padding: 0 10px; height: 26px; border-radius: 5px;
-        font-size: 11px; font-weight: 600; cursor: default;
-        border: 1px solid rgba(239,68,68,.3); background: rgba(239,68,68,.1);
-        color: #EF4444; transition: transform .1s, box-shadow .15s, background .25s, color .25s, border-color .25s;
-        white-space: nowrap;
-      }
-
-      .apd-apply-btn.pop { transform: scale(.87); box-shadow: 0 0 12px rgba(239,68,68,.5); }
-
-      .apd-apply-btn.done {
-        background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: #22C55E;
-      }
-
-      .apd-debug-btn {
-        display: flex; align-items: center; justify-content: center; gap: 6px;
-        height: 28px; border-radius: 5px;
-        background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.22);
-        color: #EF4444; font-size: 11px; font-weight: 600; cursor: default;
-        transition: transform .1s, box-shadow .15s;
-      }
-
-      .apd-debug-btn.pop { transform: scale(.95); box-shadow: 0 0 12px rgba(239,68,68,.4); }
-
-      @media (max-width: 640px) {
-        .apd-left { display: none; }
-        .apd-section { padding: 56px 20px; }
-      }
-    </style>
   </head>
 
   <body>
@@ -1965,6 +33,7 @@
       </div>
       <div class="nav-links">
         <a href="#features">Features</a>
+        <a href="#grpc">gRPC</a>
         <a href="#install">Installation</a>
         <a href="#faq">FAQ</a>
         <a href="#start">Getting Started</a>
@@ -2058,25 +127,29 @@
     <section id="why">
       <div class="section-label">Why Flux?</div>
       <h2 class="section-title">What makes Flux different?</h2>
-      <p class="section-desc">Most API clients are Electron wrappers consuming hundreds of MB of RAM. Flux is different — and the difference is obvious from the first request.</p>
+      <p class="section-desc">Most API clients are Electron wrappers consuming hundreds of MB of RAM. Flux is different
+        — and the difference is obvious from the first request.</p>
 
       <div class="why-grid">
         <div class="why-card">
           <span class="why-card-eyebrow">Performance</span>
           <h3>Native binary, not a browser wrapper</h3>
-          <p>Most API clients bundle a full Chromium engine and Node.js runtime. Flux is built with Tauri and Rust — a true native binary with no web runtime overhead.</p>
+          <p>Most API clients bundle a full Chromium engine and Node.js runtime. Flux is built with Tauri and Rust — a
+            true native binary with no web runtime overhead.</p>
           <span class="why-metric">&lt; 30 MB RAM · ~ 5 MB installer</span>
         </div>
         <div class="why-card">
           <span class="why-card-eyebrow">All-in-one</span>
           <h3>Load testing and mock servers, built in</h3>
-          <p>Other tools need third-party integrations for load testing and mocking. With Flux, both are native features — no extra installs, no Docker, no config files.</p>
+          <p>Other tools need third-party integrations for load testing and mocking. With Flux, both are native features
+            — no extra installs, no Docker, no config files.</p>
           <span class="why-metric">AI · Load Testing · Mock Server</span>
         </div>
         <div class="why-card">
           <span class="why-card-eyebrow">Privacy</span>
           <h3>Local-first, no account required to start</h3>
-          <p>Many API clients require an account and route your data through their cloud by default. Flux stores everything locally. Cloud sync is opt-in and uses your own Supabase instance — you own your data.</p>
+          <p>Many API clients require an account and route your data through their cloud by default. Flux stores
+            everything locally. Cloud sync is opt-in and uses your own Supabase instance — you own your data.</p>
           <span class="why-metric">No account · No vendor lock-in</span>
         </div>
       </div>
@@ -2088,13 +161,16 @@
     <section id="for">
       <div class="section-label">Audience</div>
       <h2 class="section-title">Who is Flux for?</h2>
-      <p class="section-desc">Whether you're building APIs, testing them under load, or mocking a backend that doesn't exist yet.</p>
+      <p class="section-desc">Whether you're building APIs, testing them under load, or mocking a backend that doesn't
+        exist yet.</p>
 
       <div class="who-grid">
         <div class="who-card">
           <div class="who-card-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
             </svg>
           </div>
           <h3>Backend Developers</h3>
@@ -2107,12 +183,16 @@
         </div>
         <div class="who-card">
           <div class="who-card-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
             </svg>
           </div>
           <h3>QA Engineers</h3>
-          <p>Run load tests, validate environments side-by-side, and wire your test collections into CI/CD — with no extra tools.</p>
+          <p>Run load tests, validate environments side-by-side, and wire your test collections into CI/CD — with no
+            extra tools.</p>
           <ul>
             <li>P95/P99 latency reports, no k6 needed</li>
             <li>Staging vs. production side-by-side diff</li>
@@ -2121,12 +201,17 @@
         </div>
         <div class="who-card">
           <div class="who-card-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
           <h3>Startup Teams</h3>
-          <p>No subscriptions, no cloud accounts, no vendor lock-in. Spin up a mock server in one click while the backend is still being built.</p>
+          <p>No subscriptions, no cloud accounts, no vendor lock-in. Spin up a mock server in one click while the
+            backend is still being built.</p>
           <ul>
             <li>No account required to start</li>
             <li>Local mock server — no Docker, no config</li>
@@ -2149,14 +234,8 @@
           <div class="preview-dots"><span></span><span></span><span></span></div>
           <span class="demo-chrome-title">Flux — API Client</span>
         </div>
-        <video
-          src="grabacion-2026-06-06T02-37-13.webm"
-          autoplay
-          loop
-          muted
-          playsinline
-          style="display:block;width:100%;height:auto;"
-        ></video>
+        <video src="grabacion-2026-06-06T02-37-13.webm" autoplay loop muted playsinline
+          style="display:block;width:100%;height:auto;"></video>
       </div>
     </section>
 
@@ -2166,7 +245,8 @@
     <section class="apd-section" id="apply-demo">
       <div class="section-label">One-click fixes</div>
       <h2 class="section-title">From error to fixed — one click</h2>
-      <p class="section-desc">AI Debug Assist explains the error in Flux terms and offers instant Apply buttons. Click one and the fix is added directly to your request — no copy-pasting, no tab switching.</p>
+      <p class="section-desc">AI Debug Assist explains the error in Flux terms and offers instant Apply buttons. Click
+        one and the fix is added directly to your request — no copy-pasting, no tab switching.</p>
 
       <div class="apd-window">
         <!-- Chrome + URL bar -->
@@ -2205,8 +285,10 @@
             <!-- Response header -->
             <div class="apd-resp-header">
               <span style="font-size:11px;color:var(--fg-3);flex:1">Response</span>
-              <div style="display:flex;align-items:center;gap:5px;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1)">
-                <span style="width:5px;height:5px;border-radius:50%;background:#EF4444;display:block;flex-shrink:0"></span>
+              <div
+                style="display:flex;align-items:center;gap:5px;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1)">
+                <span
+                  style="width:5px;height:5px;border-radius:50%;background:#EF4444;display:block;flex-shrink:0"></span>
                 <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#EF4444">403 Forbidden</span>
               </div>
               <span style="font-family:var(--mono);font-size:10px;color:var(--fg-4)">428ms · 252 B</span>
@@ -2228,14 +310,24 @@
             <!-- AI Debug panel -->
             <div class="apd-ai-wrap">
               <div class="apd-ai-hdr">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
                 <span class="apd-ai-title">AI Debug Assist</span>
                 <span class="apd-ai-model">claude-sonnet-4-6</span>
               </div>
 
               <!-- Phase 0: debug button -->
               <button class="apd-debug-btn" id="apd-dbgbtn">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
                 Debug with AI
               </button>
 
@@ -2247,10 +339,15 @@
 
               <!-- Phase 2+: result -->
               <div class="apd-result" id="apd-result" style="display:none">
-                <div class="apd-rline what" id="apd-what">GitHub rejected the request — no User-Agent header was sent.</div>
-                <div class="apd-rline cause" id="apd-cause">GitHub's API requires a User-Agent on every request, no exceptions.</div>
-                <div class="apd-rline step" id="apd-step1"><span class="apd-step-n">1.</span><span>Go to the <strong style="color:var(--fg-2)">Headers</strong> tab in the request panel</span></div>
-                <div class="apd-rline step" id="apd-step2"><span class="apd-step-n">2.</span><span>Add <code style="font-family:var(--mono);color:var(--accent);font-size:10px">User-Agent: Flux/0.1.5</code></span></div>
+                <div class="apd-rline what" id="apd-what">GitHub rejected the request — no User-Agent header was sent.
+                </div>
+                <div class="apd-rline cause" id="apd-cause">GitHub's API requires a User-Agent on every request, no
+                  exceptions.</div>
+                <div class="apd-rline step" id="apd-step1"><span class="apd-step-n">1.</span><span>Go to the <strong
+                      style="color:var(--fg-2)">Headers</strong> tab in the request panel</span></div>
+                <div class="apd-rline step" id="apd-step2"><span class="apd-step-n">2.</span><span>Add <code
+                      style="font-family:var(--mono);color:var(--accent);font-size:10px">User-Agent: Flux/0.1.5</code></span>
+                </div>
 
                 <!-- Apply fix box -->
                 <div class="apd-fix-box" id="apd-fixbox">
@@ -2334,6 +431,16 @@
             <polyline points="8 6 2 12 8 18" />
           </svg>
           <span>CLI Tools</span>
+        </button>
+        <button class="gallery-tab" onclick="showTab('grpc')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="5" cy="19" r="2" />
+            <circle cx="19" cy="19" r="2" />
+            <path d="M12 7v4M12 11l-5.5 6M12 11l5.5 6" />
+          </svg>
+          <span>gRPC</span>
         </button>
       </div>
 
@@ -2421,6 +528,21 @@
             it directly into GitHub Actions, Jenkins or any automation tool.</span>
         </div>
       </div>
+
+      <div id="tab-grpc" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — gRPC Client</span>
+        </div>
+        <img src="flux7.png" alt="gRPC client — import proto, select service and method, invoke with payload"
+          loading="lazy" />
+        <div class="gallery-caption">
+          <strong>gRPC Client</strong>
+          <span>Import <code style="font-family:var(--mono);color:var(--accent);font-size:11px">.proto</code> files,
+            browse your service/method tree, edit payload and metadata in Monaco, and invoke directly. Responses arrive
+            as formatted JSON — no grpcurl, no Bloom RPC needed.</span>
+        </div>
+      </div>
     </section>
 
     <hr class="divider" />
@@ -2452,8 +574,9 @@
         </div>
         <div class="what-item">
           <strong>Full protocol support</strong>
-          <span>HTTP, WebSocket and Server-Sent Events in one interface. GraphQL schema introspection, OAuth 2.0, AWS
-            SigV4, mTLS, all built in.</span>
+          <span>HTTP, WebSocket, Server-Sent Events and gRPC in one interface. GraphQL schema introspection, OAuth 2.0,
+            AWS SigV4, mTLS — all built in. Import .proto files and invoke gRPC methods without any external
+            tools.</span>
         </div>
       </div>
     </section>
@@ -2559,7 +682,8 @@
                 style="font-family:var(--mono);font-size:11px;color:var(--accent)">duration &lt; 500</code></li>
             <li>AI-generated assertions: one click after any response generates a full test suite</li>
             <li>Post-response scripts using pm.test() and pm.expect(), Chai-style API</li>
-            <li>AI fix suggestion when an assertion fails — Apply button applies the fix directly to the request headers or body</li>
+            <li>AI fix suggestion when an assertion fails — Apply button applies the fix directly to the request headers
+              or body</li>
             <li>Batch runner: run all requests in a collection and get a consolidated report</li>
           </ul>
         </div>
@@ -2583,9 +707,12 @@
           </div>
           <ul>
             <li>Generate test assertions from any response body with one click</li>
-            <li>Debug assist: structured analysis of 4xx and 5xx errors — what went wrong, root cause, Flux-specific steps, and one-click Apply buttons that add the suggested header, param, or body directly to your request</li>
+            <li>Debug assist: structured analysis of 4xx and 5xx errors — what went wrong, root cause, Flux-specific
+              steps, and one-click Apply buttons that add the suggested header, param, or body directly to your request
+            </li>
             <li>AI script editor: describe what your script should do in plain English</li>
-            <li>Fix failing assertions: Claude proposes a corrected value and an Apply button applies it to the request without leaving the panel</li>
+            <li>Fix failing assertions: Claude proposes a corrected value and an Apply button applies it to the request
+              without leaving the panel</li>
             <li>Analyze batch test failures across an entire collection run</li>
             <li>Requires your own Claude API key, added in Settings, never sent to our servers</li>
           </ul>
@@ -2670,6 +797,35 @@
             <li>Send text or JSON messages from a Monaco code editor</li>
             <li>Timestamped log of all sent and received messages</li>
             <li>Multiple simultaneous connections open in separate tabs</li>
+          </ul>
+        </div>
+
+        <div class="feature">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="5" r="2" />
+                <circle cx="5" cy="19" r="2" />
+                <circle cx="19" cy="19" r="2" />
+                <path d="M12 7v4M12 11l-5.5 6M12 11l5.5 6" />
+              </svg>
+            </div>
+            <div class="feature-title">
+              <strong>gRPC Client</strong>
+              <span>Protocol Buffers, proto library, mixed collections</span>
+            </div>
+          </div>
+          <ul>
+            <li>Import <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">.proto</code> files into
+              a persistent library — reuse them across any request without re-importing</li>
+            <li>Browse full service and method trees from the imported proto; autocomplete on every field</li>
+            <li>Edit payload and metadata in the Monaco editor with JSON syntax highlighting</li>
+            <li>TLS and plaintext transport support — toggle per endpoint</li>
+            <li>gRPC requests live inside collections alongside HTTP requests — mixed collections run in the Collection
+              Runner</li>
+            <li>Saved requests store endpoint, service, method, payload, metadata and the linked proto ID so they reload
+              without manual re-configuration</li>
           </ul>
         </div>
 
@@ -2847,6 +1003,128 @@
 
     <hr class="divider" />
 
+    <!-- ── gRPC SHOWCASE ── -->
+    <section class="gallery-section" id="grpc">
+      <div class="section-label">gRPC Support</div>
+      <h2 class="section-title">Full gRPC client, built in</h2>
+      <p class="section-desc">From importing a <code
+          style="font-family:var(--mono);color:var(--accent);font-size:14px">.proto</code> to invoking a method and
+        saving it to a collection — everything runs inside Flux with no external tools.</p>
+
+      <div class="gallery-tabs" role="tablist">
+        <button class="gallery-tab active" onclick="showGrpcTab('grpc-proto')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <span>Proto Library</span>
+        </button>
+        <button class="gallery-tab" onclick="showGrpcTab('grpc-invoke')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+          <span>Invoke</span>
+        </button>
+        <button class="gallery-tab" onclick="showGrpcTab('grpc-response')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          <span>Response</span>
+        </button>
+        <button class="gallery-tab" onclick="showGrpcTab('grpc-collection')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>Collections</span>
+        </button>
+        <button class="gallery-tab" onclick="showGrpcTab('grpc-runner')" role="tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="5" cy="19" r="2" />
+            <circle cx="19" cy="19" r="2" />
+            <path d="M12 7v4M12 11l-5.5 6M12 11l5.5 6" />
+          </svg>
+          <span>Runner</span>
+        </button>
+      </div>
+
+      <div id="grpctab-grpc-proto" class="gallery-panel active">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — gRPC · Proto Library</span>
+        </div>
+        <img src="flux8.png" alt="Proto Library — import and manage .proto files" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Proto Library</strong>
+          <span>Import any <code style="font-family:var(--mono);color:var(--accent);font-size:11px">.proto</code> file
+            once and it becomes available to every gRPC request. The library persists across sessions — no need to
+            re-import per request.</span>
+        </div>
+      </div>
+
+      <div id="grpctab-grpc-invoke" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — gRPC · Invoke</span>
+        </div>
+        <img src="flux9.png" alt="gRPC invoke — select service, method, edit payload and metadata" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Invoke a Method</strong>
+          <span>Select the service and method from the dropdown, write the JSON payload in Monaco, and add metadata
+            key-value pairs. Click Invoke — TLS is toggled per endpoint with one switch.</span>
+        </div>
+      </div>
+
+      <div id="grpctab-grpc-response" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — gRPC · Response</span>
+        </div>
+        <img src="flux10.png" alt="gRPC response — formatted JSON output with duration" loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Formatted Response</strong>
+          <span>gRPC responses are decoded and pretty-printed as JSON. Duration and status appear in the response header
+            — same familiar layout as HTTP responses.</span>
+        </div>
+      </div>
+
+      <div id="grpctab-grpc-collection" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — gRPC · Collections</span>
+        </div>
+        <img src="flux11.png" alt="gRPC in collections — mixed HTTP and gRPC requests in one collection"
+          loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Mixed Collections</strong>
+          <span>Save gRPC requests alongside HTTP requests in the same collection. The sidebar shows a distinct <code
+              style="font-family:var(--mono);color:var(--accent);font-size:11px">gRPC</code> pill so you can tell them
+            apart at a glance.</span>
+        </div>
+      </div>
+
+      <div id="grpctab-grpc-runner" class="gallery-panel">
+        <div class="gallery-panel-chrome">
+          <div class="preview-dots"><span></span><span></span><span></span></div>
+          <span class="gallery-panel-title">Flux — gRPC · Collection Runner</span>
+        </div>
+        <img src="flux12.png" alt="Collection Runner with gRPC — mixed HTTP and gRPC requests run together"
+          loading="lazy" />
+        <div class="gallery-caption">
+          <strong>Run Mixed Collections</strong>
+          <span>The Collection Runner executes HTTP and gRPC requests in sequence, showing pass/fail per request. Use it
+            to validate an entire API surface — REST endpoints and gRPC services — in a single run.</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
     <!-- ── GETTING STARTED ── -->
     <section id="start">
       <div class="section-label">Getting Started</div>
@@ -2916,6 +1194,16 @@
         </div>
         <div class="step">
           <div class="step-num">8</div>
+          <div class="step-body">
+            <strong>Call a gRPC service</strong>
+            <p>Open the gRPC tab from the left nav. Click the proto library icon to import your <code
+                style="font-family:var(--mono);font-size:12px;color:var(--accent)">.proto</code> file — it stays saved
+              for future sessions. Select your service and method, write the JSON payload, and click Invoke. Save the
+              request to a collection with Ctrl+S to reuse it later alongside HTTP requests.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">9</div>
           <div class="step-body">
             <strong>Run a load test</strong>
             <p>Open the Load Test tab, set total requests and concurrency, and click Run. Watch the live progress bar
@@ -3205,9 +1493,17 @@
 
       /* ── Feature Gallery ── */
       function showTab(id) {
-        document.querySelectorAll('.gallery-panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('[id^="tab-"]').forEach(p => p.classList.remove('active'));
+        event.currentTarget.closest('.gallery-tabs').querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-' + id).classList.add('active');
+        event.currentTarget.classList.add('active');
+      }
+
+      /* ── gRPC Gallery ── */
+      function showGrpcTab(id) {
+        document.querySelectorAll('[id^="grpctab-"]').forEach(p => p.classList.remove('active'));
+        event.currentTarget.closest('.gallery-tabs').querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('grpctab-' + id).classList.add('active');
         event.currentTarget.classList.add('active');
       }
 
@@ -3216,24 +1512,24 @@
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
         async function runApplyDemo() {
-          const dbgBtn   = document.getElementById('apd-dbgbtn');
-          const loading  = document.getElementById('apd-loading');
-          const result   = document.getElementById('apd-result');
-          const what     = document.getElementById('apd-what');
-          const cause    = document.getElementById('apd-cause');
-          const step1    = document.getElementById('apd-step1');
-          const step2    = document.getElementById('apd-step2');
-          const fixBox   = document.getElementById('apd-fixbox');
+          const dbgBtn = document.getElementById('apd-dbgbtn');
+          const loading = document.getElementById('apd-loading');
+          const result = document.getElementById('apd-result');
+          const what = document.getElementById('apd-what');
+          const cause = document.getElementById('apd-cause');
+          const step1 = document.getElementById('apd-step1');
+          const step2 = document.getElementById('apd-step2');
+          const fixBox = document.getElementById('apd-fixbox');
           const applyBtn = document.getElementById('apd-applybtn');
-          const hrow     = document.getElementById('apd-hrow');
-          const empty    = document.getElementById('apd-empty');
+          const hrow = document.getElementById('apd-hrow');
+          const empty = document.getElementById('apd-empty');
           if (!dbgBtn) return;
 
           /* reset */
           dbgBtn.style.display = 'flex';
           dbgBtn.classList.remove('pop');
           loading.style.display = 'none';
-          result.style.display  = 'none';
+          result.style.display = 'none';
           [what, cause, step1, step2].forEach(el => el.classList.remove('on'));
           fixBox.classList.remove('on');
           applyBtn.classList.remove('pop', 'done');
@@ -3254,8 +1550,8 @@
 
           /* show structured result */
           loading.style.display = 'none';
-          result.style.display  = 'flex';
-          await sleep(60);  what.classList.add('on');
+          result.style.display = 'flex';
+          await sleep(60); what.classList.add('on');
           await sleep(320); cause.classList.add('on');
           await sleep(300); step1.classList.add('on');
           await sleep(260); step2.classList.add('on');

@@ -40,3 +40,34 @@ pub async fn github_write_yaml_file(
     let path = PathBuf::from(&dir).join(&name);
     fs::write(&path, content).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn delete_yaml_file(dir: String, name: String) -> Result<(), String> {
+    let path = PathBuf::from(&dir).join(&name);
+    fs::remove_file(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn github_write_yaml_file_subdir(
+    dir: String,
+    subdir: String,
+    name: String,
+    content: String,
+) -> Result<(), String> {
+    let folder = PathBuf::from(&dir).join(&subdir);
+    fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
+    fs::write(folder.join(&name), content).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn clear_root_yaml_files(dir: String) -> Result<(), String> {
+    let path = PathBuf::from(&dir);
+    let entries = fs::read_dir(&path).map_err(|e| e.to_string())?;
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.is_file() && matches!(p.extension().and_then(|x| x.to_str()), Some("yaml") | Some("yml")) {
+            fs::remove_file(&p).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}

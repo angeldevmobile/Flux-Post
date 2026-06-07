@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch } from "lucide-react";
+import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch, Trash2, X } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
 import { useGrpcStore } from "@/stores/grpcStore";
 import { useNavStore } from "@/stores/nav";
-import { loadCollections, grpcLoadProtoById } from "@/lib/tauri";
+import { loadCollections, grpcLoadProtoById, deleteYamlFile, clearRootYamlFiles } from "@/lib/tauri";
 import { methodColor, methodBg } from "@/lib/methods";
 import { exportPostman, exportOpenAPI } from "@/lib/exporters";
 import { exportDataAsJson } from "@/lib/tauri";
@@ -117,6 +117,8 @@ export function CollectionsSidebar() {
   const [importOpen, setImportOpen] = useState(false);
   const [runnerOpen, setRunnerOpen] = useState(false);
   const [exportMenuId, setExportMenuId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [githubOpen, setGithubOpen] = useState(false);
 
   const reload = useCallback(async (d: string) => {
@@ -139,6 +141,29 @@ export function CollectionsSidebar() {
   function handleSetDir(d: string) {
     localStorage.setItem(DIR_KEY, d);
     setDir(d);
+  }
+
+  async function handleDelete(colId: string) {
+    if (!dir) return;
+    if (confirmDeleteId !== colId) { setConfirmDeleteId(colId); return; }
+    setConfirmDeleteId(null);
+    try {
+      // id may be "Group/stem" — resolve to the actual file path
+      const parts = colId.split("/");
+      const stem = parts[parts.length - 1];
+      const subdir = parts.length > 1 ? parts[0] : null;
+      const filePath = subdir ? `${subdir}/${stem}.yaml` : `${stem}.yaml`;
+      await deleteYamlFile(dir, filePath);
+    } catch { /* ignore */ }
+    await reload(dir);
+  }
+
+  async function handleClearAll() {
+    if (!dir) return;
+    if (!confirmClearAll) { setConfirmClearAll(true); return; }
+    setConfirmClearAll(false);
+    await clearRootYamlFiles(dir);
+    await reload(dir);
   }
 
   async function handleSelect(req: CollectionRequest) {
@@ -212,6 +237,85 @@ export function CollectionsSidebar() {
   const totalCount = (col: typeof collections[0]) =>
     col.requests.length + col.folders.reduce((sum, f) => sum + f.requests.length, 0);
 
+  const renderCollection = (col: typeof collections[0]) => {
+    return (
+      <div key={col.id} className="group/col">
+        <div className="flex items-center w-full px-3 transition-colors"
+          style={{ height: 30 }}
+          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+          <button onClick={() => toggleCollection(col.id)} className="flex items-center gap-1.5 flex-1 min-w-0">
+            <ChevronRight size={12} className="shrink-0 transition-transform"
+              style={{ color: "var(--color-fg-3)", transform: col.expanded ? "rotate(90deg)" : "rotate(0deg)" }} />
+            <span style={{ width: 6, height: 6, borderRadius: 3, background: "var(--color-accent)", flexShrink: 0 }} />
+            <span className="text-[12px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg)" }}>{col.name}</span>
+          </button>
+          <div className="relative flex items-center gap-0.5">
+            <button onClick={e => { e.stopPropagation(); handleDelete(col.id); }}
+              title={confirmDeleteId === col.id ? "Click again to confirm" : "Delete collection"}
+              className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
+              style={{ width: 18, height: 18, color: confirmDeleteId === col.id ? "#EF4444" : "var(--color-fg-3)", flexShrink: 0 }}>
+              <Trash2 size={11} />
+            </button>
+            <button onClick={e => { e.stopPropagation(); setExportMenuId(exportMenuId === col.id ? null : col.id); }}
+              title="Export collection"
+              className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
+              style={{ width: 18, height: 18, color: "var(--color-fg-3)", flexShrink: 0 }}>
+              <Download size={11} />
+            </button>
+            {exportMenuId === col.id && (
+              <div className="absolute z-50 rounded-lg py-1 flex flex-col"
+                style={{ top: "100%", right: 0, marginTop: 4, minWidth: 160, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000050" }}
+                onMouseLeave={() => setExportMenuId(null)}>
+                <button onClick={() => { exportDataAsJson(JSON.parse(exportPostman(col)), `${col.id}.postman_collection.json`); setExportMenuId(null); }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
+                  style={{ color: "var(--color-fg-2)" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  Postman v2.1
+                </button>
+                <button onClick={() => { exportDataAsJson(JSON.parse(exportOpenAPI(col)), `${col.id}.openapi.json`); setExportMenuId(null); }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
+                  style={{ color: "var(--color-fg-2)" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  OpenAPI 3.0
+                </button>
+              </div>
+            )}
+          </div>
+          <span className="text-[10px] ml-1" style={{ color: "var(--color-fg-4)" }}>{totalCount(col)}</span>
+        </div>
+
+        {col.expanded && (
+          <>
+            {col.requests.map(req => (
+              <RequestRow key={req.id} req={req} activeRequestId={activeRequestId} paddingLeft={28} onSelect={handleSelect} />
+            ))}
+            {col.folders.map(folder => (
+              <div key={folder.id}>
+                <button onClick={() => toggleFolder(col.id, folder.id)}
+                  className="flex items-center gap-1.5 w-full transition-colors"
+                  style={{ height: 28, paddingLeft: 20, paddingRight: 12 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  <ChevronRight size={11} className="shrink-0 transition-transform"
+                    style={{ color: "var(--color-fg-4)", transform: folder.expanded ? "rotate(90deg)" : "rotate(0deg)" }} />
+                  <Folder size={12} style={{ color: "var(--color-fg-3)", flexShrink: 0 }} />
+                  <span className="text-[11px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg-2)" }}>{folder.name}</span>
+                  <span className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>{folder.requests.length}</span>
+                </button>
+                {folder.expanded && folder.requests.map(req => (
+                  <RequestRow key={req.id} req={req} activeRequestId={activeRequestId} paddingLeft={40} onSelect={handleSelect} />
+                ))}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <aside className="flex flex-col shrink-0 h-full"
       style={{ width: 260, background: "var(--color-sidebar)", borderRight: "1px solid var(--color-border)" }}>
@@ -226,6 +330,13 @@ export function CollectionsSidebar() {
               className="flex items-center justify-center rounded transition-colors disabled:opacity-40"
               style={{ width: 24, height: 24, color: "var(--color-fg-3)" }}>
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button
+              onClick={handleClearAll}
+              title={confirmClearAll ? "Click again to confirm" : "Clear all root collections"}
+              className="flex items-center justify-center rounded transition-colors"
+              style={{ width: 24, height: 24, background: "var(--color-card)", color: confirmClearAll ? "#EF4444" : "var(--color-fg-3)" }}>
+              <X size={13} />
             </button>
             <button
               onClick={() => { localStorage.removeItem(DIR_KEY); setDir(null); useCollectionsStore.setState({ collections: [] }); }}
@@ -273,7 +384,7 @@ export function CollectionsSidebar() {
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
       <CollectionRunner open={runnerOpen} onClose={() => setRunnerOpen(false)} />
-      <GitHubSyncModal open={githubOpen} onClose={() => setGithubOpen(false)} collectionsDir={dir} />
+      <GitHubSyncModal open={githubOpen} onClose={() => setGithubOpen(false)} collectionsDir={dir} onReload={() => dir && reload(dir)} />
 
       {!dir ? (
         <FolderSetup onSet={handleSetDir} />
@@ -310,108 +421,34 @@ export function CollectionsSidebar() {
               </div>
             )}
 
-            {filtered.map(col => (
-              <div key={col.id} className="group/col">
-                {/* Collection header */}
-                <div className="flex items-center w-full px-3 transition-colors"
-                  style={{ height: 30 }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                  <button
-                    onClick={() => toggleCollection(col.id)}
-                    className="flex items-center gap-1.5 flex-1 min-w-0">
-                    <ChevronRight
-                      size={12} className="shrink-0 transition-transform"
-                      style={{ color: "var(--color-fg-3)", transform: col.expanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                    />
-                    <span style={{ width: 6, height: 6, borderRadius: 3, background: "var(--color-accent)", flexShrink: 0 }} />
-                    <span className="text-[12px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg)" }}>{col.name}</span>
-                  </button>
-                  <div className="relative">
-                    <button
-                      onClick={e => { e.stopPropagation(); setExportMenuId(exportMenuId === col.id ? null : col.id); }}
-                      title="Export collection"
-                      className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
-                      style={{ width: 18, height: 18, color: "var(--color-fg-3)", flexShrink: 0 }}>
-                      <Download size={11} />
-                    </button>
-                    {exportMenuId === col.id && (
-                      <div
-                        className="absolute z-50 rounded-lg py-1 flex flex-col"
-                        style={{ top: "100%", right: 0, marginTop: 4, minWidth: 160, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000050" }}
-                        onMouseLeave={() => setExportMenuId(null)}>
-                        <button
-                          onClick={() => { exportDataAsJson(JSON.parse(exportPostman(col)), `${col.id}.postman_collection.json`); setExportMenuId(null); }}
-                          className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
-                          style={{ color: "var(--color-fg-2)" }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                          Postman v2.1
-                        </button>
-                        <button
-                          onClick={() => { exportDataAsJson(JSON.parse(exportOpenAPI(col)), `${col.id}.openapi.json`); setExportMenuId(null); }}
-                          className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
-                          style={{ color: "var(--color-fg-2)" }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                          OpenAPI 3.0
-                        </button>
+            {/* Group headers for subfolder collections */}
+            {(() => {
+              const groups = new Map<string, typeof filtered>();
+              const root: typeof filtered = [];
+              filtered.forEach(col => {
+                if (col.group) {
+                  if (!groups.has(col.group)) groups.set(col.group, []);
+                  groups.get(col.group)!.push(col);
+                } else {
+                  root.push(col);
+                }
+              });
+              return (
+                <>
+                  {root.map(col => renderCollection(col))}
+                  {[...groups.entries()].map(([groupName, cols]) => (
+                    <div key={groupName}>
+                      <div className="flex items-center gap-1.5 px-3 mt-1" style={{ height: 26 }}>
+                        <Folder size={12} style={{ color: "var(--color-accent)", flexShrink: 0 }} />
+                        <span className="text-[11px] font-semibold flex-1 truncate" style={{ color: "var(--color-fg-3)" }}>{groupName}</span>
                       </div>
-                    )}
-                  </div>
-                  <span className="text-[10px] ml-1" style={{ color: "var(--color-fg-4)" }}>{totalCount(col)}</span>
-                </div>
+                      {cols.map(col => renderCollection(col))}
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
 
-                {col.expanded && (
-                  <>
-                    {/* Top-level requests */}
-                    {col.requests.map(req => (
-                      <RequestRow
-                        key={req.id}
-                        req={req}
-                        activeRequestId={activeRequestId}
-                        paddingLeft={28}
-                        onSelect={handleSelect}
-                      />
-                    ))}
-
-                    {/* Folders */}
-                    {col.folders.map(folder => (
-                      <div key={folder.id}>
-                        {/* Folder header */}
-                        <button
-                          onClick={() => toggleFolder(col.id, folder.id)}
-                          className="flex items-center gap-1.5 w-full transition-colors"
-                          style={{ height: 28, paddingLeft: 20, paddingRight: 12 }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                          <ChevronRight
-                            size={11} className="shrink-0 transition-transform"
-                            style={{ color: "var(--color-fg-4)", transform: folder.expanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                          />
-                          <Folder size={12} style={{ color: "var(--color-fg-3)", flexShrink: 0 }} />
-                          <span className="text-[11px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg-2)" }}>
-                            {folder.name}
-                          </span>
-                          <span className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>{folder.requests.length}</span>
-                        </button>
-
-                        {/* Folder requests */}
-                        {folder.expanded && folder.requests.map(req => (
-                          <RequestRow
-                            key={req.id}
-                            req={req}
-                            activeRequestId={activeRequestId}
-                            paddingLeft={40}
-                            onSelect={handleSelect}
-                          />
-                        ))}
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            ))}
           </div>
         </>
       )}
