@@ -903,7 +903,7 @@ function AboutSection() {
         <div className="grid grid-cols-3 border-t" style={{ borderColor: "var(--color-border)" }}>
           {[
             { value: "< 30 MB", label: "RAM usage" },
-            { value: "10+",     label: "Feature modules" },
+            { value: "~9 MB",   label: "Installer size" },
             { value: "MIT",     label: "License" },
           ].map((stat, i, arr) => (
             <div key={stat.label}
