@@ -1261,7 +1261,8 @@ export function SettingsRoute() {
           {section === "proxy"      && <ProxySection />}
           {section === "cookies"    && <CookiesSection />}
           {section === "privacy"    && <PrivacySection />}
-          {section === "cli"       && <CliSection />}
+          {section === "cli"        && <CliSection />}
+          {section === "github"     && <GitHubSection />}
           {section === "about"      && <AboutSection />}
         </div>
       </div>

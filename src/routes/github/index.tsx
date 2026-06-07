@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { flushSync } from "react-dom";
 import { GitBranch, Search, Lock, Globe, ArrowDown, ArrowUp, Check, Loader2, AlertCircle, LogOut, RefreshCw, X, ExternalLink } from "lucide-react";
 import { githubListYamlFiles, githubWriteYamlFile } from "@/lib/tauri";
 import { loadCollections } from "@/lib/tauri";
@@ -34,8 +35,8 @@ interface GitHubContentItem {
   path: string;
 }
 
-type SyncDirection = "pull" | "push";
 type SyncStatus = { kind: "idle" } | { kind: "loading"; msg: string } | { kind: "ok"; msg: string } | { kind: "error"; msg: string };
+type LogLine = { text: string; kind: "info" | "ok" | "error" };
 
 function ghFetch(token: string, path: string, opts?: RequestInit) {
   return fetch(`https://api.github.com${path}`, {
@@ -163,14 +164,23 @@ function SyncPanel({
   const collectionsDir = localStorage.getItem(COLLECTIONS_DIR_KEY);
   const [path, setPath] = useState("collections");
   const [status, setStatus] = useState<SyncStatus>({ kind: "idle" });
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<LogLine[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
-  function addLog(line: string) { setLog(p => [...p, line]); }
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [log]);
+
+  function addLog(text: string, kind: LogLine["kind"] = "info") {
+    flushSync(() => setLog(p => [...p, { text, kind }]));
+  }
 
   async function handlePull() {
     if (!collectionsDir) { setStatus({ kind: "error", msg: "Set a collections folder first in the Collections sidebar" }); return; }
     setStatus({ kind: "loading", msg: "Fetching files from GitHub…" });
     setLog([]);
+    setProgress(null);
     try {
       const url = `/repos/${repo.full_name}/contents/${path.trim()}`;
       const res = await ghFetch(token, url);
@@ -179,21 +189,28 @@ function SyncPanel({
       const yaml = items.filter(i => i.type === "file" && (i.name.endsWith(".yaml") || i.name.endsWith(".yml")));
       if (yaml.length === 0) throw new Error("No .yaml files found in that folder");
 
-      for (const file of yaml) {
+      setProgress({ done: 0, total: yaml.length });
+      for (let idx = 0; idx < yaml.length; idx++) {
+        const file = yaml[idx];
         if (!file.download_url) continue;
-        addLog(`Downloading ${file.name}…`);
+        addLog(`↓ ${file.name}`, "info");
         const content = await fetch(file.download_url).then(r => r.text());
         await githubWriteYamlFile(collectionsDir, file.name, content);
-        addLog(`✓ ${file.name}`);
+        addLog(`✓ ${file.name} — saved`, "ok");
+        setProgress({ done: idx + 1, total: yaml.length });
       }
 
-      // Reload collections automatically
+      addLog(`─── Reloading collections…`, "info");
       const loaded = await loadCollections(collectionsDir);
       useCollectionsStore.setState({ collections: loaded });
+      addLog(`✓ Collections updated`, "ok");
 
-      setStatus({ kind: "ok", msg: `${yaml.length} file${yaml.length !== 1 ? "s" : ""} synced — collections reloaded` });
+      setStatus({ kind: "ok", msg: `${yaml.length} file${yaml.length !== 1 ? "s" : ""} pulled and reloaded` });
+      setProgress(null);
     } catch (e) {
+      addLog(`✗ ${String(e)}`, "error");
       setStatus({ kind: "error", msg: String(e) });
+      setProgress(null);
     }
   }
 
@@ -201,15 +218,18 @@ function SyncPanel({
     if (!collectionsDir) { setStatus({ kind: "error", msg: "Set a collections folder first in the Collections sidebar" }); return; }
     setStatus({ kind: "loading", msg: "Reading local collections…" });
     setLog([]);
+    setProgress(null);
     try {
       const files = await githubListYamlFiles(collectionsDir);
       if (files.length === 0) throw new Error("No .yaml files found in collections folder");
 
       const basePath = path.trim().replace(/\/$/, "");
+      setProgress({ done: 0, total: files.length });
 
-      for (const file of files) {
+      for (let idx = 0; idx < files.length; idx++) {
+        const file = files[idx];
         const filePath = basePath ? `${basePath}/${file.name}` : file.name;
-        addLog(`Pushing ${file.name}…`);
+        addLog(`↑ ${file.name}`, "info");
 
         const bytes = new TextEncoder().encode(file.content);
         let binary = "";
@@ -232,14 +252,21 @@ function SyncPanel({
           body: JSON.stringify(body),
         });
         if (!putRes.ok) throw new Error(`Failed to push ${file.name}: ${putRes.status}`);
-        addLog(`✓ ${file.name}`);
+        addLog(`✓ ${file.name} — pushed`, "ok");
+        setProgress({ done: idx + 1, total: files.length });
       }
 
       setStatus({ kind: "ok", msg: `${files.length} file${files.length !== 1 ? "s" : ""} pushed to ${repo.full_name}` });
+      setProgress(null);
     } catch (e) {
+      addLog(`✗ ${String(e)}`, "error");
       setStatus({ kind: "error", msg: String(e) });
+      setProgress(null);
     }
   }
+
+  const logColor = (kind: LogLine["kind"]) =>
+    kind === "ok" ? "#22C55E" : kind === "error" ? "#EF4444" : "var(--color-fg-3)";
 
   return (
     <div className="flex flex-col rounded-xl overflow-hidden shrink-0"
@@ -276,11 +303,28 @@ function SyncPanel({
           </div>
         )}
 
+        {/* Progress bar */}
+        {progress && (
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+              <span>Syncing…</span>
+              <span>{progress.done}/{progress.total} files</span>
+            </div>
+            <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--color-border)" }}>
+              <div className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${(progress.done / progress.total) * 100}%`, background: "var(--color-accent)" }} />
+            </div>
+          </div>
+        )}
+
         {/* Log */}
         {log.length > 0 && (
-          <div className="rounded-lg p-3 text-[11px] max-h-28 overflow-y-auto"
-            style={{ background: "var(--color-topbar)", border: "1px solid var(--color-border)", fontFamily: "Geist Mono, monospace", color: "var(--color-fg-3)", lineHeight: 1.8 }}>
-            {log.map((l, i) => <div key={i}>{l}</div>)}
+          <div className="rounded-lg p-3 text-[11px] overflow-y-auto"
+            style={{ background: "var(--color-topbar)", border: "1px solid var(--color-border)", fontFamily: "Geist Mono, monospace", lineHeight: 1.9, maxHeight: 180 }}>
+            {log.map((l, i) => (
+              <div key={i} style={{ color: logColor(l.kind) }}>{l.text}</div>
+            ))}
+            <div ref={logEndRef} />
           </div>
         )}
 
