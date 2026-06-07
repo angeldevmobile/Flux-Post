@@ -889,7 +889,7 @@ function AboutSection() {
           <div className="flex items-center gap-3">
             <span className="text-[24px] font-bold" style={{ fontFamily: "Geist, Inter, sans-serif", color: "var(--color-fg)", letterSpacing: "-0.5px" }}>Flux</span>
             <div className="flex items-center px-2 py-0.5 rounded" style={{ background: "var(--color-accent-20)", border: "1px solid var(--color-accent-30)" }}>
-              <span className="text-[11px] font-semibold" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>v0.1.5</span>
+              <span className="text-[11px] font-semibold" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>v0.1.6</span>
             </div>
           </div>
           <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 520 }}>
