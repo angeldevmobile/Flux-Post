@@ -156,6 +156,7 @@ export function SignUp({ onSignUp, onGoLogin }: SignUpProps) {
           <FluxLogoBadge size={52} />
           <h1 className="text-[22px] font-semibold text-white" style={{ fontFamily: "Geist, Inter, sans-serif", letterSpacing: "-0.3px" }}>Flux</h1>
           <p className="text-[13px] text-[#71717A]">Create your free account</p>
+          <p className="text-[11px] text-[#52525B]">No GitHub account required — sign up with email below</p>
         </div>
 
         <div className="w-full rounded-xl p-6 flex flex-col gap-4"

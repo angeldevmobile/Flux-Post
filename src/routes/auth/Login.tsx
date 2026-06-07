@@ -110,6 +110,7 @@ export function Login({ onLogin, onGoSignUp }: LoginProps) {
         <div className="w-full rounded-xl p-6 flex flex-col gap-4"
           style={{ background: "#111111", border: "1px solid #27272A" }}>
           <h2 className="text-[15px] font-semibold text-white text-center">Sign in to your account</h2>
+          <p className="text-[11px] text-center" style={{ color: "#52525B", marginTop: -8 }}>Use GitHub or email — no GitHub account required</p>
 
           {error && (
             <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: "#EF444415", border: "1px solid #EF444430", color: "#FCA5A5" }}>

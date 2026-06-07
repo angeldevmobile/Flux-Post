@@ -12,7 +12,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 |---|---|---|
 | RAM usage | 200–400 MB | < 30 MB |
 | Binary size | ~150 MB | ~5 MB |
-| Requires account | Yes | No, offline first |
+| Requires account | Yes | Yes, free — email or GitHub |
 | AI test generation | Paid plan | Built-in (Claude) |
 | AI debug on errors | No | 4xx/5xx analysis + one-click Apply fixes |
 | AI script editing | No | Natural language edits |

@@ -893,10 +893,10 @@ function AboutSection() {
             </div>
           </div>
           <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.7, maxWidth: 520 }}>
-            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM — no Electron, no account required to start.
+            Modern desktop API client. Local-first, AI-powered, cloud-synced. Under 30 MB RAM, no Electron, no account required to start.
           </p>
           <p className="text-[12px]" style={{ color: "var(--color-fg-4)", lineHeight: 1.6 }}>
-            Built with Tauri 2 · React · Rust · Claude · MIT License
+            Built with Tauri 2 · React · Rust · MIT License
           </p>
         </div>
 
@@ -944,7 +944,7 @@ function AboutSection() {
           { label: "GitHub",         desc: "Source code, issues and contributions",      url: "https://github.com/angeldevmobile/Flux-Post" },
           { label: "Releases",       desc: "Download installers for all platforms",       url: "https://github.com/angeldevmobile/Flux-Post/releases" },
           { label: "Report an issue",desc: "Found a bug? Open an issue on GitHub",       url: "https://github.com/angeldevmobile/Flux-Post/issues" },
-          { label: "License",        desc: "MIT License — free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
+          { label: "License",        desc: "MIT License free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
         ].map((link, i, arr) => (
           <button key={link.label} onClick={() => openUrl(link.url)}
             className="flex items-center gap-4 w-full px-4 transition-opacity hover:opacity-80 text-left"
