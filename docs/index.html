@@ -1498,14 +1498,17 @@
     </footer>
 
     <script>
-      /* ── GitHub download counter ── */
+      /* ── GitHub download counter (real installers only, excludes .sig / .json / .tar.gz) ── */
       (async function () {
         try {
           const res = await fetch('https://api.github.com/repos/angeldevmobile/Flux-Post/releases');
           if (!res.ok) return;
           const releases = await res.json();
+          const installerExts = ['.exe', '.msi', '.dmg', '.deb', '.rpm', '.AppImage'];
           const total = releases.reduce((sum, r) =>
-            sum + r.assets.reduce((s, a) => s + a.download_count, 0), 0);
+            sum + r.assets
+              .filter(a => installerExts.some(ext => a.name.endsWith(ext)))
+              .reduce((s, a) => s + a.download_count, 0), 0);
           const el = document.getElementById('stat-downloads');
           if (el) el.textContent = total >= 1000 ? (total / 1000).toFixed(1) + 'k' : String(total);
         } catch (_) {}
