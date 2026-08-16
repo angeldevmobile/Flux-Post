@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 ## [Unreleased]
 
 ### Added
+- `QUERY` method support (RFC 10008) — safe and cacheable like `GET`, but with a request body
 - gRPC streaming: server-streaming, client-streaming and bidirectional calls, with a live message log, per-message send, end-of-stream and cancel
 - Unit tests for the request core — JSONPath extraction, assertion evaluation, Postman/OpenAPI/cURL import and export (82 cases)
 - Rust tests for collection YAML round-tripping and gRPC descriptor handling (13 cases)

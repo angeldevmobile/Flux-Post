@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluatePath } from "./jsonpath";
+import { evaluatePath } from "../jsonpath";
 
 // evaluatePath backs the variable extractor: users write `$.data.token -> {{token}}`
 // rules and the captured string is written straight into the environment, so

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluateAssertion, evaluateAssertions } from "./assertionEvaluator";
+import { evaluateAssertion, evaluateAssertions } from "../assertionEvaluator";
 
 const ctx = (over: Partial<Parameters<typeof evaluateAssertion>[1]> = {}) => ({
   status: 200,

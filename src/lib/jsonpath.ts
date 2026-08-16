@@ -13,8 +13,7 @@ function walk(segments: string[], data: unknown): string | null {
 
     if (seg === "*") {
       if (!Array.isArray(current)) return null;
-      // Whatever follows the wildcard is projected over each element, so
-      // `$.items[*].id` yields "1, 2" rather than the raw objects.
+      // The rest of the path is projected over each element: `[*].id` → "1, 2".
       const rest = segments.slice(i + 1);
       return (current as unknown[])
         .map(item => (rest.length === 0 ? formatLeaf(item) : walk(rest, item)) ?? "")

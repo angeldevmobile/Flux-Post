@@ -1,14 +1,14 @@
 import type { Collection, CollectionFolder, CollectionRequest } from "@/stores/collections";
 import type { HttpMethod } from "@/lib/tauri";
+import { HTTP_METHODS } from "@/lib/methods";
 
 function uuid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 function toMethod(m: unknown): HttpMethod {
-  const s = String(m ?? "GET").toUpperCase();
-  const valid = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
-  return (valid.includes(s) ? s : "GET") as HttpMethod;
+  const s = String(m ?? "GET").toUpperCase() as HttpMethod;
+  return HTTP_METHODS.includes(s) ? s : "GET";
 }
 
 //    Postman v2.1                                                              
@@ -87,7 +87,8 @@ interface OpenApiRequestBody { content?: Record<string, { schema?: unknown; exam
 interface OpenApiPathItem { get?: OpenApiOperation; post?: OpenApiOperation; put?: OpenApiOperation; patch?: OpenApiOperation; delete?: OpenApiOperation; head?: OpenApiOperation; options?: OpenApiOperation }
 interface OpenApiDoc { info?: { title?: string }; servers?: OpenApiServer[]; paths?: Record<string, OpenApiPathItem> }
 
-const HTTP_METHODS = ["get", "post", "put", "patch", "delete", "head", "options"] as const;
+// Operation keys defined by the OpenAPI path item object — QUERY is not one of them yet.
+const OPENAPI_METHODS = ["get", "post", "put", "patch", "delete", "head", "options"] as const;
 
 export function importOpenApi(json: unknown): Collection {
   const doc = json as OpenApiDoc;
@@ -101,7 +102,7 @@ export function importOpenApi(json: unknown): Collection {
   let idx = 0;
 
   for (const [path, pathItem] of Object.entries(doc.paths ?? {})) {
-    for (const httpMethod of HTTP_METHODS) {
+    for (const httpMethod of OPENAPI_METHODS) {
       const op = pathItem[httpMethod];
       if (!op) continue;
 
@@ -167,9 +168,8 @@ export function importCurl(command: string): CollectionRequest {
   // Normalize line continuations and collapse whitespace
   const flat = command.replace(/\\\n/g, " ").replace(/\s+/g, " ").trim();
 
-  // Extract the URL. It is a positional argument, so it can sit anywhere among
-  // the flags — our own exporter puts it last. Header and body arguments are
-  // blanked out first so a URL inside one (a Referer, say) is not mistaken for it.
+  // The URL is positional and can sit anywhere among the flags. Headers and
+  // bodies are blanked first so a URL inside one is not mistaken for it.
   const scan = flat
     .replace(/-H\s+(['"]).*?\1/g, " ")
     .replace(/(?:--data(?:-raw|-binary|-urlencode)?|-d)\s+(?:'[^']*'|"(?:[^"\\]|\\.)*"|\S+)/g, " ");
@@ -191,16 +191,14 @@ export function importCurl(command: string): CollectionRequest {
     }
   }
 
-  // Body (-d / --data / --data-raw / --data-binary / --data-urlencode).
-  // The quoted argument is matched as a whole rather than character-by-character:
-  // a JSON body is full of double quotes, and a pattern that stops at the first
-  // one drops the body entirely.
+  // The quoted argument is matched whole — stopping at the first double quote
+  // would drop any JSON body.
   const dMatch = flat.match(
     /(?:--data(?:-raw|-binary|-urlencode)?|-d)\s+(?:'([^']*)'|"((?:[^"\\]|\\.)*)"|(\S+))/
   );
   if (dMatch) {
     const [, singleQuoted, doubleQuoted, bare] = dMatch;
-    // Only a double-quoted shell argument carries backslash escapes.
+    // Only double-quoted shell arguments carry backslash escapes.
     body = doubleQuoted !== undefined
       ? doubleQuoted.replace(/\\(["\\$`])/g, "$1")
       : singleQuoted ?? bare ?? "";

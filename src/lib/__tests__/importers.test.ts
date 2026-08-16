@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { importPostman, importOpenApi, importCurl, detectFormat } from "./importers";
+import { importPostman, importOpenApi, importCurl, detectFormat } from "../importers";
 
 describe("detectFormat", () => {
   it("recognises a Postman collection by its schema url", () => {
@@ -127,6 +127,14 @@ describe("importPostman", () => {
     expect(col.requests[0].path).toBe("https://api.example.com/x");
   });
 
+  it("accepts QUERY (RFC 10008)", () => {
+    const col = importPostman({
+      item: [{ name: "Search", request: { method: "QUERY", url: { raw: "/search" }, body: { mode: "raw", raw: '{"q":"x"}' } } }],
+    });
+    expect(col.requests[0].method).toBe("QUERY");
+    expect(col.requests[0].body).toBe('{"q":"x"}');
+  });
+
   it("falls back to defaults for an unknown method and a missing name", () => {
     const col = importPostman({
       item: [{ request: { method: "FROBNICATE", url: { raw: "/x" } } }],
@@ -249,6 +257,12 @@ describe("importCurl", () => {
   it("keeps an explicit method even when a body is present", () => {
     const r = importCurl(`curl -X PUT https://api.example.com -d '{"a":1}'`);
     expect(r.method).toBe("PUT");
+  });
+
+  it("keeps an explicit QUERY with its body", () => {
+    const r = importCurl(`curl -X QUERY https://api.example.com/search -d '{"q":"ana"}'`);
+    expect(r.method).toBe("QUERY");
+    expect(r.body).toBe('{"q":"ana"}');
   });
 
   it("accepts every --data spelling", () => {

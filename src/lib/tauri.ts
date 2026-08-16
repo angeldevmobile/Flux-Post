@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
+export type HttpMethod = "GET" | "POST" | "QUERY" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
 export interface MultipartField {
   key: string;
@@ -480,18 +480,15 @@ export async function grpcInvoke(
   return invoke("grpc_invoke", { endpoint, service, method, payloadJson, metadata, useTls, protoId });
 }
 
-/** One frame of a streaming call. `payload` is the decoded JSON message, or the
- *  error / close reason for the `grpc-stream-error` and `grpc-stream-closed` events. */
+/** `payload` is the decoded JSON message, or the error / close reason. */
 export interface GrpcStreamEvent {
   streamId: string;
   payload: string;
   seq: number;
 }
 
-/** Opens a streaming call and resolves to its id. Frames arrive as
- *  `grpc-stream-message` events, ending with `grpc-stream-closed` or `grpc-stream-error`.
- *  For client-streaming and bidi methods, `payloadJson` seeds the first message
- *  (pass "" to send none) and further ones go through `grpcStreamSend`. */
+/** Opens a streaming call. Frames arrive as `grpc-stream-message` events.
+ *  For client-streaming and bidi, `payloadJson` seeds the first message. */
 export async function grpcStreamOpen(
   endpoint: string,
   service: string,
@@ -508,7 +505,7 @@ export async function grpcStreamSend(streamId: string, payloadJson: string): Pro
   return invoke("grpc_stream_send", { streamId, payloadJson });
 }
 
-/** Signals end-of-stream on the request side so the server can finish. */
+/** Signals end-of-stream so the server can finish. */
 export async function grpcStreamCloseSend(streamId: string): Promise<void> {
   return invoke("grpc_stream_close_send", { streamId });
 }

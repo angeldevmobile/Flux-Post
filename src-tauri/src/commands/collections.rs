@@ -197,8 +197,7 @@ mod tests {
         serde_yaml::from_str(yaml).expect("collection should parse")
     }
 
-    // Collections written before mixed HTTP/gRPC support have no `kind:` field.
-    // They must keep loading as HTTP rather than failing to parse.
+    // Collections predating mixed HTTP/gRPC support have no `kind:` field.
     #[test]
     fn request_without_kind_defaults_to_http() {
         let col = parse(
@@ -282,7 +281,6 @@ requests:
         assert_eq!(g.proto_id.as_deref(), Some("proto-1"));
         assert_eq!(g.metadata.get("authorization").map(String::as_str), Some("Bearer tok"));
 
-        // And back out to YAML without losing the block.
         let yaml = serde_yaml::to_string(&out_to_yaml_req(out)).unwrap();
         assert!(yaml.contains("helloworld.Greeter"), "service missing from: {yaml}");
         assert!(yaml.contains("protoId"), "protoId missing from: {yaml}");

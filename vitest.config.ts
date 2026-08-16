@@ -1,8 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
 
-// Kept separate from vite.config.ts: that one is an async config wired for Tauri
-// dev (fixed port, src-tauri watch rules) and none of it applies to a test run.
+// Separate from vite.config.ts, which is an async config wired for Tauri dev.
 export default defineConfig({
   resolve: {
     alias: {

@@ -33,7 +33,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 ## Features
 
 ### HTTP Requests
-- All methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+- All methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, and QUERY (RFC 10008)
 - Body types: JSON, form, multipart, binary, raw, GraphQL
 - Auth: Bearer, API Key, Basic, OAuth 2.0 (auth code and client credentials), AWS SigV4
 - Headers, query params, environment variable interpolation `{{VAR}}`

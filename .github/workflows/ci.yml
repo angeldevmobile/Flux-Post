@@ -1,7 +1,7 @@
 name: CI
 
-# Validation on every push and PR. The release workflow only runs on v* tags,
-# so without this nothing checked the code before it shipped.
+# The release workflow only runs on v* tags, so without this nothing checked
+# the code before it shipped.
 on:
   push:
     branches: [main]
@@ -59,9 +59,8 @@ jobs:
             ./src-tauri -> target
             ./flux-cli -> target
 
-      # No `cargo fmt --check`: rustfmt strips the trailing padding from the
-      # `//    Section    ` banners used throughout the codebase, so enforcing it
-      # would mean a whole-tree reformat that fights the house style.
+      # No `cargo fmt --check`: rustfmt strips the padding from the
+      # `//    Section    ` banners, forcing a whole-tree reformat.
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml --lib -- -D warnings
 

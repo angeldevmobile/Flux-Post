@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { exportPostman, exportCurl, exportFetch, exportAxios, exportPythonRequests, exportGoHttp } from "./exporters";
-import { importPostman, importCurl } from "./importers";
+import { exportPostman, exportCurl, exportFetch, exportAxios, exportPythonRequests, exportGoHttp } from "../exporters";
+import { importPostman, importCurl } from "../importers";
 import type { Collection } from "@/stores/collections";
 
 const collection: Collection = {

@@ -1,14 +1,9 @@
 #!/usr/bin/env node
 // Usage: npm run release <version>
-// Example: npm run release 0.1.7
 //
-// Single entry point for bumping the app version. Every place the version is
-// written down is listed in TARGETS below — if you add a new one, add it here
-// too, or it will silently drift.
-//
-// Note: the updater's latest.json is NOT maintained here. tauri-action
-// generates it at release time (bundle.createUpdaterArtifacts = true) and
-// uploads it as a release asset, which is what the updater endpoint serves.
+// Every place the version is written down lives in TARGETS below. Add new ones
+// there or they will silently drift. The updater's latest.json is not included:
+// tauri-action generates it at release time and uploads it as a release asset.
 
 const fs = require('fs');
 const path = require('path');
@@ -24,9 +19,8 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 const root = path.join(__dirname, '..');
 const SEMVER = String.raw`\d+\.\d+\.\d+`;
 
-// Each target: a file plus the patterns whose captured version gets replaced.
-// Patterns are anchored to surrounding syntax so we never rewrite an unrelated
-// version-shaped string (a dependency range, a date, a proto number).
+// Patterns are anchored to surrounding syntax so an unrelated version-shaped
+// string (a dependency range, a date) is never rewritten.
 const TARGETS = [
   {
     file: 'package.json',
@@ -38,19 +32,18 @@ const TARGETS = [
   },
   {
     file: 'src-tauri/Cargo.toml',
-    // Only the [package] version — the first `version =` at line start.
+    // Only the [package] version.
     patterns: [new RegExp(String.raw`(^version = ")${SEMVER}(")`, 'm')],
   },
   {
     file: 'src/lib/version.ts',
-    // Frontend single source of truth — analytics tags + Settings UI read this.
     patterns: [new RegExp(String.raw`(APP_VERSION = ")${SEMVER}(")`)],
   },
   {
     file: 'docs/index.html',
     patterns: [
       new RegExp(String.raw`(<span class="badge">v)${SEMVER}(</span>)`),
-      // Illustrative User-Agent in the AI-debug demo, kept in sync on purpose.
+      // Illustrative User-Agent in the AI-debug demo.
       new RegExp(String.raw`(Flux/)${SEMVER}()`, 'g'),
     ],
   },

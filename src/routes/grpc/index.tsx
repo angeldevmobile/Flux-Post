@@ -73,7 +73,6 @@ function methodKindLabel(client: boolean, server: boolean) {
   return "Unary";
 }
 
-/** One decoded message from a streaming call, as shown in the response log. */
 interface StreamFrame {
   seq: number;
   body: string;
@@ -150,7 +149,6 @@ function ServiceTree({
   );
 }
 
-/** A single streaming message: header line always visible, body collapsible. */
 function StreamFrameRow({ frame }: { frame: StreamFrame }) {
   const [open, setOpen] = useState(true);
   const preview = frame.body.replace(/\s+/g, " ").trim();
@@ -370,7 +368,7 @@ export function GrpcRoute() {
   const [invokedAt, setInvokedAt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Streaming call state — ephemeral, so it stays out of the persisted store.
+  // Ephemeral, so it stays out of the persisted store.
   const [frames, setFrames] = useState<StreamFrame[]>([]);
   const [streamId, setStreamId] = useState<string | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
@@ -461,7 +459,7 @@ export function GrpcRoute() {
     }
   }
 
-  /** Resolves the proto id, re-importing from text when it went stale across a restart. */
+  /** Re-imports from text when the id went stale across a restart. */
   async function ensureProtoId(): Promise<string | null> {
     if (protoId) return protoId;
     if (protoText.trim()) {
@@ -488,15 +486,14 @@ export function GrpcRoute() {
     setStreamNote(null);
     setStreamStatus("open");
 
-    // Tear down the previous subscriptions before claiming this generation, so a
-    // late event from an aborted call cannot land in this one's log.
+    // Torn down before claiming this generation, so a late event from an
+    // aborted call cannot land in this log.
     unlistenRef.current.forEach(fn => fn());
     unlistenRef.current = [];
     const gen = ++streamGenRef.current;
     const isCurrent = () => streamGenRef.current === gen;
 
-    // Subscribing before opening matters: the backend starts pumping as soon as
-    // the call is made, and the stream id only comes back once it has.
+    // Subscribe before opening: the backend pumps as soon as the call is made.
     unlistenRef.current = await Promise.all([
       listen<GrpcStreamEvent>("grpc-stream-message", e => {
         if (!isCurrent()) return;
@@ -519,7 +516,7 @@ export function GrpcRoute() {
     ]);
 
     try {
-      // A client-streaming call may legitimately start with no message at all.
+      // A client-streaming call may start with no message at all.
       const seed = selectedMth.clientStreaming && !payload.trim() ? "" : resolveVariable(payload);
       const id = await grpcStreamOpen(
         resolveVariable(endpoint.trim()),
@@ -566,8 +563,8 @@ export function GrpcRoute() {
     } catch (e) {
       setError(String(e));
     }
-    // Retire this generation so the backend's own "cancelled" event, which
-    // arrives right after, does not overwrite the state set here.
+    // Retire this generation so the backend's own "cancelled" event, arriving
+    // right after, does not overwrite the state set here.
     streamGenRef.current++;
     setStreamId(null);
     setStreamStatus("closed");
@@ -640,7 +637,6 @@ export function GrpcRoute() {
 
   const isStreamingMethod = !!selectedMth && (selectedMth.clientStreaming || selectedMth.serverStreaming);
   const isStreamOpen = streamStatus === "open" && !!streamId;
-  // Only client-streaming and bidi calls accept further messages from this side.
   const acceptsClientMessages = isStreamOpen && !!selectedMth?.clientStreaming;
   const canInvoke = (!!protoId || !!protoText.trim()) && !!selectedService && !!selectedMethod && !isLoading && !isStreamOpen;
 

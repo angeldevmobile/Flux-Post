@@ -8,12 +8,10 @@ import { useEnvironmentStore } from "@/stores/environment";
 import { useRequestStore } from "@/stores/request";
 import { useSettingsStore } from "@/stores/settings";
 import { sendRequest } from "@/lib/tauri";
-import { methodColor, methodBg } from "@/lib/methods";
+import { methodColor, methodBg, HTTP_METHODS } from "@/lib/methods";
 import type { HttpMethod } from "@/lib/tauri";
 import type { editor as EditorNS } from "monaco-editor";
 import type { Monaco } from "@monaco-editor/react";
-
-const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
 interface CompareResult {
   status: number;
@@ -227,7 +225,7 @@ export function CompareRoute() {
           {methodOpen && (
             <div className="absolute top-full left-0 mt-1 z-50 rounded-lg overflow-hidden py-1"
               style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", minWidth: 120 }}>
-              {METHODS.map(m => (
+              {HTTP_METHODS.map(m => (
                 <button key={m} onClick={() => { setMethod(m); setMethodOpen(false); }}
                   className="flex w-full px-3 py-1.5 transition-colors"
                   style={{ fontSize: 12, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: methodColor(m) }}

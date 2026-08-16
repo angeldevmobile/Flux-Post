@@ -55,10 +55,8 @@ export function evaluateAssertion(expr: string, ctx: Ctx): AssertionResult {
       return { expr: e, pass, message: pass ? `body contains "${needle}"` : `body does not contain "${needle}"` };
     }
 
-    // json.path != null | json.path == null
-    // Checked before the generic comparison below, which would otherwise match
-    // first and compare against a literal null — making an *absent* field fail
-    // `== null` while an explicitly-null one passed.
+    // Must come before the generic comparison, which would compare against a
+    // literal null and make an absent field fail `== null`.
     const jsonNull = e.match(/^json\.([a-zA-Z0-9_.]+)\s*(===?|!==?)\s*null$/i);
     if (jsonNull) {
       const actual = jsonPath(ctx.json, jsonNull[1]);

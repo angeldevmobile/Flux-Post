@@ -4,6 +4,7 @@ import { Play, Square, BarChart2, Zap, AlertCircle, TrendingUp } from "lucide-re
 import { runLoadTest } from "@/lib/tauri";
 import type { LoadTestResult, LoadTestProgress } from "@/lib/tauri";
 import { useRequestStore } from "@/stores/request";
+import { HTTP_METHODS } from "@/lib/methods";
 import { useEnvironmentStore } from "@/stores/environment";
 
 const LATENCY_BUCKETS = [
@@ -118,7 +119,7 @@ export function LoadTestRoute() {
               disabled={running}
               className="rounded px-2 text-[12px] font-semibold shrink-0"
               style={{ height: 34, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-accent)", fontFamily: "Geist Mono, monospace", width: 90 }}>
-              {["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].map(m => (
+              {HTTP_METHODS.map(m => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>

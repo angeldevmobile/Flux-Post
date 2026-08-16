@@ -1,5 +1,5 @@
-﻿// Tauri commands take every field of a request as a separate parameter, so the
-// 7-argument threshold fires on ordinary command signatures.
+﻿// Tauri commands take each request field as a parameter, so the 7-arg
+// threshold fires on ordinary command signatures.
 #![allow(clippy::too_many_arguments)]
 
 mod commands;

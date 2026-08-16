@@ -219,7 +219,7 @@ fn extract_services(pool: &DescriptorPool) -> Vec<GrpcService> {
         .collect()
 }
 
-/// JSON → protobuf wire bytes, against the method's input descriptor.
+/// JSON → protobuf wire bytes.
 fn encode_from_json(desc: &MessageDescriptor, json: &str) -> Result<Bytes, String> {
     use serde::de::DeserializeSeed;
     let mut de = serde_json::Deserializer::from_str(json);
@@ -230,7 +230,7 @@ fn encode_from_json(desc: &MessageDescriptor, json: &str) -> Result<Bytes, Strin
     Ok(Bytes::from(msg.encode_to_vec()))
 }
 
-/// Protobuf wire bytes → pretty JSON, against the method's output descriptor.
+/// Protobuf wire bytes → pretty JSON.
 fn decode_to_json(desc: &MessageDescriptor, bytes: Bytes) -> Result<String, String> {
     let msg = DynamicMessage::decode(desc.clone(), bytes)
         .map_err(|e| format!("Failed to decode response: {}", e))?;
@@ -453,8 +453,7 @@ pub async fn grpc_invoke(
 
 //    Streaming
 
-/// One frame of a streaming call, pushed to the UI as a Tauri event.
-/// `payload` carries the decoded JSON message, or the error/close reason.
+/// `payload` is the decoded JSON message, or the error/close reason.
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GrpcStreamEvent {
@@ -465,8 +464,7 @@ pub struct GrpcStreamEvent {
 
 pub struct GrpcStreamHandle {
     cancel: Option<oneshot::Sender<()>>,
-    /// Present only for client-streaming and bidi calls. Dropping it is what
-    /// signals end-of-stream to the server, so `close_send` just takes it.
+    /// Client-streaming and bidi only. Dropping it signals end-of-stream.
     outbound: Option<mpsc::UnboundedSender<Bytes>>,
     input: MessageDescriptor,
 }
@@ -496,9 +494,7 @@ fn emit_stream(app: &AppHandle, event: &str, stream_id: &str, payload: String, s
     );
 }
 
-/// Drains an inbound response stream into `grpc-stream-message` events until the
-/// server completes it, it errors, or the user cancels. Shared by server-streaming
-/// and bidi calls, which differ only in how the request side is built.
+/// Drains an inbound stream into events. Shared by server-streaming and bidi.
 async fn pump_responses(
     app: AppHandle,
     stream_id: String,
@@ -541,10 +537,7 @@ async fn pump_responses(
 }
 
 /// Opens a streaming call and returns its id. Messages arrive as
-/// `grpc-stream-message` events; the call ends with `grpc-stream-closed` or
-/// `grpc-stream-error`. For client-streaming and bidi methods, `payload_json`
-/// seeds the first message (may be empty) and further ones go through
-/// `grpc_stream_send`.
+/// `grpc-stream-message` events, ending with `grpc-stream-closed` or `-error`.
 #[tauri::command]
 pub async fn grpc_stream_open(
     endpoint: String,
@@ -584,8 +577,7 @@ pub async fn grpc_stream_open(
     let input_desc = method_desc.input();
     let output_desc = method_desc.output();
 
-    // Encode the seed message before anything is registered, so a malformed
-    // payload fails the command outright rather than opening a dead stream.
+    // Encoded before registering, so a bad payload fails instead of opening a dead stream.
     let seed = if payload_json.trim().is_empty() {
         None
     } else {
@@ -643,7 +635,7 @@ pub async fn grpc_stream_open(
         }
 
         match (client_streaming, server_streaming) {
-            // Server streaming: one request, many responses.
+            // One request, many responses.
             (false, true) => {
                 let mut req = Request::new(seed.expect("seed checked above"));
                 if let Err(e) = apply_metadata(&mut req, &metadata) {
@@ -659,7 +651,7 @@ pub async fn grpc_stream_open(
                 }
             }
 
-            // Client streaming: many requests, a single response.
+            // Many requests, one response.
             (true, false) => {
                 let rx = outbound_rx.expect("outbound channel built for client streaming");
                 let mut req = Request::new(UnboundedReceiverStream::new(rx));
@@ -687,7 +679,7 @@ pub async fn grpc_stream_open(
                 }
             }
 
-            // Bidirectional: many requests, many responses.
+            // Many requests, many responses.
             (true, true) => {
                 let rx = outbound_rx.expect("outbound channel built for client streaming");
                 let mut req = Request::new(UnboundedReceiverStream::new(rx));
@@ -707,8 +699,7 @@ pub async fn grpc_stream_open(
             (false, false) => unreachable!("unary rejected above"),
         }
 
-        // The call is over either way — drop the handle so the map does not grow
-        // across a long session.
+        // Drop the handle either way so the map does not grow across a session.
         app_task.state::<GrpcStreams>().0.lock().unwrap().remove(&sid);
     });
 
@@ -739,8 +730,7 @@ pub async fn grpc_stream_send(
         .map_err(|_| "Stream already closed".to_string())
 }
 
-/// Signals end-of-stream on the request side, letting the server finish.
-/// Only meaningful for client-streaming and bidi calls.
+/// Signals end-of-stream on the request side. Client-streaming and bidi only.
 #[tauri::command]
 pub async fn grpc_stream_close_send(
     stream_id: String,
@@ -750,7 +740,6 @@ pub async fn grpc_stream_close_send(
     let handle = guard
         .get_mut(&stream_id)
         .ok_or_else(|| "Stream is not open".to_string())?;
-    // Dropping the sender closes the request stream.
     handle.outbound.take();
     Ok(())
 }
