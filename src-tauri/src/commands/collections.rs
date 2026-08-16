@@ -189,7 +189,164 @@ fn out_to_yaml_req(r: RequestOut) -> YamlRequest {
     }
 }
 
-//    Commands                                                                   
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(yaml: &str) -> YamlCollection {
+        serde_yaml::from_str(yaml).expect("collection should parse")
+    }
+
+    // Collections written before mixed HTTP/gRPC support have no `kind:` field.
+    // They must keep loading as HTTP rather than failing to parse.
+    #[test]
+    fn request_without_kind_defaults_to_http() {
+        let col = parse(
+            r#"
+name: Legacy
+requests:
+  - name: Get users
+    method: GET
+    path: /users
+"#,
+        );
+        let out = yaml_req_to_out(col.requests.into_iter().next().unwrap(), "r1".into());
+        assert_eq!(out.kind, "http");
+        assert_eq!(out.method, "GET");
+        assert_eq!(out.path, "/users");
+        assert!(out.grpc.is_none());
+    }
+
+    #[test]
+    fn http_request_survives_a_round_trip() {
+        let col = parse(
+            r#"
+name: API
+requests:
+  - name: Create user
+    kind: http
+    method: POST
+    path: https://api.example.com/users
+    headers:
+      Content-Type: application/json
+    body: '{"name":"ana"}'
+    body_type: json
+    tests:
+      - assert: status == 201
+      - assert: json.id != null
+"#,
+        );
+
+        let out = yaml_req_to_out(col.requests.into_iter().next().unwrap(), "r1".into());
+        let back = out_to_yaml_req(out);
+
+        assert_eq!(back.name, "Create user");
+        assert_eq!(back.kind, "http");
+        assert_eq!(back.method, "POST");
+        assert_eq!(back.path, "https://api.example.com/users");
+        assert_eq!(back.headers.get("Content-Type").map(String::as_str), Some("application/json"));
+        assert_eq!(back.body.as_deref(), Some(r#"{"name":"ana"}"#));
+        assert_eq!(back.body_type.as_deref(), Some("json"));
+        assert_eq!(back.tests.len(), 2);
+        assert_eq!(back.tests[0].assert, "status == 201");
+        assert_eq!(back.tests[1].assert, "json.id != null");
+    }
+
+    #[test]
+    fn grpc_request_survives_a_round_trip() {
+        let col = parse(
+            r#"
+name: API
+requests:
+  - name: SayHello
+    kind: grpc
+    grpc:
+      endpoint: localhost:50051
+      service: helloworld.Greeter
+      method: SayHello
+      payload: '{"name":"ana"}'
+      metadata:
+        authorization: Bearer tok
+      protoId: proto-1
+      protoName: helloworld.proto
+"#,
+        );
+
+        let out = yaml_req_to_out(col.requests.into_iter().next().unwrap(), "r1".into());
+        assert_eq!(out.kind, "grpc");
+
+        let g = out.grpc.as_ref().expect("grpc block should be preserved");
+        assert_eq!(g.endpoint.as_deref(), Some("localhost:50051"));
+        assert_eq!(g.service.as_deref(), Some("helloworld.Greeter"));
+        assert_eq!(g.method.as_deref(), Some("SayHello"));
+        assert_eq!(g.proto_id.as_deref(), Some("proto-1"));
+        assert_eq!(g.metadata.get("authorization").map(String::as_str), Some("Bearer tok"));
+
+        // And back out to YAML without losing the block.
+        let yaml = serde_yaml::to_string(&out_to_yaml_req(out)).unwrap();
+        assert!(yaml.contains("helloworld.Greeter"), "service missing from: {yaml}");
+        assert!(yaml.contains("protoId"), "protoId missing from: {yaml}");
+    }
+
+    #[test]
+    fn empty_optional_fields_are_not_written_back() {
+        let col = parse(
+            r#"
+name: API
+requests:
+  - name: Ping
+    method: GET
+    path: /ping
+"#,
+        );
+        let out = yaml_req_to_out(col.requests.into_iter().next().unwrap(), "r1".into());
+        let yaml = serde_yaml::to_string(&out_to_yaml_req(out)).unwrap();
+
+        assert!(!yaml.contains("headers"), "empty headers written: {yaml}");
+        assert!(!yaml.contains("tests"), "empty tests written: {yaml}");
+        assert!(!yaml.contains("grpc"), "absent grpc block written: {yaml}");
+        assert!(!yaml.contains("body_type"), "absent body_type written: {yaml}");
+    }
+
+    #[test]
+    fn collection_level_fields_parse() {
+        let col = parse(
+            r#"
+name: Petstore
+description: The pet store API
+baseUrl: https://api.petstore.io
+requests:
+  - name: List
+    method: GET
+    path: /pets
+folders:
+  - name: Admin
+    requests:
+      - name: Delete
+        method: DELETE
+        path: /pets/1
+"#,
+        );
+
+        assert_eq!(col.name, "Petstore");
+        assert_eq!(col.description.as_deref(), Some("The pet store API"));
+        assert_eq!(col.base_url.as_deref(), Some("https://api.petstore.io"));
+        assert_eq!(col.requests.len(), 1);
+        assert_eq!(col.folders.len(), 1);
+        assert_eq!(col.folders[0].name, "Admin");
+        assert_eq!(col.folders[0].requests.len(), 1);
+    }
+
+    #[test]
+    fn a_collection_with_no_requests_parses() {
+        let col = parse("name: Empty\n");
+        assert_eq!(col.name, "Empty");
+        assert!(col.requests.is_empty());
+        assert!(col.folders.is_empty());
+    }
+}
+
+//    Commands
 
 fn load_yaml_files_from(scan_path: &Path, group: Option<String>) -> Vec<CollectionOut> {
     let Ok(entries) = fs::read_dir(scan_path) else { return vec![] };
@@ -255,7 +412,7 @@ pub fn load_collections(dir: String) -> Result<Vec<CollectionOut>, String> {
 #[tauri::command]
 pub fn save_collection(dir: String, collection: CollectionOut) -> Result<(), String> {
     // id may be "Group/stem" for grouped collections — use only the last segment as filename
-    let stem = collection.id.split('/').last().unwrap_or(&collection.id);
+    let stem = collection.id.rsplit('/').next().unwrap_or(&collection.id);
     let base = if let Some(ref g) = collection.group {
         Path::new(&dir).join(g)
     } else {

@@ -55,6 +55,17 @@ export function evaluateAssertion(expr: string, ctx: Ctx): AssertionResult {
       return { expr: e, pass, message: pass ? `body contains "${needle}"` : `body does not contain "${needle}"` };
     }
 
+    // json.path != null | json.path == null
+    // Checked before the generic comparison below, which would otherwise match
+    // first and compare against a literal null — making an *absent* field fail
+    // `== null` while an explicitly-null one passed.
+    const jsonNull = e.match(/^json\.([a-zA-Z0-9_.]+)\s*(===?|!==?)\s*null$/i);
+    if (jsonNull) {
+      const actual = jsonPath(ctx.json, jsonNull[1]);
+      const pass = jsonNull[2].startsWith("!") ? actual !== null && actual !== undefined : actual === null || actual === undefined;
+      return { expr: e, pass, message: pass ? e : `json.${jsonNull[1]} is ${JSON.stringify(actual)}` };
+    }
+
     // json.path == value | json.path contains "text"
     const jsonEq = e.match(/^json\.([a-zA-Z0-9_.]+)\s*(===?|!==?|<=?|>=?)\s*(.+)$/);
     if (jsonEq) {
@@ -77,14 +88,6 @@ export function evaluateAssertion(expr: string, ctx: Ctx): AssertionResult {
       const needle = jsonContains[2];
       const pass = actual.includes(needle);
       return { expr: e, pass, message: pass ? `json.${jsonContains[1]} contains "${needle}"` : `json.${jsonContains[1]} ("${actual}") does not contain "${needle}"` };
-    }
-
-    // json.path != null | json.path == null
-    const jsonNull = e.match(/^json\.([a-zA-Z0-9_.]+)\s*(===?|!==?)\s*null$/i);
-    if (jsonNull) {
-      const actual = jsonPath(ctx.json, jsonNull[1]);
-      const pass = jsonNull[2].startsWith("!") ? actual !== null && actual !== undefined : actual === null || actual === undefined;
-      return { expr: e, pass, message: pass ? e : `json.${jsonNull[1]} is ${JSON.stringify(actual)}` };
     }
 
     // headers["key"] == "value"

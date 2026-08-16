@@ -42,7 +42,7 @@ async fn wait_for_code(listener: TcpListener) -> Result<String, String> {
         .nth(1)
         .ok_or("Bad HTTP request")?;
 
-    let query = path.splitn(2, '?').nth(1).ok_or("No query string in callback")?;
+    let query = path.split_once('?').map(|x| x.1).ok_or("No query string in callback")?;
 
     let code = query
         .split('&')

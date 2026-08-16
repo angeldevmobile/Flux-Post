@@ -1,6 +1,10 @@
-﻿mod commands;
+﻿// Tauri commands take every field of a request as a separate parameter, so the
+// 7-argument threshold fires on ordinary command signatures.
+#![allow(clippy::too_many_arguments)]
 
-use commands::grpc::GrpcProtos;
+mod commands;
+
+use commands::grpc::{GrpcProtos, GrpcStreams};
 use commands::history::{Db, init_db};
 use commands::mock::MockServerState;
 use commands::sse::SseConnections;
@@ -16,6 +20,7 @@ pub fn run() {
     let sse = SseConnections(Mutex::new(HashMap::new()));
     let mock = MockServerState::new();
     let grpc_protos = GrpcProtos(Mutex::new(HashMap::new()));
+    let grpc_streams = GrpcStreams::new();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -25,6 +30,7 @@ pub fn run() {
         .manage(sse)
         .manage(mock)
         .manage(grpc_protos)
+        .manage(grpc_streams)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()
                 .expect("failed to get app data dir");
@@ -76,6 +82,10 @@ pub fn run() {
             commands::grpc::grpc_import_proto,
             commands::grpc::grpc_reflect,
             commands::grpc::grpc_invoke,
+            commands::grpc::grpc_stream_open,
+            commands::grpc::grpc_stream_send,
+            commands::grpc::grpc_stream_close_send,
+            commands::grpc::grpc_stream_cancel,
             commands::grpc::grpc_load_protos,
             commands::grpc::grpc_save_proto,
             commands::grpc::grpc_delete_proto,

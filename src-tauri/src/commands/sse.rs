@@ -99,53 +99,49 @@ pub async fn sse_connect(
                         Some(Ok(bytes)) => {
                             buffer.push_str(&String::from_utf8_lossy(&bytes));
 
-                            loop {
-                                if let Some(pos) = buffer.find('\n') {
-                                    let line = buffer[..pos].trim_end_matches('\r').to_string();
-                                    buffer = buffer[pos + 1..].to_string();
+                            while let Some(pos) = buffer.find('\n') {
+                                let line = buffer[..pos].trim_end_matches('\r').to_string();
+                                buffer = buffer[pos + 1..].to_string();
 
-                                    if line.is_empty() {
-                                        if !current_data.is_empty() {
-                                            let data = current_data.trim_end_matches('\n').to_string();
-                                            let _ = app.emit("sse-message", SseEvent {
-                                                connection_id: conn_id_task.clone(),
-                                                event: current_event.clone(),
-                                                data,
-                                                id: current_id.clone(),
-                                            });
-                                        }
-                                        current_event = "message".to_string();
-                                        current_data.clear();
-                                    } else if line.starts_with(':') {
-                                        // SSE comment — ignore
-                                    } else if let Some(colon_pos) = line.find(':') {
-                                        let field = &line[..colon_pos];
-                                        let value_start = colon_pos + 1;
-                                        let value = if value_start < line.len() && line.as_bytes()[value_start] == b' ' {
-                                            &line[value_start + 1..]
-                                        } else {
-                                            &line[value_start..]
-                                        };
-                                        match field {
-                                            "event" => current_event = value.to_string(),
-                                            "data" => {
-                                                if !current_data.is_empty() {
-                                                    current_data.push('\n');
-                                                }
-                                                current_data.push_str(value);
-                                            }
-                                            "id" => {
-                                                current_id = if value.is_empty() {
-                                                    None
-                                                } else {
-                                                    Some(value.to_string())
-                                                };
-                                            }
-                                            _ => {}
-                                        }
+                                if line.is_empty() {
+                                    if !current_data.is_empty() {
+                                        let data = current_data.trim_end_matches('\n').to_string();
+                                        let _ = app.emit("sse-message", SseEvent {
+                                            connection_id: conn_id_task.clone(),
+                                            event: current_event.clone(),
+                                            data,
+                                            id: current_id.clone(),
+                                        });
                                     }
-                                } else {
-                                    break;
+                                    current_event = "message".to_string();
+                                    current_data.clear();
+                                } else if line.starts_with(':') {
+                                    // SSE comment — ignore
+                                } else if let Some(colon_pos) = line.find(':') {
+                                    let field = &line[..colon_pos];
+                                    let value_start = colon_pos + 1;
+                                    let value = if value_start < line.len() && line.as_bytes()[value_start] == b' ' {
+                                        &line[value_start + 1..]
+                                    } else {
+                                        &line[value_start..]
+                                    };
+                                    match field {
+                                        "event" => current_event = value.to_string(),
+                                        "data" => {
+                                            if !current_data.is_empty() {
+                                                current_data.push('\n');
+                                            }
+                                            current_data.push_str(value);
+                                        }
+                                        "id" => {
+                                            current_id = if value.is_empty() {
+                                                None
+                                            } else {
+                                                Some(value.to_string())
+                                            };
+                                        }
+                                        _ => {}
+                                    }
                                 }
                             }
                         }

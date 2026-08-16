@@ -1207,7 +1207,7 @@ dependencies = [
 
 [[package]]
 name = "flux"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -1234,6 +1234,7 @@ dependencies = [
  "tauri-plugin-updater",
  "thiserror 1.0.69",
  "tokio",
+ "tokio-stream",
  "tokio-tungstenite",
  "tonic",
  "tonic-reflection",

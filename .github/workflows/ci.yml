@@ -1,0 +1,72 @@
+name: CI
+
+# Validation on every push and PR. The release workflow only runs on v* tags,
+# so without this nothing checked the code before it shipped.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (typecheck + tests)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  rust:
+    name: Rust (fmt + clippy + tests)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            ./src-tauri -> target
+            ./flux-cli -> target
+
+      # No `cargo fmt --check`: rustfmt strips the trailing padding from the
+      # `//    Section    ` banners used throughout the codebase, so enforcing it
+      # would mean a whole-tree reformat that fights the house style.
+      - name: Clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --lib -- -D warnings
+
+      - name: Tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --lib
+
+      - name: Build flux-cli
+        run: cargo build --manifest-path flux-cli/Cargo.toml

@@ -153,7 +153,7 @@ pub async fn run_load_test(
     // Nearest-rank percentile: index = ceil(p/100 * n) - 1, clamped to [0, n-1]
     let pct = |p: usize| -> u64 {
         if n == 0 { return 0; }
-        let idx = ((n * p + 99) / 100).saturating_sub(1).min(n - 1);
+        let idx = (n * p).div_ceil(100).saturating_sub(1).min(n - 1);
         lats[idx]
     };
     let p50_ms = pct(50);

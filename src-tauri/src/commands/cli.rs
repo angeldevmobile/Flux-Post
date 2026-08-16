@@ -50,10 +50,11 @@ fn find_cli_binary(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         }
     }
 
-    Err(format!(
+    Err(
         "CLI binary not found. For development run `cargo build` in flux-cli/. \
          For production run `cargo build --release` in flux-cli/ before `cargo tauri build`."
-    ))
+            .to_string(),
+    )
 }
 
 fn get_install_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {

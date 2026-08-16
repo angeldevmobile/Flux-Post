@@ -95,16 +95,16 @@ fn parse_set_cookie_header(header: &str, request_host: &str) -> Option<ParsedCoo
             if !p.is_empty() {
                 path = p;
             }
-        } else if lower.starts_with("max-age=") {
-            if let Ok(secs) = lower[8..].parse::<i64>() {
+        } else if let Some(rest) = lower.strip_prefix("max-age=") {
+            if let Ok(secs) = rest.parse::<i64>() {
                 expires = Some(now_secs() + secs);
             }
         } else if lower == "secure" {
             secure = true;
         } else if lower == "httponly" {
             http_only = true;
-        } else if lower.starts_with("samesite=") {
-            same_site = match lower[9..].trim() {
+        } else if let Some(rest) = lower.strip_prefix("samesite=") {
+            same_site = match rest.trim() {
                 "strict" => "Strict",
                 "none"   => "None",
                 _        => "Lax",

@@ -480,6 +480,43 @@ export async function grpcInvoke(
   return invoke("grpc_invoke", { endpoint, service, method, payloadJson, metadata, useTls, protoId });
 }
 
+/** One frame of a streaming call. `payload` is the decoded JSON message, or the
+ *  error / close reason for the `grpc-stream-error` and `grpc-stream-closed` events. */
+export interface GrpcStreamEvent {
+  streamId: string;
+  payload: string;
+  seq: number;
+}
+
+/** Opens a streaming call and resolves to its id. Frames arrive as
+ *  `grpc-stream-message` events, ending with `grpc-stream-closed` or `grpc-stream-error`.
+ *  For client-streaming and bidi methods, `payloadJson` seeds the first message
+ *  (pass "" to send none) and further ones go through `grpcStreamSend`. */
+export async function grpcStreamOpen(
+  endpoint: string,
+  service: string,
+  method: string,
+  payloadJson: string,
+  metadata: Record<string, string>,
+  useTls: boolean,
+  protoId: string,
+): Promise<string> {
+  return invoke("grpc_stream_open", { endpoint, service, method, payloadJson, metadata, useTls, protoId });
+}
+
+export async function grpcStreamSend(streamId: string, payloadJson: string): Promise<void> {
+  return invoke("grpc_stream_send", { streamId, payloadJson });
+}
+
+/** Signals end-of-stream on the request side so the server can finish. */
+export async function grpcStreamCloseSend(streamId: string): Promise<void> {
+  return invoke("grpc_stream_close_send", { streamId });
+}
+
+export async function grpcStreamCancel(streamId: string): Promise<void> {
+  return invoke("grpc_stream_cancel", { streamId });
+}
+
 export interface GitHubFileEntry {
   name: string;
   content: string;

@@ -167,12 +167,18 @@ export function importCurl(command: string): CollectionRequest {
   // Normalize line continuations and collapse whitespace
   const flat = command.replace(/\\\n/g, " ").replace(/\s+/g, " ").trim();
 
-  // Extract URL (first non-flag argument after curl)
-  const urlMatch = flat.match(/curl\s+(?:[^-][^\s]*|(?:-[A-Za-z]\s+\S+\s+)*)(['"]?(https?:\/\/[^\s'"]+)['"]?)/);
+  // Extract the URL. It is a positional argument, so it can sit anywhere among
+  // the flags — our own exporter puts it last. Header and body arguments are
+  // blanked out first so a URL inside one (a Referer, say) is not mistaken for it.
+  const scan = flat
+    .replace(/-H\s+(['"]).*?\1/g, " ")
+    .replace(/(?:--data(?:-raw|-binary|-urlencode)?|-d)\s+(?:'[^']*'|"(?:[^"\\]|\\.)*"|\S+)/g, " ");
+  const urlMatch = scan.match(/(['"]?)(https?:\/\/[^\s'"]+)\1/);
   if (urlMatch) url = urlMatch[2];
 
   // -X method
   const mMatch = flat.match(/-X\s+([A-Z]+)/i);
+  const explicitMethod = !!mMatch;
   if (mMatch) method = mMatch[1].toUpperCase();
 
   // Headers (-H)
@@ -185,11 +191,20 @@ export function importCurl(command: string): CollectionRequest {
     }
   }
 
-  // Body (-d / --data / --data-raw / --data-binary)
-  const dMatch = flat.match(/(?:--data(?:-raw|-binary)?|-d)\s+['"]?((?:[^'"\\]|\\.)*)['"]?(?:\s|$)/);
+  // Body (-d / --data / --data-raw / --data-binary / --data-urlencode).
+  // The quoted argument is matched as a whole rather than character-by-character:
+  // a JSON body is full of double quotes, and a pattern that stops at the first
+  // one drops the body entirely.
+  const dMatch = flat.match(
+    /(?:--data(?:-raw|-binary|-urlencode)?|-d)\s+(?:'([^']*)'|"((?:[^"\\]|\\.)*)"|(\S+))/
+  );
   if (dMatch) {
-    body = dMatch[1].replace(/\\"/g, '"').replace(/\\'/g, "'");
-    if (!method || method === "GET") method = "POST";
+    const [, singleQuoted, doubleQuoted, bare] = dMatch;
+    // Only a double-quoted shell argument carries backslash escapes.
+    body = doubleQuoted !== undefined
+      ? doubleQuoted.replace(/\\(["\\$`])/g, "$1")
+      : singleQuoted ?? bare ?? "";
+    if (!explicitMethod) method = "POST";
   }
 
   return {

@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Network, Play, RefreshCw, Upload, Trash2, Plus, X, ChevronRight, ChevronDown, Lock, Unlock, BookMarked, Check, Bookmark, Pencil } from "lucide-react";
+import { Network, Play, RefreshCw, Upload, Trash2, Plus, X, ChevronRight, ChevronDown, Lock, Unlock, BookMarked, Check, Bookmark, Pencil, Square, SendHorizontal, CircleStop } from "lucide-react";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useGrpcStore, type GrpcMetadataEntry } from "@/stores/grpcStore";
-import { grpcImportProto, grpcReflect, grpcInvoke, grpcLoadProtoById, saveHistory, saveCollection, type GrpcService } from "@/lib/tauri";
+import {
+  grpcImportProto, grpcReflect, grpcInvoke, grpcLoadProtoById,
+  grpcStreamOpen, grpcStreamSend, grpcStreamCloseSend, grpcStreamCancel,
+  saveHistory, saveCollection,
+  type GrpcService, type GrpcStreamEvent,
+} from "@/lib/tauri";
 import { useProtoLibraryStore } from "@/stores/protoLibraryStore";
 import { useCollectionsStore } from "@/stores/collections";
 import { pushHistory, pushCollection } from "@/lib/sync";
@@ -53,6 +59,29 @@ function now() {
   return new Date().toLocaleTimeString("en-US", { hour12: false });
 }
 
+function methodKindGlyph(client: boolean, server: boolean) {
+  if (client && server) return "⇄";
+  if (server) return "⇉";
+  if (client) return "⇇";
+  return "→";
+}
+
+function methodKindLabel(client: boolean, server: boolean) {
+  if (client && server) return "Bidirectional streaming";
+  if (server) return "Server streaming";
+  if (client) return "Client streaming";
+  return "Unary";
+}
+
+/** One decoded message from a streaming call, as shown in the response log. */
+interface StreamFrame {
+  seq: number;
+  body: string;
+  at: string;
+}
+
+type StreamStatus = "idle" | "open" | "closed" | "error";
+
 function ServiceTree({
   services,
   selectedService,
@@ -103,8 +132,12 @@ function ServiceTree({
                     color: isActive ? "var(--color-accent)" : "var(--color-fg-3)",
                   }}
                 >
-                  <span className="text-[10px]" style={{ color: "var(--color-fg-4)", fontFamily: "var(--font-mono)" }}>
-                    {m.clientStreaming ? "↔" : m.serverStreaming ? "←" : "→"}
+                  <span
+                    className="text-[10px]"
+                    style={{ color: "var(--color-fg-4)", fontFamily: "var(--font-mono)" }}
+                    title={methodKindLabel(m.clientStreaming, m.serverStreaming)}
+                  >
+                    {methodKindGlyph(m.clientStreaming, m.serverStreaming)}
                   </span>
                   <span className="text-[11px] truncate">{m.name}</span>
                 </button>
@@ -113,6 +146,44 @@ function ServiceTree({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** A single streaming message: header line always visible, body collapsible. */
+function StreamFrameRow({ frame }: { frame: StreamFrame }) {
+  const [open, setOpen] = useState(true);
+  const preview = frame.body.replace(/\s+/g, " ").trim();
+
+  return (
+    <div style={{ borderBottom: "1px solid var(--color-border)" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 w-full px-4 py-1.5 text-left transition-colors hover:opacity-80"
+      >
+        {open
+          ? <ChevronDown size={11} style={{ color: "var(--color-fg-4)", flexShrink: 0 }} />
+          : <ChevronRight size={11} style={{ color: "var(--color-fg-4)", flexShrink: 0 }} />}
+        <span className="text-[10px] shrink-0" style={{ color: "var(--color-accent)", fontFamily: "var(--font-mono)" }}>
+          #{frame.seq + 1}
+        </span>
+        <span className="text-[10px] shrink-0" style={{ color: "var(--color-fg-4)", fontFamily: "var(--font-mono)" }}>
+          {frame.at}
+        </span>
+        {!open && (
+          <span className="text-[11px] truncate" style={{ color: "var(--color-fg-3)", fontFamily: "var(--font-mono)" }}>
+            {preview}
+          </span>
+        )}
+      </button>
+      {open && (
+        <pre
+          className="px-4 pb-2 text-[11px] whitespace-pre-wrap break-all"
+          style={{ color: "var(--color-fg-2)", fontFamily: "var(--font-mono)" }}
+        >
+          {frame.body}
+        </pre>
+      )}
     </div>
   );
 }
@@ -299,6 +370,17 @@ export function GrpcRoute() {
   const [invokedAt, setInvokedAt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Streaming call state — ephemeral, so it stays out of the persisted store.
+  const [frames, setFrames] = useState<StreamFrame[]>([]);
+  const [streamId, setStreamId] = useState<string | null>(null);
+  const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
+  const [streamNote, setStreamNote] = useState<string | null>(null);
+  const unlistenRef = useRef<UnlistenFn[]>([]);
+  // Bumped per call so a late event from an aborted stream is ignored.
+  const streamGenRef = useRef(0);
+
+  useEffect(() => () => { unlistenRef.current.forEach(fn => fn()); }, []);
+
   // Proto library UI state
   const [libOpen, setLibOpen] = useState(true);
   const [savingName, setSavingName] = useState("");
@@ -379,6 +461,120 @@ export function GrpcRoute() {
     }
   }
 
+  /** Resolves the proto id, re-importing from text when it went stale across a restart. */
+  async function ensureProtoId(): Promise<string | null> {
+    if (protoId) return protoId;
+    if (protoText.trim()) {
+      const info = await grpcImportProto(protoText);
+      setProtoId(info.id);
+      setServices(info.services);
+      return info.id;
+    }
+    return null;
+  }
+
+  function buildMetadataMap(): Record<string, string> {
+    const metaMap: Record<string, string> = {};
+    for (const e of metadata) {
+      if (e.enabled && e.key.trim()) metaMap[e.key.trim()] = resolveVariable(e.value);
+    }
+    return metaMap;
+  }
+
+  async function handleStartStream(activeProtoId: string) {
+    if (!selectedService || !selectedMethod || !selectedMth) return;
+
+    setFrames([]);
+    setStreamNote(null);
+    setStreamStatus("open");
+
+    // Tear down the previous subscriptions before claiming this generation, so a
+    // late event from an aborted call cannot land in this one's log.
+    unlistenRef.current.forEach(fn => fn());
+    unlistenRef.current = [];
+    const gen = ++streamGenRef.current;
+    const isCurrent = () => streamGenRef.current === gen;
+
+    // Subscribing before opening matters: the backend starts pumping as soon as
+    // the call is made, and the stream id only comes back once it has.
+    unlistenRef.current = await Promise.all([
+      listen<GrpcStreamEvent>("grpc-stream-message", e => {
+        if (!isCurrent()) return;
+        setFrames(prev => [...prev, { seq: e.payload.seq, body: e.payload.payload, at: now() }]);
+      }),
+      listen<GrpcStreamEvent>("grpc-stream-error", e => {
+        if (!isCurrent()) return;
+        setError(e.payload.payload);
+        setStreamStatus("error");
+        setStreamId(null);
+        setLoading(false);
+      }),
+      listen<GrpcStreamEvent>("grpc-stream-closed", e => {
+        if (!isCurrent()) return;
+        setStreamNote(e.payload.payload);
+        setStreamStatus("closed");
+        setStreamId(null);
+        setLoading(false);
+      }),
+    ]);
+
+    try {
+      // A client-streaming call may legitimately start with no message at all.
+      const seed = selectedMth.clientStreaming && !payload.trim() ? "" : resolveVariable(payload);
+      const id = await grpcStreamOpen(
+        resolveVariable(endpoint.trim()),
+        selectedService,
+        selectedMethod,
+        seed,
+        buildMetadataMap(),
+        useTls,
+        activeProtoId,
+      );
+      setStreamId(id);
+      setTab("payload");
+    } catch (e) {
+      setError(String(e));
+      setStreamStatus("error");
+      setLoading(false);
+    }
+  }
+
+  async function handleStreamSend() {
+    if (!streamId) return;
+    try {
+      await grpcStreamSend(streamId, resolveVariable(payload));
+      toast.success("Message sent");
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
+  async function handleEndStream() {
+    if (!streamId) return;
+    try {
+      await grpcStreamCloseSend(streamId);
+      setStreamNote("waiting for server…");
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
+  async function handleCancelStream() {
+    if (!streamId) return;
+    try {
+      await grpcStreamCancel(streamId);
+    } catch (e) {
+      setError(String(e));
+    }
+    // Retire this generation so the backend's own "cancelled" event, which
+    // arrives right after, does not overwrite the state set here.
+    streamGenRef.current++;
+    setStreamId(null);
+    setStreamStatus("closed");
+    setStreamNote("cancelled");
+    setLoading(false);
+  }
+
   async function handleInvoke() {
     if (!selectedService || !selectedMethod) return;
     setError(null);
@@ -387,18 +583,13 @@ export function GrpcRoute() {
     setInvokedAt(now());
 
     // Auto-reimport proto from text when protoId is stale (e.g. after app restart)
-    let activeProtoId = protoId;
-    if (!activeProtoId && protoText.trim()) {
-      try {
-        const info = await grpcImportProto(protoText);
-        setProtoId(info.id);
-        setServices(info.services);
-        activeProtoId = info.id;
-      } catch (e) {
-        setError(String(e));
-        setLoading(false);
-        return;
-      }
+    let activeProtoId: string | null;
+    try {
+      activeProtoId = await ensureProtoId();
+    } catch (e) {
+      setError(String(e));
+      setLoading(false);
+      return;
     }
 
     if (!activeProtoId) {
@@ -407,11 +598,13 @@ export function GrpcRoute() {
       return;
     }
 
+    if (isStreamingMethod) {
+      await handleStartStream(activeProtoId);
+      return;
+    }
+
     try {
-      const metaMap: Record<string, string> = {};
-      for (const e of metadata) {
-        if (e.enabled && e.key.trim()) metaMap[e.key.trim()] = resolveVariable(e.value);
-      }
+      const metaMap = buildMetadataMap();
       const resp = await grpcInvoke(
         resolveVariable(endpoint.trim()),
         selectedService,
@@ -445,7 +638,11 @@ export function GrpcRoute() {
     }
   }
 
-  const canInvoke = (!!protoId || !!protoText.trim()) && !!selectedService && !!selectedMethod && !isLoading;
+  const isStreamingMethod = !!selectedMth && (selectedMth.clientStreaming || selectedMth.serverStreaming);
+  const isStreamOpen = streamStatus === "open" && !!streamId;
+  // Only client-streaming and bidi calls accept further messages from this side.
+  const acceptsClientMessages = isStreamOpen && !!selectedMth?.clientStreaming;
+  const canInvoke = (!!protoId || !!protoText.trim()) && !!selectedService && !!selectedMethod && !isLoading && !isStreamOpen;
 
   return (
     <div className="flex flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
@@ -691,17 +888,50 @@ export function GrpcRoute() {
             </span>
           )}
 
-          <button
-            onClick={handleInvoke}
-            disabled={!canInvoke}
-            className="flex items-center gap-1.5 px-4 rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 shrink-0"
-            style={{ height: 32, fontSize: 13, background: "var(--color-accent)" }}
-          >
-            {isLoading
-              ? <span className="animate-spin text-[14px]">⟳</span>
-              : <Play size={11} />}
-            {isLoading ? "Invoking…" : "Invoke"}
-          </button>
+          {isStreamOpen ? (
+            <>
+              {acceptsClientMessages && (
+                <>
+                  <button
+                    onClick={handleStreamSend}
+                    title="Send the payload above as another message"
+                    className="flex items-center gap-1.5 px-3 rounded-md font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+                    style={{ height: 32, fontSize: 13, background: "var(--color-accent)" }}
+                  >
+                    <SendHorizontal size={11} /> Send
+                  </button>
+                  <button
+                    onClick={handleEndStream}
+                    title="Signal end-of-stream and wait for the server to finish"
+                    className="flex items-center gap-1.5 px-3 rounded-md transition-colors hover:opacity-80 shrink-0"
+                    style={{ height: 32, fontSize: 13, border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}
+                  >
+                    <CircleStop size={11} /> End
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleCancelStream}
+                title="Abort the call"
+                className="flex items-center gap-1.5 px-3 rounded-md font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+                style={{ height: 32, fontSize: 13, background: "var(--color-red)" }}
+              >
+                <Square size={11} /> Stop
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleInvoke}
+              disabled={!canInvoke}
+              className="flex items-center gap-1.5 px-4 rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 shrink-0"
+              style={{ height: 32, fontSize: 13, background: "var(--color-accent)" }}
+            >
+              {isLoading
+                ? <span className="animate-spin text-[14px]">⟳</span>
+                : <Play size={11} />}
+              {isLoading ? (isStreamingMethod ? "Opening…" : "Invoking…") : isStreamingMethod ? "Start stream" : "Invoke"}
+            </button>
+          )}
 
           <div className="relative shrink-0">
             <button
@@ -739,7 +969,7 @@ export function GrpcRoute() {
         </div>
 
         {/* Status bar */}
-        {(error || response) && (
+        {(error || response || streamStatus !== "idle") && (
           <div className="flex items-center gap-3 shrink-0 px-4" style={{ height: 32, borderBottom: "1px solid var(--color-border)", background: "var(--color-sidebar)" }}>
             {error && (
               <span className="text-[11px] truncate" style={{ color: "var(--color-red)" }}>{error}</span>
@@ -752,16 +982,39 @@ export function GrpcRoute() {
                 {invokedAt && <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>at {invokedAt}</span>}
               </>
             )}
-            <div className="flex-1" />
-            {(error || response) && (
-              <button
-                onClick={() => { setResponse(null); setError(null); }}
-                className="flex items-center gap-1 text-[11px] transition-colors hover:opacity-80"
-                style={{ color: "var(--color-fg-3)" }}
-              >
-                <Trash2 size={11} /> Clear
-              </button>
+            {!error && streamStatus !== "idle" && (
+              <>
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${isStreamOpen ? "animate-pulse" : ""}`}
+                  style={{ background: isStreamOpen ? "var(--color-accent)" : "var(--color-fg-4)" }}
+                />
+                <span className="text-[11px]" style={{ color: isStreamOpen ? "var(--color-accent)" : "var(--color-fg-3)" }}>
+                  {isStreamOpen ? "Streaming" : "Stream closed"}
+                </span>
+                <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+                  {frames.length} {frames.length === 1 ? "message" : "messages"}
+                </span>
+                {streamNote && (
+                  <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>· {streamNote}</span>
+                )}
+                {invokedAt && <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>at {invokedAt}</span>}
+              </>
             )}
+            <div className="flex-1" />
+            <button
+              onClick={() => {
+                setResponse(null);
+                setError(null);
+                setFrames([]);
+                setStreamStatus("idle");
+                setStreamNote(null);
+              }}
+              disabled={isStreamOpen}
+              className="flex items-center gap-1 text-[11px] transition-colors hover:opacity-80 disabled:opacity-40"
+              style={{ color: "var(--color-fg-3)" }}
+            >
+              <Trash2 size={11} /> Clear
+            </button>
           </div>
         )}
 
@@ -824,7 +1077,7 @@ export function GrpcRoute() {
               <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-fg-4)" }}>Response</span>
             </div>
 
-            {!response && !error && (
+            {!response && !error && streamStatus === "idle" && (
               <div className="flex flex-col items-center justify-center flex-1 gap-2" style={{ color: "var(--color-fg-4)" }}>
                 <Network size={24} style={{ opacity: 0.3 }} />
                 <span className="text-[12px]">
@@ -832,12 +1085,34 @@ export function GrpcRoute() {
                     ? "Load a .proto or use server reflection, then invoke a method"
                     : !selectedMethod
                     ? "Select a method from the left panel"
+                    : isStreamingMethod
+                    ? `Hit Start stream — ${methodKindLabel(!!selectedMth?.clientStreaming, !!selectedMth?.serverStreaming).toLowerCase()}`
                     : "Hit Invoke to make a request"}
                 </span>
               </div>
             )}
 
-            {response && (
+            {/* Streaming log — one collapsible entry per decoded message */}
+            {streamStatus !== "idle" && (
+              <div className="flex-1 overflow-y-auto">
+                {frames.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: "var(--color-fg-4)" }}>
+                    <span className="text-[12px]">
+                      {isStreamOpen
+                        ? acceptsClientMessages
+                          ? "Stream open — edit the payload above and hit Send"
+                          : "Stream open — waiting for messages…"
+                        : "No messages received"}
+                    </span>
+                  </div>
+                )}
+                {frames.map(f => (
+                  <StreamFrameRow key={f.seq} frame={f} />
+                ))}
+              </div>
+            )}
+
+            {response && streamStatus === "idle" && (
               <CodeEditor
                 lang="json"
                 value={response.body}
@@ -846,7 +1121,7 @@ export function GrpcRoute() {
               />
             )}
 
-            {error && !response && (
+            {error && !response && streamStatus === "idle" && (
               <div className="flex-1 overflow-y-auto p-4">
                 <pre className="text-[11px] whitespace-pre-wrap break-all" style={{ color: "var(--color-red)", fontFamily: "var(--font-mono)" }}>
                   {error}
