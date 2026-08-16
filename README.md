@@ -211,9 +211,10 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - Request timeline (waterfall): TTFB and download breakdown on every response
 - CLI runner: `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines
 - OpenAPI 3.0 export from any collection
+- gRPC: `.proto` import, server reflection, persistent proto library, unary calls, and server / client / bidirectional streaming
+- GitHub integration: browse repos and sync collections as YAML
 
 ### In progress
-- gRPC support: `.proto` import, Monaco editor for request messages, server reflection
 - Team workspaces: shared collections with real-time sync via Supabase Realtime
 
 ### Planned
