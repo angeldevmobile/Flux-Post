@@ -145,6 +145,43 @@ export interface GrpcRequestFields {
   protoName?: string;
 }
 
+/** Credential fields hold `{{VAR}}` references, not literals — see `findLiteralSecrets`. */
+export interface CollectionAuth {
+  type: string;
+  token?: string;
+  username?: string;
+  password?: string;
+  key?: string;
+  value?: string;
+  in?: string;
+  grantType?: string;
+  clientId?: string;
+  clientSecret?: string;
+  authUrl?: string;
+  tokenUrl?: string;
+  scopes?: string;
+  region?: string;
+  service?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  sessionToken?: string;
+}
+
+export interface CollectionScripts {
+  preRequest?: string;
+  postResponse?: string;
+}
+
+export interface CollectionExtractor {
+  path: string;
+  variable: string;
+}
+
+export interface CollectionGraphql {
+  query?: string;
+  variables?: string;
+}
+
 export interface CollectionRequest {
   id: string;
   name: string;
@@ -155,6 +192,12 @@ export interface CollectionRequest {
   headers: Record<string, string>;
   body?: string;
   bodyType?: string;
+  params?: Record<string, string>;
+  form?: Record<string, string>;
+  graphql?: CollectionGraphql;
+  auth?: CollectionAuth;
+  scripts?: CollectionScripts;
+  extractors?: CollectionExtractor[];
   tests: { assert: string }[];
   // gRPC
   grpc?: GrpcRequestFields;
@@ -165,11 +208,13 @@ export interface CollectionFolder {
   name: string;
   expanded: boolean;
   requests: CollectionRequest[];
+  folders?: CollectionFolder[];
 }
 
 export interface Collection {
   id: string;
   name: string;
+  description?: string;
   baseUrl?: string;
   requests: CollectionRequest[];
   folders: CollectionFolder[];

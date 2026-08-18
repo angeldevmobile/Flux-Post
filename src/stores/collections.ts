@@ -8,11 +8,13 @@ export interface CollectionFolder {
   name: string;
   expanded: boolean;
   requests: CollectionRequest[];
+  folders?: CollectionFolder[];
 }
 
 export interface Collection {
   id: string;
   name: string;
+  description?: string;
   baseUrl?: string;
   requests: CollectionRequest[];
   folders: CollectionFolder[];
@@ -32,6 +34,15 @@ interface CollectionsStore {
   deleteRequest: (collectionId: string, requestId: string) => void;
   addFolder: (collectionId: string, folder: CollectionFolder) => void;
   deleteFolder: (collectionId: string, folderId: string) => void;
+}
+
+/** Folders nest to any depth, so the target can be at any level. */
+function toggleIn(folders: CollectionFolder[], folderId: string): CollectionFolder[] {
+  return folders.map((f) =>
+    f.id === folderId
+      ? { ...f, expanded: !f.expanded }
+      : { ...f, folders: toggleIn(f.folders ?? [], folderId) }
+  );
 }
 
 export const useCollectionsStore = create<CollectionsStore>((set) => ({
@@ -60,14 +71,7 @@ export const useCollectionsStore = create<CollectionsStore>((set) => ({
   toggleFolder: (collectionId, folderId) =>
     set((s) => ({
       collections: s.collections.map((c) =>
-        c.id === collectionId
-          ? {
-              ...c,
-              folders: c.folders.map((f) =>
-                f.id === folderId ? { ...f, expanded: !f.expanded } : f
-              ),
-            }
-          : c
+        c.id === collectionId ? { ...c, folders: toggleIn(c.folders, folderId) } : c
       ),
     })),
 

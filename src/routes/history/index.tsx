@@ -68,7 +68,7 @@ function StatusBadge({ status }: { status: number }) {
 export function HistoryRoute() {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [search, setSearch] = useState("");
-  const { setMethod, setUrl } = useRequestStore();
+  const { setMethod, setUrl, reset: resetRequest } = useRequestStore();
 
   useEffect(() => {
     getHistory()
@@ -100,6 +100,10 @@ export function HistoryRoute() {
 
   function handleReplay(e: HistoryEntry) {
     if (e.method === "gRPC") return;
+    // History stores only the method and url, so everything else has to be
+    // cleared — otherwise the previous request's auth and body ride along to
+    // whatever host is being replayed.
+    resetRequest();
     setMethod(e.method as HttpMethod);
     setUrl(e.url);
   }

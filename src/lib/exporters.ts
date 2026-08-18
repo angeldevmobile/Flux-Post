@@ -1,4 +1,4 @@
-import type { Collection, CollectionRequest } from "@/stores/collections";
+import type { Collection, CollectionRequest, CollectionFolder } from "@/stores/collections";
 
 //   Postman v2.1                                
 
@@ -15,13 +15,21 @@ function reqToPostmanItem(req: CollectionRequest) {
   };
 }
 
+/** Postman folders are just items with an `item` array, so nesting maps directly. */
+function folderToPostmanItem(folder: CollectionFolder): unknown {
+  return {
+    name: folder.name,
+    item: [
+      ...folder.requests.map(reqToPostmanItem),
+      ...(folder.folders ?? []).map(folderToPostmanItem),
+    ],
+  };
+}
+
 export function exportPostman(col: Collection): string {
   const items: unknown[] = [
     ...col.requests.map(reqToPostmanItem),
-    ...col.folders.map(folder => ({
-      name: folder.name,
-      item: folder.requests.map(reqToPostmanItem),
-    })),
+    ...col.folders.map(folderToPostmanItem),
   ];
 
   const doc = {
@@ -198,9 +206,19 @@ function requestToOperation(req: CollectionRequest, tag: string): [string, Recor
 
 export function exportOpenAPI(col: Collection): string {
   const paths: Record<string, Record<string, unknown>> = {};
+  // OpenAPI has no folder nesting, so a nested folder becomes a "Parent / Child" tag.
+  const walk = (folders: CollectionFolder[], prefix: string): { req: CollectionRequest; tag: string }[] =>
+    folders.flatMap(f => {
+      const tag = prefix ? `${prefix} / ${f.name}` : f.name;
+      return [
+        ...f.requests.map(r => ({ req: r, tag })),
+        ...walk(f.folders ?? [], tag),
+      ];
+    });
+
   const tagged = [
     ...col.requests.map(r => ({ req: r, tag: col.name })),
-    ...col.folders.flatMap(f => f.requests.map(r => ({ req: r, tag: f.name }))),
+    ...walk(col.folders, ""),
   ];
 
   for (const { req, tag } of tagged) {

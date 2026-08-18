@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { X, Upload, FileJson, Terminal } from "lucide-react";
 import { importPostman, importOpenApi, importCurl, detectFormat, type ImportFormat } from "@/lib/importers";
 import { useCollectionsStore } from "@/stores/collections";
-import type { CollectionRequest } from "@/stores/collections";
+import type { CollectionRequest, CollectionFolder, Collection } from "@/stores/collections";
 
 interface Props {
   open: boolean;
@@ -14,6 +14,12 @@ const TABS: { id: ImportFormat | "curl"; label: string; icon: React.ReactNode; h
   { id: "openapi", label: "OpenAPI 3.0", icon: <FileJson size={13} />, hint: "Paste or drop an OpenAPI 3.0 JSON spec" },
   { id: "curl", label: "cURL", icon: <Terminal size={13} />, hint: "Paste a cURL command" },
 ];
+
+function countRequests(col: Collection): number {
+  const walk = (fs: CollectionFolder[]): number =>
+    fs.reduce((n, f) => n + f.requests.length + walk(f.folders ?? []), 0);
+  return col.requests.length + walk(col.folders);
+}
 
 export function ImportModal({ open, onClose }: Props) {
   const [tab, setTab] = useState<ImportFormat>("postman");
@@ -59,7 +65,7 @@ export function ImportModal({ open, onClose }: Props) {
         col = importPostman(JSON.parse(text));
       }
       useCollectionsStore.getState().addCollection(col);
-      setSuccess(`Imported "${col.name}" — ${col.requests.length + col.folders.reduce((s, f) => s + f.requests.length, 0)} requests`);
+      setSuccess(`Imported "${col.name}": ${countRequests(col)} requests`);
       setText("");
     } catch (e) {
       setError(String(e));

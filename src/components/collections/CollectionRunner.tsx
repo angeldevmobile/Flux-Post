@@ -4,7 +4,7 @@ import { useCollectionsStore } from "@/stores/collections";
 import { sendRequest, grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
 import { evaluateAssertions, type AssertionResult } from "@/lib/assertionEvaluator";
 import { methodColor, methodBg } from "@/lib/methods";
-import type { CollectionRequest } from "@/stores/collections";
+import type { CollectionRequest, CollectionFolder } from "@/stores/collections";
 
 interface RunResult {
   req: CollectionRequest;
@@ -64,9 +64,10 @@ export function CollectionRunner({ open, onClose }: Props) {
 
   function flatRequests(): CollectionRequest[] {
     if (!col) return [];
-    const reqs: CollectionRequest[] = [...col.requests];
-    for (const folder of col.folders) reqs.push(...folder.requests);
-    return reqs;
+    // Folders nest to any depth; missing one would silently skip its requests.
+    const walk = (folders: CollectionFolder[]): CollectionRequest[] =>
+      folders.flatMap(f => [...f.requests, ...walk(f.folders ?? [])]);
+    return [...col.requests, ...walk(col.folders)];
   }
 
   function toggleExpanded(idx: number) {
@@ -116,7 +117,7 @@ export function CollectionRunner({ open, onClose }: Props) {
             body: req.body,
           });
           const assertions = req.tests?.length
-            ? evaluateAssertions(req.tests.map(t => t.assert), resp.status, resp.body, resp.headers)
+            ? evaluateAssertions(req.tests.map(t => t.assert), resp.status, resp.body, resp.headers, resp.durationMs)
             : [];
           setResults(prev => prev.map((r, idx) =>
             idx === i ? { ...r, status: "done", statusCode: resp.status, durationMs: resp.durationMs, body: resp.body, assertions } : r

@@ -85,6 +85,33 @@ describe("exportPostman", () => {
     const doc = JSON.parse(exportPostman(collection));
     expect(doc.variable).toBeUndefined();
   });
+
+  it("keeps folders nested instead of dropping the inner ones", () => {
+    const nested: Collection = {
+      ...collection,
+      requests: [],
+      folders: [
+        {
+          id: "f1", name: "Outer", expanded: true,
+          requests: [{ id: "a", name: "Outer req", method: "GET", path: "/a", headers: {}, tests: [] }],
+          folders: [
+            {
+              id: "f2", name: "Inner", expanded: true,
+              requests: [{ id: "b", name: "Inner req", method: "GET", path: "/b", headers: {}, tests: [] }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const doc = JSON.parse(exportPostman(nested));
+    const outer = doc.item[0];
+    expect(outer.name).toBe("Outer");
+    expect(outer.item.map((i: { name: string }) => i.name)).toEqual(["Outer req", "Inner"]);
+
+    const inner = outer.item[1];
+    expect(inner.item[0].name).toBe("Inner req");
+  });
 });
 
 describe("exportCurl", () => {

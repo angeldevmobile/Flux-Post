@@ -8,8 +8,10 @@ import {
   saveHistory, saveCollection,
   type GrpcService, type GrpcStreamEvent,
 } from "@/lib/tauri";
+import { generateProtoFromServices } from "@/lib/protoText";
 import { useProtoLibraryStore } from "@/stores/protoLibraryStore";
 import { useCollectionsStore } from "@/stores/collections";
+import type { CollectionFolder } from "@/stores/collections";
 import { pushHistory, pushCollection } from "@/lib/sync";
 import { CodeEditor } from "@/components/CodeEditor";
 import { useEnvironmentStore } from "@/stores/environment";
@@ -18,42 +20,17 @@ import { toast } from "sonner";
 
 const DIR_KEY = "flux_collections_dir";
 
-type Tab = "payload" | "metadata" | "proto";
-
-function generateProtoFromServices(services: GrpcService[]): string {
-  const lines: string[] = ['syntax = "proto3";', ""];
-  const messagesSeen = new Set<string>();
-
-  for (const svc of services) {
-    lines.push(`service ${svc.name} {`);
-    for (const m of svc.methods) {
-      const inp = m.clientStreaming ? `stream ${m.inputType.split(".").pop()}` : m.inputType.split(".").pop();
-      const out = m.serverStreaming ? `stream ${m.outputType.split(".").pop()}` : m.outputType.split(".").pop();
-      lines.push(`  rpc ${m.name} (${inp}) returns (${out}) {}`);
-    }
-    lines.push("}");
-    lines.push("");
-  }
-
-  for (const svc of services) {
-    for (const m of svc.methods) {
-      if (!messagesSeen.has(m.inputType) && m.inputFields.length > 0) {
-        messagesSeen.add(m.inputType);
-        const msgName = m.inputType.split(".").pop() ?? m.inputType;
-        lines.push(`message ${msgName} {`);
-        m.inputFields.forEach((f, i) => {
-          const mod = f.repeated ? "repeated " : f.optional ? "optional " : "";
-          const typeName = f.kind === "message" ? f.typeName.split(".").pop() : f.kind;
-          lines.push(`  ${mod}${typeName} ${f.name} = ${i + 1};`);
-        });
-        lines.push("}");
-        lines.push("");
-      }
-    }
-  }
-
-  return lines.join("\n");
+/** Older collections may lack `headers` or `tests`; fill them in at any depth. */
+function normalizeFolders(folders: CollectionFolder[]): CollectionFolder[] {
+  return folders.map(f => ({
+    ...f,
+    requests: f.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })),
+    folders: normalizeFolders(f.folders ?? []),
+  }));
 }
+
+
+type Tab = "payload" | "metadata" | "proto";
 
 function now() {
   return new Date().toLocaleTimeString("en-US", { hour12: false });
@@ -308,7 +285,7 @@ function GrpcSavePopover({
       const updated = {
         ...col,
         requests: [...col.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })), newReq],
-        folders: col.folders.map(f => ({ ...f, requests: f.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })) })),
+        folders: normalizeFolders(col.folders),
       };
       await saveCollection(dir, updated);
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
@@ -1082,13 +1059,13 @@ export function GrpcRoute() {
                     : !selectedMethod
                     ? "Select a method from the left panel"
                     : isStreamingMethod
-                    ? `Hit Start stream — ${methodKindLabel(!!selectedMth?.clientStreaming, !!selectedMth?.serverStreaming).toLowerCase()}`
+                    ? `Hit Start stream: ${methodKindLabel(!!selectedMth?.clientStreaming, !!selectedMth?.serverStreaming).toLowerCase()}`
                     : "Hit Invoke to make a request"}
                 </span>
               </div>
             )}
 
-            {/* Streaming log — one collapsible entry per decoded message */}
+            {/* Streaming log: one collapsible entry per decoded message */}
             {streamStatus !== "idle" && (
               <div className="flex-1 overflow-y-auto">
                 {frames.length === 0 && (
@@ -1096,8 +1073,8 @@ export function GrpcRoute() {
                     <span className="text-[12px]">
                       {isStreamOpen
                         ? acceptsClientMessages
-                          ? "Stream open — edit the payload above and hit Send"
-                          : "Stream open — waiting for messages…"
+                          ? "Stream open, edit the payload above and hit Send"
+                          : "Stream open, waiting for messages…"
                         : "No messages received"}
                     </span>
                   </div>

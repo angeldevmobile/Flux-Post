@@ -8,14 +8,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 ## [Unreleased]
 
 ### Added
+- Collections now carry the whole request: auth, query params, pre/post-request scripts, variable extractors, GraphQL query and variables, and form bodies. Saving and reopening a request gives back what you built.
+- Saving a request whose auth holds a literal token warns before writing it to the file, and offers to move it into the active environment as a masked `{{VAR}}` in one click
+
+- Collection descriptions can be written from the sidebar, and show under the collection when it is expanded
+- CLI runner honours the new fields: auth (bearer, basic, api key, OAuth 2.0 client credentials), query params, form and GraphQL bodies, and folders at any depth. A collection that works in the app now works in CI.
+- CLI reports what it cannot do instead of running a request that quietly differs: gRPC requests are skipped, pre/post scripts are announced, and AWS SigV4 fails with a message rather than going out unsigned
+
+### Security
+- An assertion whose left side was not recognised resolved to null, so `anything.at.all == null` passed against any response — including in CI, where the run exited 0. Unknown paths now fail with `unknown path '…'`. Pipelines that were silently green may start reporting real failures.
+
+### Changed
+- One assertion engine, one language. The collection runner, the Tests screen and the CLI used three different implementations: `json.token == null` passed in one and failed in another, `duration < 500` only worked in two of the three. All three now evaluate through the same engine, `json.` and `body.` are interchangeable, and `headers.x` and `headers["x"]` both work. A shared contract table is asserted by both the TypeScript and Rust test suites so they cannot drift apart again.
+- Assertion failures now say what they got (`expected status == 404 — got 200`) instead of a bare value
+- `body_type` in collection files is now written as `bodyType`, matching the rest of the schema; the old spelling is still read
+
+---
+
+## [0.1.7] — 2026-08-15
+
+### Added
 - `QUERY` method support (RFC 10008) — safe and cacheable like `GET`, but with a request body
 - gRPC streaming: server-streaming, client-streaming and bidirectional calls, with a live message log, per-message send, end-of-stream and cancel
-- Unit tests for the request core — JSONPath extraction, assertion evaluation, Postman/OpenAPI/cURL import and export (82 cases)
-- Rust tests for collection YAML round-tripping and gRPC descriptor handling (13 cases)
+- Nested folders in collections, and a stable `id` on every request and folder
+- Unit tests for the request core — JSONPath extraction, assertion evaluation, Postman/OpenAPI/cURL import and export, and proto rendering (92 cases)
+- Rust tests for collection YAML round-tripping, gRPC descriptors and the proto library on disk (31 cases)
 - `CI` workflow: typecheck, tests, build, clippy and `flux-cli` build on every push and pull request
 - `npm run test`, `npm run test:watch` and `npm run typecheck` scripts
 
+### Security
+- Selecting a collection request, replaying from history, or opening a result from the command palette carried the previously open request's auth, scripts and extractors over to the new one — sending credentials to whatever host was loaded next. All three now reset the request state first.
+
 ### Fixed
+- Every singular proto3 field was reported as `optional`, so the generated proto marked the whole message optional; only fields declared with the keyword are flagged now (proto2 labels handled separately)
+- Enum fields rendered as the literal word `enum` in the proto view instead of their type name
+- Collection `description` was parsed but silently dropped on every save
+- Request ids were positional, so deleting or reordering renumbered every request below; ids are now written to the collection file and stay stable
 - cURL import dropped any body containing double quotes — which is most JSON — and left the method as `GET`
 - cURL import could not find the URL unless it came first, so Flux could not re-import its own exported snippets
 - JSONPath `$.items[*].field` returned whole objects instead of projecting the field over the array

@@ -59,13 +59,26 @@ jobs:
             ./src-tauri -> target
             ./flux-cli -> target
 
+      # Must come first: tauri.conf.json declares this binary as a bundled
+      # resource, so src-tauri's build script fails without it. On Linux the
+      # binary is `flux`, but the resource path names it `flux.exe`.
+      - name: Build flux-cli
+        run: |
+          cargo build --release --manifest-path flux-cli/Cargo.toml
+          cp flux-cli/target/release/flux flux-cli/target/release/flux.exe
+
       # No `cargo fmt --check`: rustfmt strips the padding from the
       # `//    Section    ` banners, forcing a whole-tree reformat.
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml --lib -- -D warnings
 
+      - name: Clippy (flux-cli)
+        run: cargo clippy --manifest-path flux-cli/Cargo.toml -- -D warnings
+
       - name: Tests
         run: cargo test --manifest-path src-tauri/Cargo.toml --lib
 
-      - name: Build flux-cli
-        run: cargo build --manifest-path flux-cli/Cargo.toml
+      # Includes the assertion contract table, which must stay in step with the
+      # one in src/lib/__tests__/assertions.test.ts.
+      - name: Tests (flux-cli)
+        run: cargo test --manifest-path flux-cli/Cargo.toml

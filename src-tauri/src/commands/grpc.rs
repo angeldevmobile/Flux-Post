@@ -175,6 +175,17 @@ fn kind_name(k: &Kind) -> String {
     .to_string()
 }
 
+/// Whether the field was declared with the `optional` keyword. Every singular
+/// proto3 field is `Cardinality::Optional` in the descriptor, so that alone
+/// would mark the whole message optional; proto3 records the keyword in a
+/// dedicated flag, while in proto2 the label itself carries the meaning.
+fn is_explicitly_optional(f: &prost_reflect::FieldDescriptor) -> bool {
+    if f.parent_file().syntax() == prost_reflect::Syntax::Proto2 {
+        return f.cardinality() == Cardinality::Optional;
+    }
+    f.field_descriptor_proto().proto3_optional.unwrap_or(false)
+}
+
 fn extract_services(pool: &DescriptorPool) -> Vec<GrpcService> {
     pool.services()
         .map(|svc| {
@@ -196,7 +207,7 @@ fn extract_services(pool: &DescriptorPool) -> Vec<GrpcService> {
                                 kind: kind_name(&k),
                                 type_name,
                                 repeated: f.cardinality() == Cardinality::Repeated,
-                                optional: f.cardinality() == Cardinality::Optional,
+                                optional: is_explicitly_optional(&f),
                             }
                         })
                         .collect();
@@ -397,7 +408,7 @@ pub async fn grpc_invoke(
         guard
             .get(&proto_id)
             .map(|(pool, _)| pool.clone())
-            .ok_or_else(|| "Proto not loaded — import or reflect first".to_string())?
+            .ok_or_else(|| "Proto not loaded, import or reflect first".to_string())?
     };
 
     let service_desc = pool
@@ -411,7 +422,7 @@ pub async fn grpc_invoke(
 
     if method_desc.is_client_streaming() || method_desc.is_server_streaming() {
         return Err(format!(
-            "'{}' is a streaming method — open it with grpc_stream_open instead",
+            "'{}' is a streaming method, open it with grpc_stream_open instead",
             method
         ));
     }
@@ -556,7 +567,7 @@ pub async fn grpc_stream_open(
         guard
             .get(&proto_id)
             .map(|(pool, _)| pool.clone())
-            .ok_or_else(|| "Proto not loaded — import or reflect first".to_string())?
+            .ok_or_else(|| "Proto not loaded, import or reflect first".to_string())?
     };
 
     let service_desc = pool
@@ -571,7 +582,7 @@ pub async fn grpc_stream_open(
     let client_streaming = method_desc.is_client_streaming();
     let server_streaming = method_desc.is_server_streaming();
     if !client_streaming && !server_streaming {
-        return Err(format!("'{}' is unary — send it with grpc_invoke instead", method));
+        return Err(format!("'{}' is unary, send it with grpc_invoke instead", method));
     }
 
     let input_desc = method_desc.input();
@@ -783,13 +794,84 @@ service Greeter {
 }
 "#;
 
-    fn pool() -> DescriptorPool {
+    /// Exercises the field shapes the payload scaffold has to render.
+    const RICH_PROTO: &str = r#"
+syntax = "proto3";
+package rich;
+
+enum Status {
+  UNKNOWN = 0;
+  ACTIVE = 1;
+}
+
+message Address {
+  string street = 1;
+}
+
+message Empty {}
+
+message User {
+  string name = 1;
+  int32 age = 2;
+  bool active = 3;
+  bytes avatar = 4;
+  double score = 5;
+  uint64 visits = 6;
+  repeated string tags = 7;
+  optional string nickname = 8;
+  Status status = 9;
+  Address address = 10;
+}
+
+service UserService {
+  rpc GetUser (User) returns (User) {}
+}
+
+service AdminService {
+  rpc Purge (Empty) returns (Empty) {}
+}
+"#;
+
+    fn compile(source: &str) -> prost_types::FileDescriptorSet {
         let dir = std::env::temp_dir().join(format!("flux_grpc_test_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("test.proto"), PROTO).unwrap();
+        std::fs::write(dir.join("test.proto"), source).unwrap();
         let fds = protox::compile(["test.proto"], [&dir]).expect("proto should compile");
         std::fs::remove_dir_all(&dir).ok();
-        DescriptorPool::from_file_descriptor_set(fds).unwrap()
+        fds
+    }
+
+    fn pool_from(source: &str) -> DescriptorPool {
+        DescriptorPool::from_file_descriptor_set(compile(source)).unwrap()
+    }
+
+    fn pool() -> DescriptorPool {
+        pool_from(PROTO)
+    }
+
+    fn temp_dir() -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("flux_proto_lib_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn field<'a>(m: &'a GrpcMethod, name: &str) -> &'a GrpcField {
+        m.input_fields
+            .iter()
+            .find(|f| f.name == name)
+            .unwrap_or_else(|| panic!("field {name} not found"))
+    }
+
+    fn method(services: &[GrpcService], service: &str, method: &str) -> GrpcMethod {
+        services
+            .iter()
+            .find(|s| s.full_name == service)
+            .unwrap_or_else(|| panic!("service {service} not found"))
+            .methods
+            .iter()
+            .find(|m| m.name == method)
+            .unwrap_or_else(|| panic!("method {method} not found"))
+            .clone()
     }
 
     fn message(name: &str) -> MessageDescriptor {
@@ -862,6 +944,201 @@ service Greeter {
     }
 
     #[test]
+    fn every_scalar_kind_gets_a_proto_name() {
+        let services = extract_services(&pool_from(RICH_PROTO));
+        let get_user = method(&services, "rich.UserService", "GetUser");
+
+        assert_eq!(field(&get_user, "name").kind, "string");
+        assert_eq!(field(&get_user, "age").kind, "int32");
+        assert_eq!(field(&get_user, "active").kind, "bool");
+        assert_eq!(field(&get_user, "avatar").kind, "bytes");
+        assert_eq!(field(&get_user, "score").kind, "double");
+        assert_eq!(field(&get_user, "visits").kind, "uint64");
+    }
+
+    #[test]
+    fn message_and_enum_fields_carry_their_full_type_name() {
+        let services = extract_services(&pool_from(RICH_PROTO));
+        let get_user = method(&services, "rich.UserService", "GetUser");
+
+        let status = field(&get_user, "status");
+        assert_eq!(status.kind, "enum");
+        assert_eq!(status.type_name, "rich.Status");
+
+        let address = field(&get_user, "address");
+        assert_eq!(address.kind, "message");
+        assert_eq!(address.type_name, "rich.Address");
+
+        // Scalars carry no type name, which is what the payload scaffold keys off.
+        assert_eq!(field(&get_user, "name").type_name, "");
+    }
+
+    #[test]
+    fn repeated_fields_are_flagged() {
+        let services = extract_services(&pool_from(RICH_PROTO));
+        let get_user = method(&services, "rich.UserService", "GetUser");
+
+        assert!(field(&get_user, "tags").repeated);
+        assert!(!field(&get_user, "name").repeated);
+        assert!(!field(&get_user, "status").repeated);
+    }
+
+    #[test]
+    fn optional_flags_only_explicitly_optional_fields() {
+        let services = extract_services(&pool_from(RICH_PROTO));
+        let get_user = method(&services, "rich.UserService", "GetUser");
+
+        assert!(field(&get_user, "nickname").optional, "declared optional");
+        assert!(!field(&get_user, "name").optional, "plain proto3 singular");
+        assert!(!field(&get_user, "tags").optional, "repeated");
+    }
+
+    /// Reflection can hand back proto2 files, where `optional` is a real label
+    /// rather than the proto3 flag.
+    #[test]
+    fn proto2_optional_and_required_are_told_apart() {
+        let services = extract_services(&pool_from(
+            r#"
+syntax = "proto2";
+package old;
+
+message Legacy {
+  required string id = 1;
+  optional string note = 2;
+  repeated string tags = 3;
+}
+
+service LegacyService {
+  rpc Get (Legacy) returns (Legacy);
+}
+"#,
+        ));
+        let get = method(&services, "old.LegacyService", "Get");
+
+        assert!(field(&get, "note").optional, "declared optional");
+        assert!(!field(&get, "id").optional, "declared required");
+        assert!(!field(&get, "tags").optional, "repeated");
+        assert!(field(&get, "tags").repeated);
+    }
+
+    #[test]
+    fn every_service_in_the_file_is_discovered() {
+        let services = extract_services(&pool_from(RICH_PROTO));
+        let mut names: Vec<&str> = services.iter().map(|s| s.full_name.as_str()).collect();
+        names.sort();
+        assert_eq!(names, vec!["rich.AdminService", "rich.UserService"]);
+
+        let purge = method(&services, "rich.AdminService", "Purge");
+        assert_eq!(purge.input_type, "rich.Empty");
+        assert!(purge.input_fields.is_empty(), "Empty has no fields");
+    }
+
+    /// Mirrors what `grpc_save_proto` writes and `grpc_load_proto_by_id` reads:
+    /// the pool is persisted as an encoded FileDescriptorSet, not as source.
+    #[test]
+    fn a_descriptor_set_survives_the_persistence_round_trip() {
+        let bytes = prost::Message::encode_to_vec(&compile(RICH_PROTO));
+
+        let decoded = prost_types::FileDescriptorSet::decode(Bytes::from(bytes))
+            .expect("descriptor set should decode");
+        let services = extract_services(&DescriptorPool::from_file_descriptor_set(decoded).unwrap());
+
+        let get_user = method(&services, "rich.UserService", "GetUser");
+        assert_eq!(get_user.input_type, "rich.User");
+        assert!(field(&get_user, "tags").repeated);
+        assert_eq!(field(&get_user, "status").type_name, "rich.Status");
+    }
+
+    #[test]
+    fn a_message_with_a_nested_type_encodes_and_decodes() {
+        let pool = pool_from(RICH_PROTO);
+        let desc = pool.get_message_by_name("rich.User").unwrap();
+
+        let json = r#"{"name":"ana","tags":["a","b"],"status":"ACTIVE","address":{"street":"Main"}}"#;
+        let out = decode_to_json(&desc, encode_from_json(&desc, json).unwrap()).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&out).unwrap();
+
+        assert_eq!(value["name"], "ana");
+        assert_eq!(value["tags"][1], "b");
+        assert_eq!(value["status"], "ACTIVE");
+        assert_eq!(value["address"]["street"], "Main");
+    }
+
+    #[test]
+    fn an_out_of_range_enum_value_is_rejected() {
+        let pool = pool_from(RICH_PROTO);
+        let desc = pool.get_message_by_name("rich.User").unwrap();
+        assert!(encode_from_json(&desc, r#"{"status":"NOT_A_STATUS"}"#).is_err());
+    }
+
+    #[test]
+    fn a_proto_with_no_services_yields_none() {
+        let services = extract_services(&pool_from(
+            r#"
+syntax = "proto3";
+package lonely;
+message Thing { string id = 1; }
+"#,
+        ));
+        assert!(services.is_empty());
+    }
+
+    #[test]
+    fn the_proto_library_index_round_trips() {
+        let dir = temp_dir();
+        let meta = SavedProtoMeta {
+            id: "p1".into(),
+            name: "helloworld.proto".into(),
+            source: "file".into(),
+            services: extract_services(&pool()),
+            created_at: "2026-08-15T00:00:00Z".into(),
+        };
+
+        write_index(&dir, &[meta]).unwrap();
+        let read = read_index(&dir);
+
+        assert_eq!(read.len(), 1);
+        assert_eq!(read[0].id, "p1");
+        assert_eq!(read[0].name, "helloworld.proto");
+        assert_eq!(read[0].services[0].full_name, "test.Greeter");
+        assert_eq!(read[0].services[0].methods.len(), 4);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_missing_or_corrupt_index_reads_as_empty_instead_of_panicking() {
+        let dir = temp_dir();
+        assert!(read_index(&dir).is_empty(), "missing index");
+
+        std::fs::write(dir.join("index.json"), "{ not json").unwrap();
+        assert!(read_index(&dir).is_empty(), "corrupt index");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn rewriting_the_index_replaces_it_rather_than_appending() {
+        let dir = temp_dir();
+        let entry = |id: &str| SavedProtoMeta {
+            id: id.into(),
+            name: format!("{id}.proto"),
+            source: "file".into(),
+            services: vec![],
+            created_at: "2026-08-15T00:00:00Z".into(),
+        };
+
+        write_index(&dir, &[entry("a"), entry("b")]).unwrap();
+        write_index(&dir, &[entry("b")]).unwrap();
+
+        let read = read_index(&dir);
+        assert_eq!(read.len(), 1);
+        assert_eq!(read[0].id, "b");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn metadata_keys_are_validated() {
         let mut req = Request::new(Bytes::new());
         let mut md = HashMap::new();
@@ -898,7 +1175,7 @@ pub async fn grpc_save_proto(
         let guard = state.0.lock().unwrap();
         let (pool, bytes) = guard
             .get(&proto_id)
-            .ok_or("Proto not in memory — import or reflect first")?;
+            .ok_or("Proto not in memory, import or reflect first")?;
         (bytes.clone(), extract_services(pool))
     };
 

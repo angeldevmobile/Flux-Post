@@ -29,7 +29,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const { collections } = useCollectionsStore();
-  const { setMethod, setUrl, setBody, setBodyType, setHeaders } = useRequestStore();
+  const { setMethod, setUrl, setBody, setBodyType, setHeaders, reset: resetRequest } = useRequestStore();
 
   useEffect(() => {
     if (open) {
@@ -73,6 +73,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     : [...collectionResults, ...historyResults.slice(0, 8)];
 
   const loadResult = useCallback((r: Result) => {
+    // Clear auth, scripts and extractors the result does not carry, so they
+    // are not sent along to a different host.
+    resetRequest();
     setMethod(r.method as any);
     setUrl(r.url);
     if (r.body) {

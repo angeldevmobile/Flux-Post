@@ -1,6 +1,6 @@
 import { useState, useId, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X, Code2 } from "lucide-react";
+import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X, Code2, TriangleAlert } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
 import { sendRequest, saveHistory, saveCollection, editContent } from "@/lib/tauri";
@@ -17,16 +17,30 @@ import { CodeEditor } from "@/components/CodeEditor";
 import { fetchGraphQLSchema, setCurrentSchema } from "@/lib/graphqlIntrospection";
 import { SnippetModal } from "@/components/SnippetModal";
 import { evaluatePath } from "@/lib/jsonpath";
+import { toCollectionRequest, findLiteralSecrets, type LiteralSecret, type RequestSnapshot } from "@/lib/requestFidelity";
 import type { Extractor } from "@/stores/request";
+import type { CollectionFolder } from "@/stores/collections";
 
 const DIR_KEY = "flux_collections_dir";
 
+/** Older collections may lack `headers` or `tests`; fill them in at any depth. */
+function normalizeFolders(folders: CollectionFolder[]): CollectionFolder[] {
+  return folders.map(f => ({
+    ...f,
+    requests: f.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })),
+    folders: normalizeFolders(f.folders ?? []),
+  }));
+}
+
+
 function SavePopover({ onClose }: { onClose: () => void }) {
-  const { method, url, body, headers } = useRequestStore();
+  const url = useRequestStore(s => s.url);
   const { collections } = useCollectionsStore();
+  const { updateEnvironment, toggleSecretKey, setGlobalVariable, toggleGlobalSecretKey } = useEnvironmentStore();
   const [name, setName] = useState(url.split("/").filter(Boolean).pop() ?? "New request");
   const [collectionId, setCollectionId] = useState(collections[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
+  const [secrets, setSecrets] = useState<LiteralSecret[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,27 +51,53 @@ function SavePopover({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("mousedown", handle);
   }, [onClose]);
 
-  async function handleSave() {
+  /** Moves a pasted credential into the active environment and leaves a {{VAR}} behind. */
+  function convertToVariable(secret: LiteralSecret) {
+    const { environments, activeId } = useEnvironmentStore.getState();
+    const env = environments.find(e => e.id === activeId);
+
+    if (env) {
+      updateEnvironment(env.id, { variables: { ...env.variables, [secret.suggested]: secret.value } });
+      if (!(env.secretKeys ?? []).includes(secret.suggested)) toggleSecretKey(env.id, secret.suggested);
+    } else {
+      // No environment selected, so globals are the only place it can live.
+      setGlobalVariable(secret.suggested, secret.value);
+      if (!useEnvironmentStore.getState().globalSecretKeys.includes(secret.suggested)) {
+        toggleGlobalSecretKey(secret.suggested);
+      }
+    }
+
+    useRequestStore.setState({ [secret.field]: `{{${secret.suggested}}}` } as never);
+    setSecrets(prev => prev.filter(s => s.field !== secret.field));
+    toast.success(`Moved to {{${secret.suggested}}}`);
+  }
+
+  async function handleSave(force = false) {
     const dir = localStorage.getItem(DIR_KEY);
     if (!dir || !collectionId) return;
     const col = collections.find(c => c.id === collectionId);
     if (!col) return;
+
+    const snapshot = useRequestStore.getState() as unknown as RequestSnapshot;
+
+    // Warn before writing a literal credential into a file the GitHub sync commits.
+    if (!force) {
+      const found = findLiteralSecrets(snapshot, name);
+      if (found.length > 0) {
+        setSecrets(found);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
-      const enabledHeaders: Record<string, string> = {};
-      for (const h of headers) {
-        if (h.enabled && h.key) enabledHeaders[h.key] = h.value;
-      }
       const updated = {
         ...col,
         requests: [
           ...col.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })),
-          { id: `${col.id}-${Date.now()}`, name, method, path: url, headers: enabledHeaders, body: body || undefined, tests: [] },
+          toCollectionRequest(snapshot, { id: `${col.id}-${Date.now()}`, name }),
         ],
-        folders: col.folders.map(f => ({
-          ...f,
-          requests: f.requests.map(r => ({ ...r, headers: r.headers ?? {}, tests: r.tests ?? [] })),
-        })),
+        folders: normalizeFolders(col.folders),
       };
       await saveCollection(dir, updated);
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
@@ -87,7 +127,34 @@ function SavePopover({ onClose }: { onClose: () => void }) {
       ) : (
         <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>No collections loaded — set a folder first.</p>
       )}
-      <button onClick={handleSave} disabled={saving || !collectionId || !name}
+      {secrets.length > 0 && (
+        <div className="flex flex-col gap-2 rounded p-2"
+          style={{ background: "var(--color-amber-10, #F59E0B18)", border: "1px solid #F59E0B50" }}>
+          <div className="flex items-start gap-1.5">
+            <TriangleAlert size={12} style={{ color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
+            <span className="text-[11px]" style={{ color: "var(--color-fg-2)", lineHeight: 1.5 }}>
+              {secrets.length === 1 ? "This credential would be" : "These credentials would be"} written
+              in plain text into the collection file.
+            </span>
+          </div>
+          {secrets.map(s => (
+            <div key={String(s.field)} className="flex flex-col gap-1">
+              <span className="text-[10px]" style={{ color: "var(--color-fg-3)" }}>{s.label}</span>
+              <button onClick={() => convertToVariable(s)}
+                className="flex items-center justify-center w-full rounded transition-opacity hover:opacity-80"
+                style={{ height: 26, fontSize: 11, background: "var(--color-accent-20)", color: "var(--color-accent)", border: "1px solid var(--color-accent-50)" }}>
+                Move to {`{{${s.suggested}}}`}
+              </button>
+            </div>
+          ))}
+          <button onClick={() => handleSave(true)}
+            className="text-[10px] underline transition-opacity hover:opacity-80"
+            style={{ color: "var(--color-fg-4)" }}>
+            Save anyway
+          </button>
+        </div>
+      )}
+      <button onClick={() => handleSave()} disabled={saving || !collectionId || !name}
         className="flex items-center justify-center gap-1.5 w-full rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         style={{ height: 28, fontSize: 12, background: "var(--color-accent)" }}>
         {saving ? "Saving..." : "Save"}

@@ -818,6 +818,13 @@
 
         <div class="sidebar-group">
           <div class="sidebar-group-label">Getting Started</div>
+          <button class="sidebar-item" onclick="show('whatsnew')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1" />
+            </svg>
+            What's New
+          </button>
           <button class="sidebar-item active" onclick="show('intro')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -1245,6 +1252,107 @@
         </section>
 
         <!-- ═══════════════ REQUEST BUILDER ═══════════════ -->
+        <section class="doc-section" id="sec-whatsnew">
+          <div class="page-eyebrow">Release Notes</div>
+          <h1 class="page-title">What's New</h1>
+          <p class="page-lead">What changed in each release, and what you need to know before updating. The full
+            history lives in
+            <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/CHANGELOG.md" target="_blank"
+              rel="noopener">CHANGELOG.md</a>.</p>
+
+          <h2>0.1.8</h2>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Your CI may start reporting failures it was hiding</div>
+              <div class="callout-text">An assertion whose left side was not recognised used to resolve to null, so
+                <code>anything.at.all == null</code> passed against any response, and the CLI exited 0. Those
+                assertions now fail with <code>unknown path '…'</code>. If a pipeline turns red after updating, it was
+                green without checking anything. The error message names the path and the roots that are valid.
+              </div>
+            </div>
+          </div>
+
+          <h3>One assertion language everywhere</h3>
+          <p>The Collection Runner, the Tests screen and the CLI each had their own evaluator, so the same assertion
+            could pass in one and fail in another. They now share a single engine. Both spellings of a body path work,
+            and so do both header forms:</p>
+          <pre><code>json.token != null        <span class="token-cmt">// same as body.token != null</span>
+headers["Content-Type"]   <span class="token-cmt">// same as headers.content-type</span>
+duration &lt; 500            <span class="token-cmt">// now works in all three</span></code></pre>
+          <p>Failures also say what they got: <code>expected status == 404, got 200</code>. See
+            <a href="#" onclick="show('resp-tests');return false;">Tests</a> for the full syntax.</p>
+
+          <h3>Collections carry the whole request</h3>
+          <p>Saving a request used to keep only its method, URL, headers and body. Auth, query params, pre and
+            post-response scripts, variable extractors, GraphQL queries and form bodies were dropped, and assertions
+            were written out empty. All of it is saved and restored now, and the
+            <a href="#" onclick="show('cli');return false;">CLI</a> honours it too, so a collection that works in the app
+            works in CI.</p>
+
+          <div class="callout info">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Credentials stay out of your collection files</div>
+              <div class="callout-text">Saving a request whose auth holds a literal token now warns before writing it
+                to disk, and offers to move it into the active environment as a masked
+                <code>&#123;&#123;VAR&#125;&#125;</code> in one click. It matters because collections are meant to be
+                committed, see <a href="#" onclick="show('github');return false;">GitHub Sync</a>.</div>
+            </div>
+          </div>
+
+          <h3>Switching requests no longer carries credentials over</h3>
+          <p>Opening a request from a collection, replaying from History, or picking a result in the command palette
+            kept the previously open request's auth, scripts and extractors. A bearer token set for one API could go
+            out to a different host. All three reset the request first now.</p>
+
+          <h3>Also in 0.1.8</h3>
+          <ul>
+            <li>Collections support folders nested at any depth, and every request keeps a stable id, so deleting or
+              reordering no longer renumbers everything below it.</li>
+            <li>Collection <code>description</code> is no longer dropped on save.</li>
+            <li>The CLI runs auth (bearer, basic, API key, OAuth&nbsp;2.0 client credentials), query params, form and
+              GraphQL bodies. It reports what it cannot do instead of running a request that quietly differs.</li>
+          </ul>
+
+          <div class="divider"></div>
+
+          <h2>0.1.7</h2>
+
+          <h3>QUERY method <span class="badge-sm blue">RFC 10008</span></h3>
+          <p>Safe, idempotent and cacheable like <code>GET</code>, but the query travels in the request body instead of
+            the URL. The first new general-purpose HTTP method since <code>PATCH</code>. Pick it from the method
+            selector, see <a href="#" onclick="show('request');return false;">URL Bar &amp; Method</a>.</p>
+
+          <h3>gRPC streaming</h3>
+          <p>Server-streaming, client-streaming and bidirectional calls, with a live message log, per-message send,
+            end-of-stream and cancel. Previously a streaming method could be selected but not invoked. See
+            <a href="#" onclick="show('grpc');return false;">gRPC</a>.</p>
+
+          <h3>Import fixes worth knowing about</h3>
+          <ul>
+            <li>A cURL command with a body containing double quotes, which is most JSON, lost the body entirely and
+              came in as <code>GET</code>. Re-import anything you brought in with <code>Copy as cURL</code>.</li>
+            <li>Flux could not re-import its own exported cURL snippets, because the URL was only found when it came
+              first.</li>
+            <li>Variable extractor rules like <code>$.items[*].id</code> returned whole JSON objects instead of the
+              field.</li>
+            <li>An assertion on a field that was absent failed <code>== null</code>, while an explicitly-null one
+              passed.</li>
+          </ul>
+        </section>
+
         <section class="doc-section" id="sec-request">
           <div class="page-eyebrow">Request Builder</div>
           <h1 class="page-title">URL Bar & Method</h1>
@@ -1254,9 +1362,44 @@
           <h2>Method selector</h2>
           <p>Click the method badge to the left of the URL field. Supported methods:</p>
           <div class="pill-tabs">
-            <span class="pill-tab active">GET</span><span class="pill-tab">POST</span><span class="pill-tab">PUT</span>
+            <span class="pill-tab active">GET</span><span class="pill-tab">POST</span><span
+              class="pill-tab">QUERY</span><span class="pill-tab">PUT</span>
             <span class="pill-tab">PATCH</span><span class="pill-tab">DELETE</span><span class="pill-tab">HEAD</span>
             <span class="pill-tab">OPTIONS</span>
+          </div>
+
+          <h2>The QUERY method <span class="badge-sm blue">RFC 10008</span></h2>
+          <p><code>QUERY</code> is safe, idempotent and cacheable like <code>GET</code>, but the query travels in the
+            request body instead of the URL. Use it for read-only calls whose parameters are too large or too
+            structured to fit in a query string: a search with nested filters, a batch lookup by id, a GeoJSON
+            polygon.</p>
+          <pre><code>QUERY https://api.example.com/search
+Content-Type: application/json
+
+&#123;
+  <span class="token-key">"filters"</span>: &#123; <span class="token-key">"status"</span>: <span
+              class="token-str">"active"</span>, <span class="token-key">"tags"</span>: [<span
+              class="token-str">"a"</span>, <span class="token-str">"b"</span>] &#125;,
+  <span class="token-key">"sort"</span>: <span class="token-str">"created_at"</span>
+&#125;</code></pre>
+          <p>The body works exactly as it does for <code>POST</code>, see
+            <a href="#" onclick="show('body');return false;">Body</a>. Because the method is safe, a server may cache
+            the response and a client may retry it, which is the difference from sending the same payload as
+            <code>POST</code>.</p>
+
+          <div class="callout info">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Check your server supports it</div>
+              <div class="callout-text">QUERY was standardised in June 2026, so support is still arriving. A server
+                that does not know the method will usually answer <code>405 Method Not Allowed</code>. Proxies and
+                gateways in front of your API may reject it before it ever gets there.</div>
+            </div>
           </div>
 
           <h2>Environment interpolation</h2>
@@ -1433,7 +1576,7 @@
               </tr>
               <tr>
                 <td>OAuth 2.0</td>
-                <td>Client credentials, authorization code, and password grant flows.</td>
+                <td>Authorization code (opens a browser and captures the callback) and client credentials.</td>
               </tr>
               <tr>
                 <td>AWS Sig v4</td>
@@ -1455,6 +1598,38 @@
               <div class="callout-text">Set your token as an environment variable (e.g., <code>accessToken</code>) and
                 reference it as <code>&#123;&#123;accessToken&#125;&#125;</code> in the Bearer field. Switching
                 environments automatically swaps the token.</div>
+            </div>
+          </div>
+
+          <h2>Saving auth to a collection</h2>
+          <p>Auth is stored with the request, so reopening it restores the whole configuration. Credential values
+            should be <code>&#123;&#123;VAR&#125;&#125;</code> references rather than literals, because collection
+            files are meant to be committed and synced.</p>
+          <p>If you save a request whose auth holds a literal secret, Flux stops and offers to fix it:</p>
+          <pre><code><span class="token-cmt">This credential would be written in plain text into the collection file.</span>
+
+Bearer token
+[ Move to &#123;&#123;GET_USERS_TOKEN&#125;&#125; ]
+
+<span class="token-cmt">Save anyway</span></code></pre>
+          <p>Choosing <strong>Move to</strong> writes the value into the active environment, marks it as a secret so
+            it is masked in the UI, and leaves the reference in the request. If there is no active environment it goes
+            to the globals. <strong>Save anyway</strong> is there when you know what you are doing, for a throwaway
+            local collection.</p>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Auth in CI</div>
+              <div class="callout-text">The <a href="#" onclick="show('cli');return false;">CLI</a> runs Bearer,
+                Basic, API key and OAuth 2.0 client credentials. Authorization code needs a browser, so it cannot work
+                unattended, and AWS SigV4 is not supported there yet: the run fails with a message rather than sending
+                an unsigned request.</div>
             </div>
           </div>
         </section>
@@ -1535,37 +1710,66 @@
             </thead>
             <tbody>
               <tr>
-                <td><code>flux.request</code></td>
-                <td>The current request object. Mutate headers, URL, body, params.</td>
+                <td><code>pm.environment.get(key)</code></td>
+                <td>Read an environment or global variable</td>
               </tr>
               <tr>
-                <td><code>flux.env</code></td>
-                <td>Read/write environment variables: <code>flux.env.set("token", val)</code></td>
+                <td><code>pm.environment.set(key, value)</code></td>
+                <td>Write one back, available to this request and the ones after it</td>
               </tr>
               <tr>
-                <td><code>flux.globals</code></td>
-                <td>Read/write global variables.</td>
+                <td><code>pm.variables</code></td>
+                <td>Alias of <code>pm.environment</code></td>
               </tr>
               <tr>
-                <td><code>fetch</code></td>
-                <td>Standard Fetch API, call external endpoints to retrieve tokens.</td>
+                <td><code>pm.request.headers.upsert(key, value)</code></td>
+                <td>Add or replace a header on the outgoing request. <code>.add()</code> does the same.</td>
               </tr>
               <tr>
                 <td><code>console.log</code></td>
-                <td>Output appears in the Console tab of the Response Panel.</td>
-              </tr>
-              <tr>
-                <td><code>CryptoJS</code></td>
-                <td>Common hashing and encoding utilities.</td>
+                <td>Output appears in the <a href="#" onclick="show('resp-console');return false;">Console</a> tab</td>
               </tr>
             </tbody>
           </table>
 
-          <h2>Example, dynamic HMAC signature</h2>
-          <pre><code><span class="token-kw">const</span> body    = flux.request.body.raw;
-<span class="token-kw">const</span> secret  = flux.env.<span class="token-fn">get</span>(<span class="token-str">"apiSecret"</span>);
-<span class="token-kw">const</span> sig     = CryptoJS.HmacSHA256(body, secret).toString();
-flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"X-Signature"</span>, sig);</code></pre>
+          <div class="callout info">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Scripts change headers and variables, not the whole request</div>
+              <div class="callout-text">A pre-request script can set headers and environment variables. The URL, method
+                and body come from the request builder, so edit those there using
+                <code>&#123;&#123;variables&#125;&#125;</code> for anything the script computes.</div>
+            </div>
+          </div>
+
+          <h2>Example, sign a request</h2>
+          <p>Compute the value in the script, then reference it from the header or body field:</p>
+          <pre><code><span class="token-kw">const</span> secret = pm.environment.<span class="token-fn">get</span>(<span class="token-str">"apiSecret"</span>);
+<span class="token-kw">const</span> nonce  = <span class="token-fn">String</span>(Date.<span class="token-fn">now</span>());
+
+pm.environment.<span class="token-fn">set</span>(<span class="token-str">"nonce"</span>, nonce);
+pm.request.headers.<span class="token-fn">upsert</span>(<span class="token-str">"X-Nonce"</span>, nonce);
+pm.request.headers.<span class="token-fn">upsert</span>(<span class="token-str">"Authorization"</span>, <span class="token-str">"Bearer "</span> + secret);</code></pre>
+
+          <div class="callout tip">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Scripts do not run in the CLI</div>
+              <div class="callout-text">The <a href="#" onclick="show('cli');return false;">CLI runner</a> has no
+                JavaScript engine, so pre and post-response scripts are skipped in CI. It prints a notice when a
+                collection contains them. Anything a run in CI depends on should come from the request itself or from
+                <code>--env</code>.</div>
+            </div>
+          </div>
         </section>
 
         <!-- ═══════════════ POST-RESPONSE ═══════════════ -->
@@ -1585,31 +1789,71 @@ flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"
             </thead>
             <tbody>
               <tr>
-                <td><code>flux.response</code></td>
-                <td>The full response: <code>.status</code>, <code>.headers</code>, <code>.body</code> (parsed JSON or
-                  raw text)</td>
+                <td><code>pm.response.status</code></td>
+                <td>Status code</td>
               </tr>
               <tr>
-                <td><code>flux.env</code></td>
-                <td>Write extracted values back to the environment</td>
+                <td><code>pm.response.json()</code></td>
+                <td>Parsed JSON body, or <code>null</code> when the body is not JSON</td>
               </tr>
               <tr>
-                <td><code>flux.test()</code></td>
-                <td>Programmatic test assertion (same as the Tests tab)</td>
+                <td><code>pm.response.text()</code></td>
+                <td>Raw body as a string</td>
+              </tr>
+              <tr>
+                <td><code>pm.response.headers.get(name)</code></td>
+                <td>One header, case-insensitive. <code>.toObject()</code> returns them all.</td>
+              </tr>
+              <tr>
+                <td><code>pm.response.responseTime</code></td>
+                <td>Round trip in milliseconds</td>
+              </tr>
+              <tr>
+                <td><code>pm.environment.get / set</code></td>
+                <td>Read and write environment variables. <code>pm.variables</code> is an alias.</td>
+              </tr>
+              <tr>
+                <td><code>pm.test(name, fn)</code></td>
+                <td>A named check. It fails when the function throws.</td>
+              </tr>
+              <tr>
+                <td><code>pm.expect(value)</code></td>
+                <td>Chai-style assertions: <code>.to.equal</code>, <code>.to.eql</code>, <code>.to.include</code>,
+                  <code>.to.be.a</code>, <code>.to.be.ok</code>, <code>.to.be.null</code>, <code>.to.be.above</code>,
+                  <code>.to.be.below</code></td>
               </tr>
               <tr>
                 <td><code>console.log</code></td>
-                <td>Output to Console tab</td>
+                <td>Output to the <a href="#" onclick="show('resp-console');return false;">Console</a> tab</td>
               </tr>
             </tbody>
           </table>
 
           <h2>Example, extract JWT after login</h2>
-          <pre><code><span class="token-kw">const</span> data = flux.response.body;
+          <pre><code><span class="token-kw">const</span> data = pm.response.<span class="token-fn">json</span>();
+
 <span class="token-kw">if</span> (data?.token) {
-  flux.env.<span class="token-fn">set</span>(<span class="token-str">"accessToken"</span>, data.token);
+  pm.environment.<span class="token-fn">set</span>(<span class="token-str">"accessToken"</span>, data.token);
   console.<span class="token-fn">log</span>(<span class="token-str">"Token saved:"</span>, data.token.slice(0, 20) + <span class="token-str">"..."</span>);
-}</code></pre>
+}
+
+pm.<span class="token-fn">test</span>(<span class="token-str">"login returns a token"</span>, () => {
+  pm.<span class="token-fn">expect</span>(data.token).to.be.<span class="token-fn">a</span>(<span class="token-str">"string"</span>);
+});</code></pre>
+
+          <div class="callout tip">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">For a plain field, use the extractor instead</div>
+              <div class="callout-text">Pulling one value out of a response does not need a script:
+                <a href="#" onclick="show('extract');return false;">Extract</a> does it with a JSONPath rule, and
+                unlike scripts it also works in the CLI.</div>
+            </div>
+          </div>
         </section>
 
         <!-- ═══════════════ EXTRACT ═══════════════ -->
@@ -1766,28 +2010,103 @@ flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"
         <section class="doc-section" id="sec-resp-tests">
           <div class="page-eyebrow">Response Panel</div>
           <h1 class="page-title">Tests</h1>
-          <p class="page-lead">Write and run JavaScript assertions against every response. Tests run automatically after
-            each request and show pass / fail indicators inline.</p>
+          <p class="page-lead">One assertion per line, no scripting. Tests run automatically after each request and
+            show pass / fail inline, and the same assertions run in the Collection Runner and in CI through the
+            <a href="#" onclick="show('cli');return false;">CLI</a>.</p>
 
           <h2>Writing tests</h2>
-          <pre><code><span class="token-fn">flux.test</span>(<span class="token-str">"Status is 200"</span>, () => {
-  <span class="token-fn">expect</span>(flux.response.status).<span class="token-fn">toBe</span>(<span class="token-num">200</span>);
-});
+          <p>An assertion is a path, an operator and a value:</p>
+          <pre><code>status == 200
+duration &lt; 500
+json.token != null
+json.user.name == <span class="token-str">"ana"</span>
+headers["Content-Type"] == <span class="token-str">"application/json"</span>
+body contains <span class="token-str">"success"</span></code></pre>
 
-<span class="token-fn">flux.test</span>(<span class="token-str">"Body has id"</span>, () => {
-  <span class="token-kw">const</span> body = flux.response.body;
-  <span class="token-fn">expect</span>(body).toHaveProperty(<span class="token-str">"id"</span>);
-  <span class="token-fn">expect</span>(<span class="token-kw">typeof</span> body.id).<span class="token-fn">toBe</span>(<span class="token-str">"number"</span>);
-});
+          <h2>Paths</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Resolves to</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>status</code></td>
+                <td>HTTP status code</td>
+              </tr>
+              <tr>
+                <td><code>duration</code></td>
+                <td>Round trip in milliseconds</td>
+              </tr>
+              <tr>
+                <td><code>body</code></td>
+                <td>The whole response body</td>
+              </tr>
+              <tr>
+                <td><code>json.a.b</code> · <code>body.a.b</code></td>
+                <td>A field in the JSON body. The two spellings are interchangeable.</td>
+              </tr>
+              <tr>
+                <td><code>headers.name</code> · <code>headers["name"]</code></td>
+                <td>A response header, case-insensitive. Both forms are equivalent.</td>
+              </tr>
+            </tbody>
+          </table>
 
-<span class="token-fn">flux.test</span>(<span class="token-str">"Response time under 500ms"</span>, () => {
-  <span class="token-fn">expect</span>(flux.response.responseTime).<span class="token-fn">toBeLessThan</span>(<span class="token-num">500</span>);
-});</code></pre>
+          <h2>Operators</h2>
+          <p><code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>,
+            <code>&gt;=</code>, and <code>contains</code> for substring checks. <code>===</code> and <code>!==</code>
+            are accepted as aliases.</p>
+          <p>Values are <code>null</code>, <code>true</code>, <code>false</code>, a number, or a quoted string. A
+            numeric string in the response matches a number in the assertion, so <code>json.id == 5</code> passes when
+            the body has <code>"id": "5"</code>.</p>
+
+          <h2>Absent fields</h2>
+          <p>A field that is not in the response counts as <code>null</code>, so both of these hold when
+            <code>token</code> is missing:</p>
+          <pre><code>json.token == null        <span class="token-cmt">// passes</span>
+json.token != null        <span class="token-cmt">// fails</span></code></pre>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">A path that is not one of the above is an error</div>
+              <div class="callout-text">An unrecognised path fails with <code>unknown path '…'</code> rather than
+                resolving to null. Without that, a typo like <code>dta.token == null</code> would pass against every
+                response and the test would look green while checking nothing.</div>
+            </div>
+          </div>
+
+          <h2>Where assertions run</h2>
+          <p>The same lines are evaluated by the same engine in three places: inline under the response, in the
+            <a href="#" onclick="show('collections');return false;">Collection Runner</a>, and in the
+            <a href="#" onclick="show('cli');return false;">CLI</a>. An assertion means the same thing in all three.</p>
+
+          <div class="callout tip">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Need real logic?</div>
+              <div class="callout-text">Assertions are deliberately declarative. For anything that needs code, such as signing
+                a payload, looping or conditionals, use a
+                <a href="#" onclick="show('postreq');return false;">post-response script</a>, which gives you the
+                <code>pm</code> API. Scripts run in the app but not in the CLI.</div>
+            </div>
+          </div>
 
           <h2>AI-generated tests</h2>
           <p>Click <strong>Generate Tests</strong> in the Body tab. Flux sends the response schema to Claude, which
-            returns a full set of meaningful assertions. The generated code is placed directly in this editor, ready to
-            run.</p>
+            returns a set of assertions in the syntax above, ready to run.</p>
 
           <h2>Test suite integration</h2>
           <p>Tests saved per-request are also visible and runnable from the <a href="#"
@@ -1895,16 +2214,119 @@ flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"
     <span class="token-key">create-user.yml</span></code></pre>
 
           <h2>Request YAML schema</h2>
+          <p>A collection saves everything the request builder holds, so reopening a request gives back what you
+            built. Only <code>name</code> is required; anything unset is left out of the file.</p>
           <pre><code><span class="token-key">name</span>: <span class="token-str">Create User</span>
+<span class="token-key">id</span>: <span class="token-str">col-1723800000</span>
+<span class="token-key">kind</span>: <span class="token-str">http</span>
 <span class="token-key">method</span>: <span class="token-str">POST</span>
-<span class="token-key">url</span>: <span class="token-str">&#123;&#123;baseUrl&#125;&#125;/api/users</span>
+<span class="token-key">path</span>: <span class="token-str">&#123;&#123;baseUrl&#125;&#125;/api/users</span>
 <span class="token-key">headers</span>:
   <span class="token-key">Content-Type</span>: <span class="token-str">application/json</span>
-  <span class="token-key">Authorization</span>: <span class="token-str">Bearer &#123;&#123;accessToken&#125;&#125;</span>
-<span class="token-key">body</span>:
-  <span class="token-key">mode</span>: <span class="token-str">json</span>
-  <span class="token-key">raw</span>: <span class="token-str">'{"name":"Alice","email":"alice@example.com"}'</span>
-<span class="token-key">kind</span>: <span class="token-str">http</span></code></pre>
+<span class="token-key">params</span>:
+  <span class="token-key">notify</span>: <span class="token-str">"true"</span>
+<span class="token-key">bodyType</span>: <span class="token-str">json</span>
+<span class="token-key">body</span>: <span class="token-str">'{"name":"Alice","email":"alice@example.com"}'</span>
+<span class="token-key">auth</span>:
+  <span class="token-key">type</span>: <span class="token-str">bearer</span>
+  <span class="token-key">token</span>: <span class="token-str">"&#123;&#123;accessToken&#125;&#125;"</span>
+<span class="token-key">scripts</span>:
+  <span class="token-key">preRequest</span>: <span class="token-str">pm.environment.set("nonce", String(Date.now()));</span>
+  <span class="token-key">postResponse</span>: <span class="token-str">pm.environment.set("id", pm.response.json().id);</span>
+<span class="token-key">extractors</span>:
+  - <span class="token-key">path</span>: <span class="token-str">$.data.token</span>
+    <span class="token-key">variable</span>: <span class="token-str">accessToken</span>
+<span class="token-key">tests</span>:
+  - <span class="token-key">assert</span>: <span class="token-str">status == 201</span>
+  - <span class="token-key">assert</span>: <span class="token-str">json.id != null</span></code></pre>
+
+          <h3>Fields</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>id</code></td>
+                <td>Stable identifier, written on save. Deleting or reordering requests does not change it.</td>
+              </tr>
+              <tr>
+                <td><code>kind</code></td>
+                <td><code>http</code> or <code>grpc</code>. Defaults to <code>http</code> when absent.</td>
+              </tr>
+              <tr>
+                <td><code>path</code></td>
+                <td>Full URL, or a path appended to the collection's <code>baseUrl</code></td>
+              </tr>
+              <tr>
+                <td><code>params</code></td>
+                <td>Query string parameters, as a map</td>
+              </tr>
+              <tr>
+                <td><code>bodyType</code></td>
+                <td><code>json</code>, <code>form</code>, <code>multipart</code>, <code>binary</code>,
+                  <code>raw</code> or <code>graphql</code></td>
+              </tr>
+              <tr>
+                <td><code>body</code></td>
+                <td>The raw body as a string. For <code>form</code> use the <code>form</code> map instead, and for
+                  <code>graphql</code> use the <code>graphql</code> block.</td>
+              </tr>
+              <tr>
+                <td><code>graphql</code></td>
+                <td><code>query</code> and <code>variables</code></td>
+              </tr>
+              <tr>
+                <td><code>auth</code></td>
+                <td><code>type</code> plus its fields. See <a href="#"
+                    onclick="show('auth');return false;">Auth</a>.</td>
+              </tr>
+              <tr>
+                <td><code>scripts</code></td>
+                <td><code>preRequest</code> and <code>postResponse</code>. Not run by the CLI.</td>
+              </tr>
+              <tr>
+                <td><code>extractors</code></td>
+                <td>JSONPath rules that write response values into variables. See <a href="#"
+                    onclick="show('extract');return false;">Extract</a>.</td>
+              </tr>
+              <tr>
+                <td><code>tests</code></td>
+                <td>One <code>assert</code> per entry. See <a href="#"
+                    onclick="show('resp-tests');return false;">Tests</a>.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Keep credentials out of the file</div>
+              <div class="callout-text">Collection files are meant to be committed, so auth values should be
+                <code>&#123;&#123;VAR&#125;&#125;</code> references, never literal tokens. Flux warns when you save a
+                literal one and offers to move it into the environment for you.</div>
+            </div>
+          </div>
+
+          <h3>Nested folders</h3>
+          <p>Folders hold requests and further folders, at any depth:</p>
+          <pre><code><span class="token-key">folders</span>:
+  - <span class="token-key">name</span>: <span class="token-str">Admin</span>
+    <span class="token-key">requests</span>:
+      - <span class="token-key">name</span>: <span class="token-str">List users</span>
+        <span class="token-key">method</span>: <span class="token-str">GET</span>
+        <span class="token-key">path</span>: <span class="token-str">/admin/users</span>
+    <span class="token-key">folders</span>:
+      - <span class="token-key">name</span>: <span class="token-str">Billing</span>
+        <span class="token-key">requests</span>: []</code></pre>
 
           <h2>Mixed HTTP and gRPC collections</h2>
           <p>Collections support both HTTP and gRPC requests in the same folder. gRPC requests include an extra
@@ -1964,7 +2386,7 @@ flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"
               </tr>
               <tr>
                 <td>Script (runtime)</td>
-                <td>Set via <code>flux.env.set()</code> during pre/post scripts, not persisted</td>
+                <td>Set via <code>pm.environment.set()</code> during pre/post scripts, not persisted</td>
                 <td>Highest</td>
               </tr>
             </tbody>
@@ -2264,19 +2686,70 @@ flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"
                 <td><span class="badge-sm green">Available</span></td>
               </tr>
               <tr>
-                <td>Server streaming</td>
-                <td><span class="badge-sm amber">Roadmap</span></td>
+                <td>Server streaming <code>⇉</code></td>
+                <td><span class="badge-sm green">Available</span></td>
               </tr>
               <tr>
-                <td>Client streaming</td>
-                <td><span class="badge-sm amber">Roadmap</span></td>
+                <td>Client streaming <code>⇇</code></td>
+                <td><span class="badge-sm green">Available</span></td>
               </tr>
               <tr>
-                <td>Bidirectional streaming</td>
-                <td><span class="badge-sm amber">Roadmap</span></td>
+                <td>Bidirectional streaming <code>⇄</code></td>
+                <td><span class="badge-sm green">Available</span></td>
               </tr>
             </tbody>
           </table>
+          <p>The glyph next to each method in the service tree tells you which kind it is. Unary methods show
+            <code>→</code>.</p>
+
+          <h2>Streaming calls</h2>
+          <p>Selecting a streaming method turns <strong>Invoke</strong> into <strong>Start stream</strong>. Messages
+            arrive in a log below the request, newest last, each one numbered and timestamped and collapsible.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Control</th>
+                <th>When it appears</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Start stream</strong></td>
+                <td>Opens the call. For client-streaming and bidirectional methods the payload is sent as the first
+                  message; leave it empty to send none.</td>
+              </tr>
+              <tr>
+                <td><strong>Send</strong></td>
+                <td>Client-streaming and bidirectional only. Sends the current payload as another message, so you can
+                  edit it between sends.</td>
+              </tr>
+              <tr>
+                <td><strong>End</strong></td>
+                <td>Client-streaming and bidirectional only. Signals end-of-stream and waits for the server to
+                  finish.</td>
+              </tr>
+              <tr>
+                <td><strong>Stop</strong></td>
+                <td>Aborts the call in either direction</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>The status bar shows whether the stream is open, how many messages have arrived, and how it ended:
+            <code>completed</code> when the server closed it, <code>cancelled</code> when you did.</p>
+
+          <div class="callout info">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Streaming does not run in the CLI</div>
+              <div class="callout-text">The <a href="#" onclick="show('cli');return false;">CLI runner</a> is HTTP
+                only, so gRPC requests in a collection are skipped and reported at the start of the run.</div>
+            </div>
+          </div>
 
           <h2>Saving to a collection</h2>
           <p>Click <strong>Save to Collection</strong> in the top-right of the gRPC screen. The request is saved as a
@@ -2561,43 +3034,49 @@ flux.request.headers.<span class="token-fn">set</span>(<span class="token-str">"
           <p>The CLI is bundled with the desktop app. After installing Flux, add it to your PATH from <strong>Settings →
               CLI Tools → Add to PATH</strong>.</p>
 
-          <h2>Commands</h2>
-          <pre><code><span class="token-cmt"># Run an entire collection</span>
-flux run ./my-api --env production
+          <h2>Running a collection</h2>
+          <p>Point <code>flux run</code> at a YAML file or a directory of them. Only requests that have
+            <code>tests</code> are executed.</p>
+          <pre><code><span class="token-cmt"># One collection file</span>
+flux run ./my-api/users.yaml
 
-<span class="token-cmt"># Run a single request file</span>
-flux run ./my-api/users/create-user.yml --env staging
+<span class="token-cmt"># Every collection in a directory</span>
+flux run ./my-api
 
-<span class="token-cmt"># Run and output results as JSON (CI-friendly)</span>
-flux run ./my-api --env production --reporter json > results.json
+<span class="token-cmt"># Supply the variables the collection references</span>
+flux run ./my-api --env BASE_URL=https://staging.example.com --env API_TOKEN=$TOKEN
 
-<span class="token-cmt"># List all collections</span>
-flux collections list</code></pre>
+<span class="token-cmt"># JSON report for CI</span>
+flux run ./my-api --reporter json --output results.json
 
-          <h2>Exit codes</h2>
+<span class="token-cmt"># Stop at the first failure</span>
+flux run ./my-api --bail</code></pre>
+
+          <h2>Options</h2>
           <table>
             <thead>
               <tr>
-                <th>Code</th>
+                <th>Flag</th>
                 <th>Meaning</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><code>0</code></td>
-                <td>All requests succeeded and all tests passed</td>
+                <td><code>--env KEY=VALUE</code></td>
+                <td>Sets one variable, resolving <code>&#123;&#123;KEY&#125;&#125;</code> anywhere in the collection.
+                  Repeat it for each variable.</td>
               </tr>
               <tr>
-                <td><code>1</code></td>
-                <td>One or more tests failed</td>
+                <td><code>--reporter console|json</code></td>
+                <td>Output format. Defaults to <code>console</code>.</td>
               </tr>
               <tr>
-                <td><code>2</code></td>
-                <td>One or more requests failed to connect</td>
+                <td><code>--output FILE</code></td>
+                <td>Writes the JSON report to a file instead of stdout</td>
               </tr>
               <tr>
-                <td><code>3</code></td>
-                <td>Configuration error (missing env, bad path, etc.)</td>
+                <td><code>--bail</code></td>
+                <td>Stops the run at the first failing request</td>
               </tr>
             </tbody>
           </table>
@@ -2610,12 +3089,76 @@ flux collections list</code></pre>
                 <path d="M12 8h.01" />
               </svg></span>
             <div class="callout-body">
-              <div class="callout-title">Environment files in CI</div>
-              <div class="callout-text">Use <code>--env-file .env.ci</code> to load environment variables from a
-                <code>.env</code> file. Secret variables can be injected via OS environment variables: any
-                <code>FLUX_VAR_*</code> env var is automatically mapped.</div>
+              <div class="callout-title">Secrets come from the environment, not the file</div>
+              <div class="callout-text">Collections hold <code>&#123;&#123;VAR&#125;&#125;</code> references, so pass
+                the values at run time from your CI secret store:
+                <code>--env API_TOKEN=$API_TOKEN</code>. Nothing sensitive needs to live in the repository.</div>
             </div>
           </div>
+
+          <h2>Exit codes</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>0</code></td>
+                <td>Every assertion passed and every request completed</td>
+              </tr>
+              <tr>
+                <td><code>1</code></td>
+                <td>An assertion failed, or a request could not be sent</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>What the CLI supports</h2>
+          <p>A collection saved in the app runs the same way here: auth, query params, form and GraphQL bodies,
+            environment interpolation, folders at any depth, and the same
+            <a href="#" onclick="show('resp-tests');return false;">assertion language</a> evaluated by the same
+            engine.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Auth type</th>
+                <th>CLI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Bearer, Basic, API key (header or query)</td>
+                <td>Supported</td>
+              </tr>
+              <tr>
+                <td>OAuth 2.0, client credentials</td>
+                <td>Supported. The token is fetched before the request.</td>
+              </tr>
+              <tr>
+                <td>OAuth 2.0, authorization code</td>
+                <td>Not possible unattended: the grant needs a browser. Use client credentials in CI.</td>
+              </tr>
+              <tr>
+                <td>AWS SigV4</td>
+                <td>Not supported yet. The request fails with a message rather than going out unsigned.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>What it does not do</h2>
+          <p>The CLI announces these at the start of a run instead of quietly running something different:</p>
+          <ul>
+            <li><strong>Pre and post-response scripts</strong> are skipped, because there is no JavaScript engine.
+              Anything a CI run depends on should come from the request itself or from <code>--env</code>. Use an
+              <a href="#" onclick="show('extract');return false;">extractor</a> instead of a script where you can.</li>
+            <li><strong>gRPC requests</strong> are skipped. Only HTTP runs here.</li>
+          </ul>
+          <pre><code><span class="token-cmt">My API   4 requests with tests</span>
+<span class="token-cmt">  skipped 1 gRPC request(s), not supported by the CLI runner</span>
+<span class="token-cmt">  2 request(s) have pre/post scripts, which the CLI does not run</span></code></pre>
         </section>
 
         <!-- ═══════════════ SETTINGS ═══════════════ -->
@@ -2903,13 +3446,14 @@ flux collections list</code></pre>
       const sidebarItems = document.querySelectorAll('.sidebar-item');
 
       const tocMap = {
+        'whatsnew': ['0.1.8', '0.1.7'],
         'intro': ['Why Flux?', 'Tech stack'],
         'install': ['Download', 'Account', 'System requirements'],
         'quickstart': [],
-        'request': ['Method selector', 'Environment interpolation', 'Keyboard shortcuts'],
+        'request': ['Method selector', 'The QUERY method', 'Environment interpolation', 'Keyboard shortcuts'],
         'params': ['Adding parameters', 'Bulk edit'],
         'headers': ['Common headers', 'Header inheritance'],
-        'auth': ['Auth types'],
+        'auth': ['Auth types', 'Saving auth to a collection'],
         'body': ['Body types'],
         'prereq': ['Available globals'],
         'postreq': ['Available globals'],
@@ -2917,21 +3461,21 @@ flux collections list</code></pre>
         'response': ['Status bar', 'Tabs'],
         'resp-body': ['View modes', 'Copy & Save'],
         'resp-headers': ['Headers tab', 'Cookies tab'],
-        'resp-tests': ['Writing tests', 'AI-generated tests'],
+        'resp-tests': ['Writing tests', 'Paths', 'Operators', 'Absent fields', 'Where assertions run', 'AI-generated tests', 'Test suite integration'],
         'resp-timeline': ['Phases'],
         'resp-console': ['Log levels'],
-        'collections': ['Collection structure', 'Mixed HTTP and gRPC', 'Collection Runner', 'Import'],
+        'collections': ['Collection structure', 'Request YAML schema', 'Mixed HTTP and gRPC collections', 'Collection Runner', 'Import'],
         'environments': ['Variable scopes', 'Creating an environment', 'Secret variables'],
         'history': ['Searching history', 'Replaying a request', 'Exporting history'],
         'ai': ['Setup', 'Available models', 'AI features'],
         'github': ['Connecting a repository', 'Auto-sync'],
-        'grpc': ['Loading a proto', 'Proto Library', 'Invoking a method', 'Stream types'],
+        'grpc': ['Getting started', 'Loading a proto', 'Proto Library', 'Invoking a method', 'Stream types', 'Streaming calls', 'Saving to a collection'],
         'websocket': ['Connecting', 'Message log', 'Sending messages'],
         'sse': ['Connecting', 'Event log', 'Filtering', 'Export'],
         'loadtest': ['Configuration', 'Results'],
         'mock': ['Creating a mock route', 'Response configuration', 'Request log'],
         'compare': ['How it works', 'Use cases'],
-        'cli': ['Installation', 'Commands', 'Exit codes'],
+        'cli': ['Installation', 'Running a collection', 'Options', 'Exit codes', 'What the CLI supports', 'What it does not do'],
         'settings': ['General', 'AI & Claude', 'Appearance', 'Keyboard Shortcuts'],
         'settings-proxy': ['Proxy configuration'],
         'settings-cookies': ['Viewing cookies', 'Managing cookies'],

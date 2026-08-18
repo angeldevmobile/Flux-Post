@@ -19,6 +19,7 @@ interface KeyValue {
   enabled: boolean;
 }
 
+export type BodyType = "none" | "json" | "form" | "multipart" | "binary" | "raw" | "graphql";
 export type AuthType = "none" | "bearer" | "basic" | "apikey" | "oauth2" | "awssigv4";
 export type ApiKeyTarget = "header" | "query";
 export type OAuthGrantType = "authorization_code" | "client_credentials";
@@ -36,7 +37,7 @@ interface RequestStore {
   headers: KeyValue[];
   params: KeyValue[];
   body: string;
-  bodyType: "none" | "json" | "form" | "multipart" | "binary" | "raw" | "graphql";
+  bodyType: BodyType;
   formFields: KeyValue[];
   multipartItems: MultipartItem[];
   binaryFileBase64: string;
@@ -120,7 +121,7 @@ const defaultState = {
   headers: [],
   params: [],
   body: "",
-  bodyType: "none" as const,
+  bodyType: "none" as BodyType,
   formFields: [] as KeyValue[],
   multipartItems: [] as MultipartItem[],
   binaryFileBase64: "",
