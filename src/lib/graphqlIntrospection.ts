@@ -1,5 +1,6 @@
 import * as monaco from "monaco-editor";
 import { sendRequest } from "./tauri";
+import { networkOptions } from "./networkOptions";
 
 const INTROSPECTION_QUERY = `query IntrospectionQuery {
   __schema {
@@ -83,6 +84,7 @@ export async function fetchGraphQLSchema(
     url,
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify({ query: INTROSPECTION_QUERY }),
+    ...networkOptions(),
   });
 
   if (resp.status < 200 || resp.status >= 300) {

@@ -1,4 +1,5 @@
 use base64::Engine as _;
+use futures_util::StreamExt;
 use reqwest::{header::{HeaderMap, HeaderName, HeaderValue, SET_COOKIE}, Client, Method, Proxy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,6 +37,9 @@ pub struct HttpRequest {
     pub client_cert_pem: Option<String>,
     pub client_key_pem: Option<String>,
     pub use_cookies: Option<bool>,
+    pub connect_timeout_ms: Option<u64>,
+    pub read_timeout_ms: Option<u64>,
+    pub max_response_bytes: Option<u64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -75,6 +79,13 @@ pub async fn send_request(
     let mut builder = Client::builder()
         .danger_accept_invalid_certs(!effective_ssl_verify)
         .redirect(redirect_policy);
+
+    if let Some(ms) = request.connect_timeout_ms {
+        builder = builder.connect_timeout(std::time::Duration::from_millis(ms));
+    }
+    if let Some(ms) = request.read_timeout_ms {
+        builder = builder.read_timeout(std::time::Duration::from_millis(ms));
+    }
 
     if let Some(ref proxy_url) = request.proxy_http {
         if !proxy_url.is_empty() {
@@ -251,13 +262,12 @@ pub async fn send_request(
         || ct.contains("application/octet-stream")
         || ct.contains("application/pdf");
 
+    let bytes = collect_body(resp, request.max_response_bytes).await?;
     let (body, body_encoding, size) = if is_binary {
-        let bytes = resp.bytes().await.map_err(|e| e.to_string())?;
         let sz = bytes.len();
-        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-        (b64, "base64".to_string(), sz)
+        (base64::engine::general_purpose::STANDARD.encode(&bytes), "base64".to_string(), sz)
     } else {
-        let text = resp.text().await.map_err(|e| e.to_string())?;
+        let text = String::from_utf8_lossy(&bytes).into_owned();
         let sz = text.len();
         (text, "text".to_string(), sz)
     };
@@ -278,4 +288,72 @@ pub async fn send_request(
         size,
         body_encoding,
     })
+}
+
+fn human_mb(bytes: u64) -> String {
+    format!("{:.1} MB", bytes as f64 / 1_048_576.0)
+}
+
+/// Devuelve `true` si añadir `incoming` a lo ya recibido pasa del tope.
+fn exceeds(received: u64, incoming: u64, max: u64) -> bool {
+    received.saturating_add(incoming) > max
+}
+
+/// Lee el cuerpo respetando el tope de tamaño. Sin tope se lee de una vez.
+/// Con tope, se corta antes de descargar si el Content-Length ya lo supera, y
+/// si no viene declarado se corta durante el streaming.
+async fn collect_body(
+    resp: reqwest::Response,
+    max_bytes: Option<u64>,
+) -> Result<Vec<u8>, String> {
+    let Some(max) = max_bytes else {
+        return resp.bytes().await.map(|b| b.to_vec()).map_err(|e| e.to_string());
+    };
+
+    if let Some(declared) = resp.content_length() {
+        if declared > max {
+            return Err(format!(
+                "Response is {} but the limit is {}. Raise 'Max response size' in Settings → Proxy & Network.",
+                human_mb(declared), human_mb(max),
+            ));
+        }
+    }
+
+    let mut out: Vec<u8> = Vec::new();
+    let mut stream = resp.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| e.to_string())?;
+        if exceeds(out.len() as u64, chunk.len() as u64, max) {
+            return Err(format!(
+                "Response exceeded the {} limit. Raise 'Max response size' in Settings → Proxy & Network.",
+                human_mb(max),
+            ));
+        }
+        out.extend_from_slice(&chunk);
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn exceeds_only_past_the_limit() {
+        assert!(!exceeds(0, 100, 100), "justo en el tope cabe");
+        assert!(exceeds(0, 101, 100));
+        assert!(!exceeds(90, 10, 100));
+        assert!(exceeds(90, 11, 100));
+    }
+
+    #[test]
+    fn exceeds_does_not_overflow() {
+        assert!(exceeds(u64::MAX, 1, 100));
+    }
+
+    #[test]
+    fn human_mb_reads_as_megabytes() {
+        assert_eq!(human_mb(1_048_576), "1.0 MB");
+        assert_eq!(human_mb(52_428_800), "50.0 MB");
+    }
 }

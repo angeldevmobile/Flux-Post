@@ -4,6 +4,7 @@ import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
 import { sendRequest, analyzeTestFailures } from "@/lib/tauri";
 import { handleQuotaError } from "@/lib/aiError";
+import { networkOptions } from "@/lib/networkOptions";
 import { useSettingsStore } from "@/stores/settings";
 import { evaluateAssertion, buildContext, type AssertionResult, type TestResult } from "@/lib/testRunner";
 import type { HttpMethod } from "@/lib/tauri";
@@ -147,6 +148,7 @@ export function TestsRoute() {
           url,
           headers,
           body: req.body ? resolveVariable(req.body) : undefined,
+          ...networkOptions(),
         });
         const ctx = buildContext(resp.status, resp.body, resp.headers, resp.durationMs);
         result = {

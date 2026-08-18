@@ -879,7 +879,9 @@ function CookiesSection() {
         {cookies.length === 0 ? (
           <div className="flex items-center justify-center px-4" style={{ height: 64 }}>
             <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>
-              No cookies stored. Enable the Cookie Jar and make a request.
+              {s.enableCookieJar
+                ? "No cookies stored yet. They appear here after a response sets one."
+                : "No cookies stored. Enable the Cookie Jar above and make a request."}
             </span>
           </div>
         ) : (

@@ -8,6 +8,7 @@ import { useEnvironmentStore } from "@/stores/environment";
 import { useRequestStore } from "@/stores/request";
 import { useSettingsStore } from "@/stores/settings";
 import { sendRequest } from "@/lib/tauri";
+import { networkOptions } from "@/lib/networkOptions";
 import { methodColor, methodBg, HTTP_METHODS } from "@/lib/methods";
 import type { HttpMethod } from "@/lib/tauri";
 import type { editor as EditorNS } from "monaco-editor";
@@ -183,13 +184,12 @@ export function CompareRoute() {
       }
 
       try {
-        const { timeoutMs, followRedirects, sslVerify } = useSettingsStore.getState();
         const resp = await sendRequest({
           method,
           url: resolvedUrl,
           headers: resolvedHeaders,
           body: requestBody,
-          timeoutMs, followRedirects, sslVerify,
+          ...networkOptions(),
         });
         return [envId, { status: resp.status, durationMs: resp.durationMs, body: resp.body }] as const;
       } catch (e) {

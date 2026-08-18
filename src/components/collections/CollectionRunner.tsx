@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Play, Square, X, CheckCircle, XCircle, Loader, ChevronDown, ChevronRight, Network } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { sendRequest, grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
+import { networkOptions } from "@/lib/networkOptions";
 import { evaluateAssertions, type AssertionResult } from "@/lib/assertionEvaluator";
 import { methodColor, methodBg } from "@/lib/methods";
 import type { CollectionRequest, CollectionFolder } from "@/stores/collections";
@@ -115,6 +116,7 @@ export function CollectionRunner({ open, onClose }: Props) {
             url,
             headers: req.headers ?? {},
             body: req.body,
+            ...networkOptions(),
           });
           const assertions = req.tests?.length
             ? evaluateAssertions(req.tests.map(t => t.assert), resp.status, resp.body, resp.headers, resp.durationMs)

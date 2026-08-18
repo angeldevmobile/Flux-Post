@@ -4,6 +4,7 @@ import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X, Code
 import { useRequestStore } from "@/stores/request";
 import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
 import { sendRequest, saveHistory, saveCollection, editContent } from "@/lib/tauri";
+import { networkOptions } from "@/lib/networkOptions";
 import { trackEvent, trackCrash, trackPerf } from "@/lib/analytics";
 import { pushHistory, pushCollection } from "@/lib/sync";
 import { useUserStore } from "@/stores/user";
@@ -726,30 +727,9 @@ export function RequestPanel() {
         );
         Object.assign(resolved.headers, awsHeaders);
       }
-      const {
-        timeoutMs, followRedirects, sslVerify,
-        proxyHttp, proxyHttpPort, proxyHttps, proxyHttpsPort, noProxy, useSystemProxy,
-        proxySslVerify, clientCerts, clientCertPem, clientKeyPem, enableCookieJar,
-      } = useSettingsStore.getState();
-
-      const proxyHttpUrl = !useSystemProxy && proxyHttp ? `${proxyHttp}:${proxyHttpPort}` : undefined;
-      const proxyHttpsUrl = !useSystemProxy && proxyHttps ? `${proxyHttps}:${proxyHttpsPort}` : undefined;
-
       trackEvent("request_send", { method: resolved.method, url: resolved.url });
 
-      const resp = await sendRequest({
-        ...resolved,
-        timeoutMs,
-        followRedirects,
-        sslVerify,
-        proxyHttp: proxyHttpUrl,
-        proxyHttps: proxyHttpsUrl,
-        noProxy: noProxy || undefined,
-        proxySslVerify,
-        clientCertPem: clientCerts && clientCertPem ? clientCertPem : undefined,
-        clientKeyPem: clientCerts && clientKeyPem ? clientKeyPem : undefined,
-        useCookies: enableCookieJar,
-      });
+      const resp = await sendRequest({ ...resolved, ...networkOptions() });
       setResponse(resp);
       trackPerf(resolved.url, resolved.method, resp.durationMs, resp.status);
 

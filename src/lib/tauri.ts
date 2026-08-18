@@ -30,6 +30,9 @@ export interface HttpRequest {
   clientCertPem?: string;
   clientKeyPem?: string;
   useCookies?: boolean;
+  connectTimeoutMs?: number;
+  readTimeoutMs?: number;
+  maxResponseBytes?: number;
 }
 
 export interface HttpResponse {
