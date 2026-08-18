@@ -4,6 +4,7 @@ import { NavRail, type Route } from "@/components/NavRail";
 import { useAppearance } from "@/hooks/useAppearance";
 import { TopBar } from "@/components/TopBar";
 import { ProductTour } from "@/components/ProductTour";
+import { WhatsNewDialog } from "@/components/WhatsNewDialog";
 import { Login } from "@/routes/auth/Login";
 import { SignUp } from "@/routes/auth/SignUp";
 import { RequestsRoute } from "@/routes/requests";
@@ -21,7 +22,7 @@ import { GitHubModal } from "@/routes/github";
 import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
-import { loadSession, saveSession, clearSessionDb } from "@/lib/tauri";
+import { loadSession, saveSession, clearSessionDb, pruneHistory } from "@/lib/tauri";
 import { initCrashReporting, trackEvent } from "@/lib/analytics";
 import { checkForUpdates, installAndRestart } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
@@ -45,6 +46,12 @@ function AppShell() {
   useEffect(() => {
     if (pendingRoute) { setRoute(pendingRoute); clearPending(); }
   }, [pendingRoute, clearPending]);
+
+  // Apply the history retention setting once per launch
+  useEffect(() => {
+    const days = useSettingsStore.getState().historyRetentionDays;
+    if (days > 0) pruneHistory(days).catch(() => { /* no bloquea el arranque */ });
+  }, []);
 
   // Check for updates 4s after mount — non-blocking, silent on failure
   useEffect(() => {
@@ -99,6 +106,7 @@ function AppShell() {
       </div>
       <GitHubModal open={githubOpen} onClose={() => setGithubOpen(false)} />
       <ProductTour open={showTour} onDone={() => setShowTour(false)} />
+      {!showTour && <WhatsNewDialog onNavigate={setRoute} />}
     </div>
   );
 }

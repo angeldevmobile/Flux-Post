@@ -6,6 +6,8 @@ import { useEnvironmentStore } from "@/stores/environment";
 import { CommandPalette } from "@/components/CommandPalette";
 import type { Route } from "@/components/NavRail";
 import { useUserStore } from "@/stores/user";
+import { useSettingsStore } from "@/stores/settings";
+import { RELEASES, isNewer, unseenReleases } from "@/lib/whatsNew";
 
 interface TopBarProps {
   onNavigate: (r: Route) => void;
@@ -16,6 +18,7 @@ export function TopBar({ onNavigate }: TopBarProps) {
   const user = useUserStore(s => s.user);
   const active = environments.find(e => e.id === activeId);
   const [envOpen, setEnvOpen] = useState(false);
+  const unseen = unseenReleases(useSettingsStore(s => s.lastSeenVersion));
   const [searchOpen, setSearchOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -184,9 +187,13 @@ export function TopBar({ onNavigate }: TopBarProps) {
 
           {/* Notifications */}
           <div ref={bellRef} className="relative">
-            <IconBtn title="Notifications" onClick={() => setBellOpen(v => !v)}>
+            <IconBtn title="What's new" onClick={() => setBellOpen(v => !v)}>
               <Bell size={16} />
             </IconBtn>
+            {unseen.length > 0 && (
+              <span className="absolute rounded-full pointer-events-none"
+                style={{ top: 4, right: 4, width: 7, height: 7, background: "var(--color-accent)", border: "1.5px solid var(--color-topbar)" }} />
+            )}
             {bellOpen && <NotificationsDropdown onClose={() => setBellOpen(false)} />}
           </div>
 
@@ -205,21 +212,62 @@ export function TopBar({ onNavigate }: TopBarProps) {
 
 function NotificationsDropdown({ onClose }: { onClose: () => void }) {
   void onClose;
+  const lastSeenVersion = useSettingsStore(s => s.lastSeenVersion);
+  const patch = useSettingsStore(s => s.patch);
+  const unseenCount = unseenReleases(lastSeenVersion).length;
+
+  // Abrirlo cuenta como leerlo.
+  useEffect(() => {
+    const latest = RELEASES[0];
+    if (latest && isNewer(latest.version, lastSeenVersion)) {
+      patch({ lastSeenVersion: latest.version });
+    }
+  }, [lastSeenVersion, patch]);
+
   return (
     <div className="absolute top-full right-0 mt-1 z-50 rounded-lg overflow-hidden"
-      style={{ width: 280, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000060" }}>
+      style={{ width: 340, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000060" }}>
       <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid var(--color-border)" }}>
-        <span className="text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>Notifications</span>
+        <span className="text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>What's new</span>
         <span className="text-[10px] px-1.5 py-0.5 rounded-full"
-          style={{ background: "var(--color-border)", color: "var(--color-fg-3)" }}>0 new</span>
+          style={{
+            background: unseenCount > 0 ? "var(--color-accent-20)" : "var(--color-border)",
+            color: unseenCount > 0 ? "var(--color-accent)" : "var(--color-fg-3)",
+          }}>
+          {unseenCount > 0 ? `${unseenCount} new` : "Up to date"}
+        </span>
       </div>
-      <div className="flex flex-col items-center gap-2 py-8 px-4">
-        <Bell size={22} style={{ color: "var(--color-fg-4)" }} />
-        <p className="text-[12px] text-center" style={{ color: "var(--color-fg-3)" }}>No notifications yet</p>
-        <p className="text-[11px] text-center" style={{ color: "var(--color-fg-4)" }}>
-          Request errors and AI results will appear here.
-        </p>
-      </div>
+
+      {RELEASES.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-8 px-4">
+          <Bell size={22} style={{ color: "var(--color-fg-4)" }} />
+          <p className="text-[12px] text-center" style={{ color: "var(--color-fg-3)" }}>Nothing to report yet</p>
+        </div>
+      ) : (
+        <div className="flex flex-col overflow-y-auto" style={{ maxHeight: 380 }}>
+          {RELEASES.map(r => (
+            <div key={r.version} className="flex flex-col gap-1.5 px-3 py-3"
+              style={{ borderBottom: "1px solid var(--color-border)" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-1.5 py-0.5 rounded"
+                  style={{ background: "var(--color-accent-10)", color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>
+                  v{r.version}
+                </span>
+                <span className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>{r.date}</span>
+              </div>
+              <span className="text-[12px] font-medium" style={{ color: "var(--color-fg)" }}>{r.title}</span>
+              <ul className="flex flex-col gap-1 mt-0.5">
+                {r.points.map(pt => (
+                  <li key={pt} className="flex gap-1.5 text-[11px] leading-relaxed" style={{ color: "var(--color-fg-3)" }}>
+                    <span style={{ color: "var(--color-fg-4)" }}>&middot;</span>
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

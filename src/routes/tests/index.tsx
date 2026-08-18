@@ -3,6 +3,7 @@ import { Play, ChevronDown, Loader2, Sparkles, X, FlaskConical } from "lucide-re
 import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
 import { sendRequest, analyzeTestFailures } from "@/lib/tauri";
+import { handleQuotaError } from "@/lib/aiError";
 import { useSettingsStore } from "@/stores/settings";
 import { evaluateAssertion, buildContext, type AssertionResult, type TestResult } from "@/lib/testRunner";
 import type { HttpMethod } from "@/lib/tauri";
@@ -185,7 +186,7 @@ export function TestsRoute() {
       const result = await analyzeTestFailures(JSON.stringify(failures, null, 2), claudeApiKey, claudeModel);
       setAnalysisResult(result);
     } catch (e) {
-      setAnalysisResult(`Error: ${e}`);
+      if (!handleQuotaError(e)) setAnalysisResult(`Error: ${e}`);
     } finally {
       setAnalyzing(false);
     }

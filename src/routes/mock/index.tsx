@@ -7,6 +7,7 @@ import {
   editContent,
 } from "@/lib/tauri";
 import type { MockEndpoint, MockStatus } from "@/lib/tauri";
+import { handleQuotaError } from "@/lib/aiError";
 import { useSettingsStore } from "@/stores/settings";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "*"];
@@ -105,7 +106,7 @@ export function MockRoute() {
       const body = await editContent("", prompt, "json", claudeApiKey, claudeModel);
       updateEndpoint(ep.id, { body });
     } catch (e) {
-      toast.error(String(e));
+      if (!handleQuotaError(e)) toast.error(String(e));
     } finally {
       setAiLoading(prev => ({ ...prev, [ep.id]: false }));
     }

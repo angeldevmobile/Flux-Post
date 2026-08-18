@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settings";
-import { clearHistory, getHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, type CookieEntry } from "@/lib/tauri";
+import { clearHistory, getHistory, pruneHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, fetchAiQuota, type CookieEntry, type AiQuota } from "@/lib/tauri";
 import { APP_VERSION } from "@/lib/version";
 
 type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "cli" | "github" | "about";
@@ -136,7 +136,7 @@ function GeneralSection() {
 const MODELS = [
   { id: "claude-sonnet-4-6",       label: "claude-sonnet-4-6", badge: "Recommended", accent: true },
   { id: "claude-opus-4-7",         label: "claude-opus-4-7",   badge: "Most capable", accent: false },
-  { id: "claude-haiku-4-5-20251001", label: "claude-haiku-4-5", badge: "Fastest",     accent: false },
+  { id: "claude-haiku-4-5",        label: "claude-haiku-4-5", badge: "Fastest",     accent: false },
 ];
 
 function AiSection() {
@@ -147,6 +147,23 @@ function AiSection() {
 
   const tokenLimit = 100000;
   const tokenPct = Math.min(100, (s.tokensUsed / tokenLimit) * 100).toFixed(1);
+
+  // Sin key propia, o con el toggle apagado, se usa el tier gratuito.
+  const onFreeTier = !s.claudeApiKey || !s.useOwnKey;
+  const [quota, setQuota] = useState<AiQuota | null>(null);
+
+  useEffect(() => {
+    if (!onFreeTier) { setQuota(null); return; }
+    let active = true;
+    fetchAiQuota()
+      .then(q => { if (active) setQuota(q); })
+      .catch(() => { if (active) setQuota(null); });
+    return () => { active = false; };
+  }, [onFreeTier]);
+
+  const monthPct = quota
+    ? Math.min(100, (quota.month_used / quota.month_limit) * 100).toFixed(1)
+    : "0";
 
   function handleKeyChange(val: string) {
     s.setClaudeApiKey(val);
@@ -181,7 +198,7 @@ function AiSection() {
               Your API key is stored locally on this device
             </span>
             <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
-              It's never sent to our servers, only directly to Anthropic to power AI features like test generation, debug assist, and body editing.
+              It's never sent to our servers. With your own key, AI requests go from this device straight to Anthropic. Without one, the free tier routes them through Flux servers instead.
             </span>
             <button onClick={openAnthropicConsole}
               className="flex items-center gap-1 mt-1 self-start transition-opacity hover:opacity-70"
@@ -229,43 +246,55 @@ function AiSection() {
             </button>
           </div>
         </div>
-        <div className="flex items-start gap-4 px-4 py-4">
-          <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Model</span>
-            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Claude model used for all AI features in Flux</span>
-          </div>
-          <div className="flex flex-col gap-1.5" style={{ width: 260 }}>
-            {MODELS.map(m => {
-              const active = s.claudeModel === m.id;
-              return (
-                <button key={m.id} onClick={() => s.setClaudeModel(m.id)}
-                  className="flex items-center gap-2 px-3 rounded-md transition-colors"
-                  style={{
-                    height: 36,
-                    background: active ? "var(--color-accent-10)" : "var(--color-input)",
-                    border: `1px solid ${active ? "var(--color-accent-50)" : "var(--color-border)"}`,
-                  }}>
-                  <div className="shrink-0 rounded-full" style={{
-                    width: 14, height: 14,
-                    background: active ? "var(--color-accent)" : "transparent",
-                    border: active ? "none" : "1px solid var(--color-fg-4)",
-                  }} />
-                  <span className="flex-1 text-left text-[11px]" style={{ color: active ? "var(--color-fg)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>
-                    {m.label}
-                  </span>
-                  <div className="flex items-center px-1.5 rounded" style={{
-                    height: 18,
-                    background: active && m.accent ? "var(--color-accent-20)" : "var(--color-border)",
-                  }}>
-                    <span className="text-[10px] font-medium" style={{ color: active && m.accent ? "var(--color-accent)" : "var(--color-fg-4)" }}>
-                      {m.badge}
+        <SettingRow
+          label="Use my own API key"
+          description={s.claudeApiKey
+            ? "Off: use the free tier instead, and your key stays saved."
+            : "Add a key above to enable this."}>
+          <Toggle
+            checked={s.useOwnKey && !!s.claudeApiKey}
+            onChange={v => { if (s.claudeApiKey) s.patch({ useOwnKey: v }); }}
+          />
+        </SettingRow>
+        {!onFreeTier && (
+          <div className="flex items-start gap-4 px-4 py-4">
+            <div className="flex flex-col gap-0.5 flex-1">
+              <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Model</span>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Claude model used for all AI features in Flux</span>
+            </div>
+            <div className="flex flex-col gap-1.5" style={{ width: 260 }}>
+              {MODELS.map(m => {
+                const active = s.claudeModel === m.id;
+                return (
+                  <button key={m.id} onClick={() => s.setClaudeModel(m.id)}
+                    className="flex items-center gap-2 px-3 rounded-md transition-colors"
+                    style={{
+                      height: 36,
+                      background: active ? "var(--color-accent-10)" : "var(--color-input)",
+                      border: `1px solid ${active ? "var(--color-accent-50)" : "var(--color-border)"}`,
+                    }}>
+                    <div className="shrink-0 rounded-full" style={{
+                      width: 14, height: 14,
+                      background: active ? "var(--color-accent)" : "transparent",
+                      border: active ? "none" : "1px solid var(--color-fg-4)",
+                    }} />
+                    <span className="flex-1 text-left text-[11px]" style={{ color: active ? "var(--color-fg)" : "var(--color-fg-3)", fontFamily: "Geist Mono, monospace" }}>
+                      {m.label}
                     </span>
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="flex items-center px-1.5 rounded" style={{
+                      height: 18,
+                      background: active && m.accent ? "var(--color-accent-20)" : "var(--color-border)",
+                    }}>
+                      <span className="text-[10px] font-medium" style={{ color: active && m.accent ? "var(--color-accent)" : "var(--color-fg-4)" }}>
+                        {m.badge}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </Card>
 
       <Card title="AI Features">
@@ -280,13 +309,20 @@ function AiSection() {
         </SettingRow>
       </Card>
 
-      <Card title="Usage This Month">
+      <Card title={onFreeTier ? "Free AI Tier" : "Usage This Month"}>
         <div className="grid grid-cols-3 gap-3 p-4">
-          {[
-            { value: s.tokensUsed.toLocaleString(), label: "Tokens used",     sub: `of ${tokenLimit.toLocaleString()} est.`, color: "var(--color-accent)" },
-            { value: String(s.testsGenerated),       label: "Tests generated", sub: `since ${s.usageMonth}`, color: "#22C55E" },
-            { value: String(s.debugAssists),         label: "Debug assists",   sub: `since ${s.usageMonth}`, color: "#3B82F6" },
-          ].map(stat => (
+          {(onFreeTier && quota
+            ? [
+                { value: String(quota.month_used), label: "Used this month", sub: `of ${quota.month_limit}`, color: "var(--color-accent)" },
+                { value: String(quota.day_used),   label: "Used today",      sub: `of ${quota.day_limit}`,   color: "#3B82F6" },
+                { value: String(Math.max(0, quota.month_limit - quota.month_used)), label: "Remaining", sub: "this month", color: "#22C55E" },
+              ]
+            : [
+                { value: s.tokensUsed.toLocaleString(), label: "Tokens used",     sub: `of ${tokenLimit.toLocaleString()} est.`, color: "var(--color-accent)" },
+                { value: String(s.testsGenerated),      label: "Tests generated", sub: `since ${s.usageMonth}`, color: "#22C55E" },
+                { value: String(s.debugAssists),        label: "Debug assists",   sub: `since ${s.usageMonth}`, color: "#3B82F6" },
+              ]
+          ).map(stat => (
             <div key={stat.label} className="flex flex-col gap-1 rounded-lg p-3.5"
               style={{ background: "var(--color-topbar)", border: "1px solid var(--color-card)" }}>
               <span className="text-[22px] font-bold leading-none" style={{ color: stat.color, letterSpacing: "-0.5px", fontFamily: "Geist, Inter, sans-serif" }}>{stat.value}</span>
@@ -297,12 +333,25 @@ function AiSection() {
         </div>
         <div className="flex flex-col gap-1.5 px-4 pb-4">
           <div className="flex items-center justify-between">
-            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>{s.tokensUsed.toLocaleString()} / {tokenLimit.toLocaleString()} tokens</span>
-            <span className="text-[11px]" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>{tokenPct}%</span>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
+              {onFreeTier && quota
+                ? `${quota.month_used} / ${quota.month_limit} actions`
+                : `${s.tokensUsed.toLocaleString()} / ${tokenLimit.toLocaleString()} tokens`}
+            </span>
+            <span className="text-[11px]" style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>
+              {onFreeTier && quota ? monthPct : tokenPct}%
+            </span>
           </div>
           <div className="rounded" style={{ height: 6, background: "var(--color-border)" }}>
-            <div className="h-full rounded" style={{ width: `${tokenPct}%`, background: "linear-gradient(90deg, var(--color-accent), #7C3AED)" }} />
+            <div className="h-full rounded" style={{ width: `${onFreeTier && quota ? monthPct : tokenPct}%`, background: "linear-gradient(90deg, var(--color-accent), #7C3AED)" }} />
           </div>
+          {onFreeTier && (
+            <span className="text-[11px] leading-relaxed" style={{ color: "var(--color-fg-4)" }}>
+              {quota
+                ? "Beta until Dec 31, 2026. Add your own Claude API key above for unlimited use — your prompts then go straight to Anthropic, never through our servers."
+                : "Sign in to use the free AI tier, or add your own Claude API key above."}
+            </span>
+          )}
         </div>
       </Card>
     </div>
@@ -617,6 +666,18 @@ function PrivacySection() {
   const [historyCount, setHistoryCount] = useState<number | null>(null);
   const [exporting, setExporting]     = useState(false);
   const [showRetention, setShowRetention] = useState(false);
+  const retentionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showRetention) return;
+    function onDown(e: MouseEvent) {
+      if (retentionRef.current && !retentionRef.current.contains(e.target as Node)) {
+        setShowRetention(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showRetention]);
 
   useEffect(() => {
     getHistory().then(h => setHistoryCount(h.length)).catch(() => setHistoryCount(0));
@@ -687,7 +748,7 @@ function PrivacySection() {
         </div>
 
         {/* History retention dropdown */}
-        <div className="flex items-center gap-4 px-4" style={{ height: 52, position: "relative" }}>
+        <div ref={retentionRef} className="flex items-center gap-4 px-4" style={{ height: 52, position: "relative" }}>
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>History retention</span>
           </div>
@@ -698,11 +759,18 @@ function PrivacySection() {
             <ChevronDown size={13} style={{ color: "var(--color-fg-3)" }} className="shrink-0" />
           </button>
           {showRetention && (
-            <div className="absolute right-4 top-full mt-1 z-50 rounded-lg overflow-hidden"
+            <div className="absolute right-4 bottom-full mb-1 z-50 rounded-lg overflow-hidden"
               style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", width: 160, boxShadow: "0 8px 24px #00000060" }}>
               {RETENTION_OPTIONS.map(o => (
                 <button key={o.value}
-                  onClick={() => { s.patch({ historyRetentionDays: o.value }); setShowRetention(false); }}
+                  onClick={async () => {
+                    s.patch({ historyRetentionDays: o.value });
+                    setShowRetention(false);
+                    if (o.value > 0) {
+                      await pruneHistory(o.value).catch(() => { /* el ajuste ya quedó guardado */ });
+                      getHistory().then(h => setHistoryCount(h.length)).catch(() => {});
+                    }
+                  }}
                   className="flex items-center w-full px-3 transition-colors hover:opacity-80"
                   style={{ height: 36, color: s.historyRetentionDays === o.value ? "var(--color-accent)" : "var(--color-fg)", fontSize: 13 }}>
                   {o.label}
@@ -730,10 +798,14 @@ function PrivacySection() {
         <div className="flex items-center gap-4 px-4" style={{ height: 56, borderBottom: "1px solid #EF444420" }}>
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Sign out of all devices</span>
-            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Clears all local session data on this device</span>
+            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Ends every active session. Your API key and settings stay on this device.</span>
           </div>
           <button
-            onClick={() => { localStorage.clear(); window.location.reload(); }}
+            onClick={async () => {
+              const { supabase } = await import("@/lib/supabase");
+              await supabase.auth.signOut({ scope: "global" });
+              window.location.reload();
+            }}
             className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 shrink-0"
             style={{ height: 32, background: "var(--color-card)", border: "1px solid #EF444440", color: "#EF4444" }}>
             <LogOut size={13} /> Sign out

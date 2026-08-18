@@ -155,6 +155,33 @@ pub fn get_history(db: tauri::State<Db>) -> Result<Vec<HistoryEntry>, String> {
     Ok(entries)
 }
 
+/// Borra el historial anterior a `days`. Devuelve cuántas filas se fueron.
+/// `days == 0` significa "Forever" y no borra nada.
+///
+/// El timestamp convive en dos formatos: `save_history` usa el default de
+/// SQLite y `restore_history` inserta el ISO 8601 que llega de Supabase. Por
+/// eso se compara con `datetime()`, que entiende ambos, y se deja fuera lo que
+/// no sepa interpretar en vez de arriesgarse a borrarlo.
+#[tauri::command]
+pub fn prune_history(db: tauri::State<Db>, days: u32) -> Result<usize, String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    prune_history_conn(&conn, days)
+}
+
+fn prune_history_conn(conn: &Connection, days: u32) -> Result<usize, String> {
+    if days == 0 {
+        return Ok(0);
+    }
+    let cutoff = format!("-{} days", days);
+    conn.execute(
+        "DELETE FROM history
+          WHERE datetime(timestamp) IS NOT NULL
+            AND datetime(timestamp) < datetime('now', ?1)",
+        rusqlite::params![cutoff],
+    )
+    .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn clear_history(db: tauri::State<Db>) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
@@ -188,4 +215,62 @@ pub fn restore_history(
         ).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        init_db(&conn).unwrap();
+        conn
+    }
+
+    fn insert(conn: &Connection, url: &str, timestamp: &str) {
+        conn.execute(
+            "INSERT INTO history (method, url, status, duration_ms, timestamp)
+             VALUES ('GET', ?1, 200, 10, ?2)",
+            rusqlite::params![url, timestamp],
+        )
+        .unwrap();
+    }
+
+    fn urls(conn: &Connection) -> Vec<String> {
+        let mut stmt = conn.prepare("SELECT url FROM history ORDER BY url").unwrap();
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0)).unwrap();
+        rows.filter_map(|r| r.ok()).collect()
+    }
+
+    #[test]
+    fn deletes_old_rows_in_both_timestamp_formats() {
+        let conn = db();
+        // save_history usa el default de SQLite, restore_history mete ISO 8601
+        insert(&conn, "old-sqlite", "2020-01-01 00:00:00");
+        insert(&conn, "old-iso", "2020-01-01T00:00:00.000Z");
+        insert(&conn, "recent", "2099-01-01 00:00:00");
+
+        let removed = prune_history_conn(&conn, 30).unwrap();
+
+        assert_eq!(removed, 2);
+        assert_eq!(urls(&conn), vec!["recent"]);
+    }
+
+    #[test]
+    fn zero_days_means_forever() {
+        let conn = db();
+        insert(&conn, "ancient", "1999-01-01 00:00:00");
+
+        assert_eq!(prune_history_conn(&conn, 0).unwrap(), 0);
+        assert_eq!(urls(&conn), vec!["ancient"]);
+    }
+
+    #[test]
+    fn keeps_rows_whose_timestamp_cannot_be_parsed() {
+        let conn = db();
+        insert(&conn, "garbage", "not a date");
+
+        assert_eq!(prune_history_conn(&conn, 1).unwrap(), 0);
+        assert_eq!(urls(&conn), vec!["garbage"]);
+    }
 }

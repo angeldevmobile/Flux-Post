@@ -42,7 +42,7 @@ const STEPS: Step[] = [
   },
   {
     title: "AI that actually helps",
-    body: "After any response, Claude can generate test assertions, explain 4xx/5xx errors, and fix failing tests. Your API key stays local — requests go directly from your machine to Claude's API, never through Flux servers.",
+    body: "After any response, Claude can generate test assertions, explain 4xx/5xx errors, and fix failing tests. Free to try during the beta: 100 actions a month, no setup. Add your own API key for unlimited use, and requests go straight from your machine to Anthropic.",
     target: "ai-panel",
     position: "left",
   },

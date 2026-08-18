@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Sparkles, Copy, Check, Timer, Bug, ImageIcon, Terminal, Trash2, Wrench, Loader2, Zap } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
-import { useSettingsStore } from "@/stores/settings";
+import { useSettingsStore, useUsingOwnKey } from "@/stores/settings";
 import { generateTests, debugAssist, fixAssertion, type AssertionFix } from "@/lib/tauri";
+import { handleQuotaError } from "@/lib/aiError";
 import { CodeEditor } from "@/components/CodeEditor";
 import { useConsoleStore } from "@/stores/console";
 import type { LogLevel } from "@/stores/console";
@@ -114,6 +115,7 @@ export function ResponsePanel() {
     autoGenerateTests, aiDebugAssist: debugAssistEnabled,
     trackUsage,
   } = useSettingsStore();
+  const usingOwnKey = useUsingOwnKey();
 
   const { results: testResults } = useTestResultsStore();
   const [tab, setTab] = useState<RespTab>("Body");
@@ -149,7 +151,7 @@ export function ResponsePanel() {
       );
       setAiResult(result);
       trackUsage("tests");
-    } catch (e) { setAiResult(`Error: ${e}`); }
+    } catch (e) { if (!handleQuotaError(e)) setAiResult(`Error: ${e}`); }
     finally { setAiLoading(false); }
   }
 
@@ -170,7 +172,9 @@ export function ResponsePanel() {
       );
       setFixes(prev => ({ ...prev, [index]: fix }));
     } catch (e) {
-      setFixes(prev => ({ ...prev, [index]: { kind: "assertion", value: "", explanation: String(e) } }));
+      if (!handleQuotaError(e)) {
+        setFixes(prev => ({ ...prev, [index]: { kind: "assertion", value: "", explanation: String(e) } }));
+      }
     } finally {
       setFixLoading(prev => ({ ...prev, [index]: false }));
     }
@@ -195,7 +199,7 @@ export function ResponsePanel() {
         setDebugRaw(result);
       }
       trackUsage("debugs");
-    } catch (e) { setDebugRaw(`Error: ${e}`); }
+    } catch (e) { if (!handleQuotaError(e)) setDebugRaw(`Error: ${e}`); }
     finally { setAiLoading(false); }
   }
 
@@ -621,7 +625,7 @@ export function ResponsePanel() {
             <span className="flex-1 text-[12px] font-semibold" style={{ color: "var(--color-fg)" }}>
               {isError ? "AI Debug Assist" : "AI Test Generator"}
             </span>
-            <span className="text-[10px]" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-4)" }}>{claudeModel}</span>
+            {usingOwnKey && <span className="text-[10px]" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-4)" }}>{claudeModel}</span>}
           </div>
           <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
             {isError

@@ -7,10 +7,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] — 2026-08-17
+
 ### Added
+- AI features are free to try: every signed-in account gets 100 AI actions a month, up to 20 a day, running on Claude Haiku 4.5 with no API key and no setup. Prompts on the free tier are relayed through a Flux proxy, which is how the quota is applied; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
+- Settings → AI & Claude shows the free-tier consumption for the month and the day, and a toggle chooses between the free tier and your own key without having to delete the key to switch
+- Hitting a limit explains which one and when it resets, with a shortcut to add your own key
+- "What's new" in the bell: release notes ship inside the binary, with a marker when there is something unread
 - Collections now carry the whole request: auth, query params, pre/post-request scripts, variable extractors, GraphQL query and variables, and form bodies. Saving and reopening a request gives back what you built.
 - Saving a request whose auth holds a literal token warns before writing it to the file, and offers to move it into the active environment as a masked `{{VAR}}` in one click
-
 - Collection descriptions can be written from the sidebar, and show under the collection when it is expanded
 - CLI runner honours the new fields: auth (bearer, basic, api key, OAuth 2.0 client credentials), query params, form and GraphQL bodies, and folders at any depth. A collection that works in the app now works in CI.
 - CLI reports what it cannot do instead of running a request that quietly differs: gRPC requests are skipped, pre/post scripts are announced, and AWS SigV4 fails with a message rather than going out unsigned
@@ -22,6 +29,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - One assertion engine, one language. The collection runner, the Tests screen and the CLI used three different implementations: `json.token == null` passed in one and failed in another, `duration < 500` only worked in two of the three. All three now evaluate through the same engine, `json.` and `body.` are interchangeable, and `headers.x` and `headers["x"]` both work. A shared contract table is asserted by both the TypeScript and Rust test suites so they cannot drift apart again.
 - Assertion failures now say what they got (`expected status == 404 — got 200`) instead of a bare value
 - `body_type` in collection files is now written as `bodyType`, matching the rest of the schema; the old spelling is still read
+- The model selector is disabled on the free tier, which always uses `claude-haiku-4-5`, instead of accepting a choice that was silently ignored
 
 ---
 

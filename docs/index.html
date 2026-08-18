@@ -726,7 +726,8 @@
             <li>Fix failing assertions: Claude proposes a corrected value and an Apply button applies it to the request
               without leaving the panel</li>
             <li>Analyze batch test failures across an entire collection run</li>
-            <li>Requires your own Claude API key, added in Settings, never sent to our servers</li>
+            <li>Free to try: 100 AI actions a month during the beta, no API key and no setup</li>
+            <li>Bring your own Claude API key for unlimited use, stored locally and never sent to our servers</li>
           </ul>
           <!-- AI key notice -->
           <div class="ai-notice">
@@ -735,7 +736,7 @@
                 <span class="ai-notice-dot-ring"></span>
                 <span class="ai-notice-dot"></span>
               </div>
-              <span class="ai-notice-badge">Important API key required</span>
+              <span class="ai-notice-badge">Free during the beta no API key needed</span>
               <svg style="margin-left:auto;flex-shrink:0;color:var(--accent)" width="14" height="14" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
@@ -745,10 +746,45 @@
             </div>
             <div class="ai-notice-body">
               <p>
-                <strong>Flux does not include an API key.</strong> You must provide your own Claude API key from
-                Anthropic. It is stored <strong>only on your local device</strong> and is never sent to Flux servers
-                every AI call goes <strong>directly from your machine to Anthropic's API</strong>.
+                <strong>Nothing to set up to start.</strong> Every signed-in account gets
+                <strong>100 AI actions a month</strong> (up to 20 a day), free while Flux is in beta. On this tier
+                your prompts are relayed through Flux servers, which is how the quota is applied.
               </p>
+              <p>
+                <strong>Add your own Claude API key for unlimited use.</strong> Your key is stored
+                <strong>only on your local device</strong> and is never sent to Flux servers every AI call then goes
+                <strong>directly from your machine to Anthropic's API</strong>.
+              </p>
+              <div style="font-size:11px;color:var(--fg-4);margin:0 0 6px;">Free tier</div>
+              <div class="ai-flow" style="margin-bottom:12px;">
+                <div class="ai-flow-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                  Your device
+                </div>
+                <span class="ai-flow-arrow">→</span>
+                <div class="ai-flow-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+                  </svg>
+                  Flux proxy
+                </div>
+                <span class="ai-flow-arrow">→</span>
+                <div class="ai-flow-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  </svg>
+                  Anthropic API
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--fg-4);margin:0 0 6px;">With your own key</div>
               <div class="ai-flow">
                 <div class="ai-flow-chip">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -778,8 +814,8 @@
                 </div>
               </div>
               <p style="font-size:12px;color:var(--fg-4);margin:0;">
-                To enable: open <strong style="color:var(--fg-3)">Settings → AI &amp; Claude</strong>, paste your key
-                (starts with <code style="font-family:var(--mono);color:var(--accent)">sk-ant-</code>) and choose a
+                To go unlimited: open <strong style="color:var(--fg-3)">Settings → AI &amp; Claude</strong>, paste your
+                key (starts with <code style="font-family:var(--mono);color:var(--accent)">sk-ant-</code>) and choose a
                 model. Get your key at <code
                   style="font-family:var(--mono);color:var(--accent)">console.anthropic.com/account/keys</code>. Usage
                 is billed by Anthropic directly on your account.
@@ -1370,35 +1406,37 @@
 
         <div class="faq-item open">
           <button class="faq-q" onclick="this.closest('.faq-item').classList.toggle('open')">
-            Why do I have to provide my own API key? Why doesn't Flux include one?
+            Do I need my own API key to use the AI features?
             <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
           <div class="faq-a">
-            <p>Three reasons, each on its own makes it non-negotiable:</p>
+            <p>No. During the beta every signed-in account gets <strong>100 AI actions a month</strong> (up to 20
+              a day) at no cost and with nothing to configure. Adding your own key is optional, lifts every limit, and
+              lets you pick the model.</p>
+            <p style="margin-top:12px;">The two modes differ in one way worth knowing about:</p>
             <ul>
               <li>
-                <strong>Security.</strong> If Flux shipped a built-in key, every user would share the same secret. One
-                person decompiling the binary, or a single leaked GitHub commit, would expose it to the entire internet,
-                immediately draining the account. Your own key belongs only to you.
+                <strong>Free tier.</strong> Your prompts are relayed through a small Flux proxy, which checks your quota
+                and forwards the call to Anthropic using our key. That relay is how the quota exists at all, and it
+                means the prompt, including any response body you are debugging, passes through our server. We never
+                ship a shared key inside the binary: a bundled secret would be extracted from the first download and
+                drained within hours.
               </li>
               <li>
-                <strong>Privacy.</strong> With your key, every AI request travels <em>directly</em> from your machine to
-                Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing. If a shared
-                key were used, those calls would have to route through a Flux backend, meaning a third party would
-                process your data.
-              </li>
-              <li>
-                <strong>Cost &amp; fairness.</strong> The API is not free. Bundling a key would mean Flux pays for every
-                AI call every user makes, which is unsustainable for a free, open-source tool. With BYOK ("bring your
-                own key") you pay Anthropic directly, only for what you use, at the published rate. No subscription, no
-                hidden fees.
+                <strong>Your own key.</strong> Every AI request travels <em>directly</em> from your machine to
+                Anthropic's API. Flux never sees your prompts, your response bodies, or what you're testing, and your
+                key is stored only on your device. You pay Anthropic directly, only for what you use, at the published
+                rate. No subscription, no hidden fees, no limits.
               </li>
             </ul>
+            <p style="margin-top:12px;">The free tier is capped because the API is not free and Flux pays for it. The
+              cap is what keeps it sustainable for an open-source project, and it is why heavy users are better off
+              with their own key.</p>
             <p style="margin-top:12px;">
-              <span class="faq-tag">How to set it up</span>
+              <span class="faq-tag">Using your own key</span>
               Open <strong style="color:var(--fg-2)">Settings → AI &amp; Claude</strong>, paste your key (starts with
               <code style="font-family:var(--mono);color:var(--accent);font-size:12px">sk-ant-</code>), and pick a
               model. Get your key at <code

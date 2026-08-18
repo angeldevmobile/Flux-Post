@@ -12,6 +12,7 @@ interface SettingsStore {
   // AI
   claudeApiKey: string;
   claudeModel: string;
+  useOwnKey: boolean;
   autoGenerateTests: boolean;
   aiDebugAssist: boolean;
   smartAutocomplete: boolean;
@@ -61,6 +62,7 @@ interface SettingsStore {
 
   // Onboarding
   tourSeen: boolean;
+  lastSeenVersion: string;
 
   // Actions
   setTimeoutMs: (v: number) => void;
@@ -84,6 +86,7 @@ export const useSettingsStore = create<SettingsStore>()(
       // AI
       claudeApiKey: localStorage.getItem("flux_claude_key") ?? "",
       claudeModel: "claude-sonnet-4-6",
+      useOwnKey: !!localStorage.getItem("flux_claude_key"),
       autoGenerateTests: true,
       aiDebugAssist: true,
       smartAutocomplete: false,
@@ -133,6 +136,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
       // Onboarding
       tourSeen: false,
+      lastSeenVersion: "0.0.0",
 
       // Actions
       setTimeoutMs: (timeoutMs) => set({ timeoutMs }),
@@ -140,7 +144,8 @@ export const useSettingsStore = create<SettingsStore>()(
       setSslVerify: (sslVerify) => set({ sslVerify }),
       setClaudeApiKey: (claudeApiKey) => {
         localStorage.setItem("flux_claude_key", claudeApiKey);
-        set({ claudeApiKey });
+        // Guardar una key significa querer usarla; borrarla, volver al tier gratuito.
+        set({ claudeApiKey, useOwnKey: !!claudeApiKey });
       },
       setClaudeModel: (claudeModel) => set({ claudeModel }),
       setTourSeen: (tourSeen) => set({ tourSeen }),
@@ -164,6 +169,26 @@ export const useSettingsStore = create<SettingsStore>()(
         }
       },
     }),
-    { name: "flux-settings" }
+    {
+      name: "flux-settings",
+      version: 1,
+      // El id de Haiku llevaba sufijo de fecha mientras los otros dos usaban
+      // alias, así que el radio no se marcaba. Se normaliza al rehidratar.
+      migrate: (persisted) => {
+        const state = persisted as Partial<SettingsStore> | undefined;
+        if (state?.claudeModel === "claude-haiku-4-5-20251001") {
+          return { ...state, claudeModel: "claude-haiku-4-5" };
+        }
+        return state;
+      },
+    }
   )
 );
+
+/**
+ * El modelo solo se enseña cuando lo eligió el usuario. En el tier gratuito
+ * lo decide el proxy, así que la app no lo nombra.
+ */
+export function useUsingOwnKey(): boolean {
+  return useSettingsStore(s => !!s.claudeApiKey && s.useOwnKey);
+}

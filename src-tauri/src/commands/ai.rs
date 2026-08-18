@@ -28,9 +28,50 @@ struct ClaudeMessage {
     content: Vec<ClaudeContent>,
 }
 
-//    private helper                                                            
+//    private helper
+
+const PROXY_URL: &str = "https://flux-ai-proxy-production.up.railway.app";
+
+// Errores de cuota: lo que sigue al prefijo es el JSON del proxy con `error`,
+// `month_used`, `day_used` y los dos límites.
+const QUOTA_ERROR_PREFIX: &str = "quota:";
+
+#[derive(Debug, Deserialize)]
+struct ProxyMessage {
+    text: String,
+}
+
+enum AiAuth {
+    Byok(String),
+    Free(String),
+}
+
+fn resolve_auth(api_key: String, auth_token: Option<String>) -> Result<AiAuth, String> {
+    if !api_key.is_empty() {
+        return Ok(AiAuth::Byok(api_key));
+    }
+    match auth_token.filter(|t| !t.is_empty()) {
+        Some(token) => Ok(AiAuth::Free(token)),
+        None => Err("Sign in to use the free AI tier, or add your own Claude API key in Settings → AI & Claude.".to_string()),
+    }
+}
 
 async fn call_claude(
+    auth: &AiAuth,
+    function: &str,
+    model: &str,
+    system: &str,
+    user: &str,
+    max_tokens: u32,
+) -> Result<String, String> {
+    match auth {
+        AiAuth::Byok(key) => call_anthropic(key, model, system, user, max_tokens).await,
+        // El proxy decide modelo y max_tokens; aquí se ignoran a propósito.
+        AiAuth::Free(token) => call_proxy(token, function, system, user).await,
+    }
+}
+
+async fn call_anthropic(
     api_key: &str,
     model: &str,
     system: &str,
@@ -62,16 +103,66 @@ async fn call_claude(
     Ok(msg.content.into_iter().map(|c| c.text).collect::<Vec<_>>().join(""))
 }
 
-fn require_key(api_key: &str) -> Result<(), String> {
-    if api_key.is_empty() {
-        Err("Claude API key not configured. Go to Settings → AI & Claude to add your key.".to_string())
-    } else {
-        Ok(())
+async fn call_proxy(
+    auth_token: &str,
+    function: &str,
+    system: &str,
+    user: &str,
+) -> Result<String, String> {
+    let client = Client::new();
+    let resp = client
+        .post(format!("{}/v1/ai", PROXY_URL))
+        .header("authorization", format!("Bearer {}", auth_token))
+        .header("content-type", "application/json")
+        .json(&json!({
+            "fn": function,
+            "system": system,
+            "user": user
+        }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        if status.as_u16() == 402 {
+            return Err(format!("{}{}", QUOTA_ERROR_PREFIX, body));
+        }
+        return Err(format!("Flux AI error: {}", body));
     }
+
+    let msg: ProxyMessage = resp.json().await.map_err(|e| e.to_string())?;
+    Ok(msg.text)
 }
 
 fn model_or_default(model: Option<String>) -> String {
     model.unwrap_or_else(|| "claude-sonnet-4-6".to_string())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AiQuota {
+    pub month_used: u32,
+    pub day_used: u32,
+    pub month_limit: u32,
+    pub day_limit: u32,
+}
+
+#[tauri::command]
+pub async fn ai_quota(auth_token: String) -> Result<AiQuota, String> {
+    let client = Client::new();
+    let resp = client
+        .get(format!("{}/v1/ai/quota", PROXY_URL))
+        .header("authorization", format!("Bearer {}", auth_token))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        return Err(resp.text().await.unwrap_or_default());
+    }
+
+    resp.json().await.map_err(|e| e.to_string())
 }
 
 //    commands                                                                  
@@ -81,9 +172,10 @@ pub async fn generate_tests(
     request: AiRequest,
     response: AiResponse,
     api_key: String,
+    auth_token: Option<String>,
     model: Option<String>,
 ) -> Result<String, String> {
-    require_key(&api_key)?;
+    let auth = resolve_auth(api_key, auth_token)?;
 
     let system = "You are an API testing assistant. Generate precise test assertions in YAML format based on the HTTP request and response provided. Return only the YAML block with no explanation.";
 
@@ -99,7 +191,7 @@ pub async fn generate_tests(
         &response.body.chars().take(2000).collect::<String>(),
     );
 
-    call_claude(&api_key, &model_or_default(model), system, &user, 1024).await
+    call_claude(&auth, "generate_tests", &model_or_default(model), system, &user, 1024).await
 }
 
 #[tauri::command]
@@ -107,9 +199,10 @@ pub async fn debug_assist(
     request: AiRequest,
     response: AiResponse,
     api_key: String,
+    auth_token: Option<String>,
     model: Option<String>,
 ) -> Result<String, String> {
-    require_key(&api_key)?;
+    let auth = resolve_auth(api_key, auth_token)?;
 
     let system = "You are an API debugging assistant embedded inside Flux, a native desktop API client (Tauri + Rust, no Electron). \
 Know the full Flux UI so you can give precise, actionable fixes: \
@@ -150,7 +243,7 @@ Always tie your fix to a specific tab or UI element in Flux. Never give generic 
         &response.body.chars().take(2000).collect::<String>(),
     );
 
-    call_claude(&api_key, &model_or_default(model), system, &user, 1024).await
+    call_claude(&auth, "debug_assist", &model_or_default(model), system, &user, 1024).await
 }
 
 #[tauri::command]
@@ -159,9 +252,10 @@ pub async fn edit_content(
     instruction: String,
     language: String,
     api_key: String,
+    auth_token: Option<String>,
     model: Option<String>,
 ) -> Result<String, String> {
-    require_key(&api_key)?;
+    let auth = resolve_auth(api_key, auth_token)?;
 
     let system = format!(
         "You are a code editor assistant inside an HTTP API client tool (like Postman). \
@@ -176,7 +270,7 @@ pub async fn edit_content(
         content, instruction
     );
 
-    call_claude(&api_key, &model_or_default(model), &system, &user, 2048).await
+    call_claude(&auth, "edit_content", &model_or_default(model), &system, &user, 2048).await
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -195,9 +289,10 @@ pub async fn fix_assertion(
     req_url: String,
     req_body: Option<String>,
     api_key: String,
+    auth_token: Option<String>,
     model: Option<String>,
 ) -> Result<AssertionFix, String> {
-    require_key(&api_key)?;
+    let auth = resolve_auth(api_key, auth_token)?;
 
     let system = "You are an API test debugging assistant. A test assertion failed. \
         Determine the best fix: either correct the assertion to match the actual response, \
@@ -219,7 +314,7 @@ pub async fn fix_assertion(
         &actual_body.chars().take(2000).collect::<String>(),
     );
 
-    let raw = call_claude(&api_key, &model_or_default(model), system, &user, 512).await?;
+    let raw = call_claude(&auth, "fix_assertion", &model_or_default(model), system, &user, 512).await?;
 
     serde_json::from_str::<AssertionFix>(&raw).map_err(|_| {
         // fallback: treat entire response as an assertion fix
@@ -245,9 +340,10 @@ impl ToStringErr for AssertionFix {
 pub async fn analyze_test_failures(
     failures_json: String,
     api_key: String,
+    auth_token: Option<String>,
     model: Option<String>,
 ) -> Result<String, String> {
-    require_key(&api_key)?;
+    let auth = resolve_auth(api_key, auth_token)?;
 
     let system = "You are an API test suite analyst. Given a list of failing test assertions and their context, \
         provide a concise diagnostic grouped by likely root cause. \
@@ -258,5 +354,5 @@ pub async fn analyze_test_failures(
         failures_json
     );
 
-    call_claude(&api_key, &model_or_default(model), system, &user, 1024).await
+    call_claude(&auth, "analyze_test_failures", &model_or_default(model), system, &user, 1024).await
 }

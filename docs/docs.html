@@ -1078,7 +1078,7 @@
               </tr>
               <tr>
                 <td>AI integration</td>
-                <td>BYOK, your key, your data</td>
+                <td>Free tier included, or BYOK for unlimited</td>
                 <td>Subscription or none</td>
               </tr>
               <tr>
@@ -1106,9 +1106,11 @@
                   d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
               </svg></span>
             <div class="callout-body">
-              <div class="callout-title">BYOK, Bring Your Own Key</div>
-              <div class="callout-text">Flux never stores your Claude API key on any server. It lives only on your
-                device and is sent directly to Anthropic when you use AI features.</div>
+              <div class="callout-title">Free tier, or bring your own key</div>
+              <div class="callout-text">The beta includes 100 AI actions a month, relayed through a Flux proxy that
+                applies the quota and picks the model. Add your own Claude API key for unlimited use and full model
+                choice: it is never stored on any server, it lives only on your device, and calls then go straight to
+                Anthropic.</div>
             </div>
           </div>
 
@@ -1117,7 +1119,7 @@
             <li><strong>Frontend:</strong> React 18, TypeScript, Vite, Tailwind CSS v4, Zustand, Radix UI</li>
             <li><strong>Backend:</strong> Rust + Tauri 2.0, reqwest (HTTP engine), rusqlite (history)</li>
             <li><strong>Code editor:</strong> Monaco Editor with local workers, no CDN dependency</li>
-            <li><strong>AI:</strong> Anthropic Claude API (BYOK), Sonnet, Opus, Haiku selectable</li>
+            <li><strong>AI:</strong> Anthropic Claude API, metered free tier or BYOK with Sonnet, Opus and Haiku selectable</li>
           </ul>
         </section>
 
@@ -2476,13 +2478,20 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <div class="page-eyebrow">Core Features</div>
           <h1 class="page-title">AI Features</h1>
           <p class="page-lead">Flux integrates Claude (Anthropic) to accelerate testing, debugging, and body authoring.
-            All AI features are BYOK, your key is stored locally and sent directly to Anthropic.</p>
+            Free to try during the beta, or bring your own key for unlimited use.</p>
 
           <h2>Setup</h2>
-          <p>Go to <strong>Settings → AI & Claude</strong>, paste your API key (starts with <code>sk-ant-</code>), and
-            select a model. That's it.</p>
+          <p>Nothing to configure. During the beta, every signed-in account gets <strong>100 AI actions a month</strong>
+            (up to 20 a day) at no cost. On this free tier your prompts are relayed through Flux servers, which is how
+            the quota is applied, and the model is chosen for you.</p>
+          <p>For unlimited use, go to <strong>Settings → AI & Claude</strong>, paste your API key (starts with
+            <code>sk-ant-</code>), and select a model. Your key is stored only on your device, and AI calls then go
+            straight from your machine to Anthropic, never through Flux servers. Usage is billed by Anthropic on your
+            own account.</p>
 
           <h2>Available models</h2>
+          <p>Model selection applies when you use your own API key. On the free tier the model is chosen for you and
+            may change over time.</p>
           <table>
             <thead>
               <tr>

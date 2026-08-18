@@ -1,4 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
+import { supabase } from "@/lib/supabase";
+import { useSettingsStore } from "@/stores/settings";
 
 export type HttpMethod = "GET" | "POST" | "QUERY" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
@@ -76,6 +78,11 @@ export async function getHistory(): Promise<HistoryEntry[]> {
 
 export async function clearHistory(): Promise<void> {
   return invoke("clear_history");
+}
+
+/** Borra el historial anterior a `days`. 0 = Forever, no borra nada. */
+export async function pruneHistory(days: number): Promise<number> {
+  return invoke("prune_history", { days });
 }
 
 export interface RestoreEntry {
@@ -230,13 +237,28 @@ export async function saveCollection(dir: string, collection: Collection): Promi
 }
 
 
+// Con key guardada y el toggle activo, las funciones de IA van directas a
+// Anthropic. En cualquier otro caso, al proxy del tier gratuito con el JWT.
+async function aiAuth(apiKey: string): Promise<{ apiKey: string; authToken: string | null }> {
+  if (apiKey && useSettingsStore.getState().useOwnKey) {
+    return { apiKey, authToken: null };
+  }
+  const { data } = await supabase.auth.getSession();
+  return { apiKey: "", authToken: data.session?.access_token ?? null };
+}
+
 export async function generateTests(
   request: { method: string; url: string; body?: string },
   response: { status: number; body: string },
   apiKey: string,
   model?: string,
 ): Promise<string> {
-  return invoke("generate_tests", { request, response, apiKey, model: model ?? null });
+  return invoke("generate_tests", {
+    request,
+    response,
+    ...(await aiAuth(apiKey)),
+    model: model ?? null,
+  });
 }
 
 export interface OAuthToken {
@@ -290,7 +312,12 @@ export async function debugAssist(
   apiKey: string,
   model?: string,
 ): Promise<string> {
-  return invoke("debug_assist", { request, response, apiKey, model: model ?? null });
+  return invoke("debug_assist", {
+    request,
+    response,
+    ...(await aiAuth(apiKey)),
+    model: model ?? null,
+  });
 }
 
 export async function editContent(
@@ -300,7 +327,13 @@ export async function editContent(
   apiKey: string,
   model?: string,
 ): Promise<string> {
-  return invoke("edit_content", { content, instruction, language, apiKey, model: model ?? null });
+  return invoke("edit_content", {
+    content,
+    instruction,
+    language,
+    ...(await aiAuth(apiKey)),
+    model: model ?? null,
+  });
 }
 
 export interface AssertionFix {
@@ -326,7 +359,7 @@ export async function fixAssertion(
     reqMethod,
     reqUrl,
     reqBody: reqBody ?? null,
-    apiKey,
+    ...(await aiAuth(apiKey)),
     model: model ?? null,
   });
 }
@@ -336,7 +369,44 @@ export async function analyzeTestFailures(
   apiKey: string,
   model?: string,
 ): Promise<string> {
-  return invoke("analyze_test_failures", { failuresJson, apiKey, model: model ?? null });
+  return invoke("analyze_test_failures", {
+    failuresJson,
+    ...(await aiAuth(apiKey)),
+    model: model ?? null,
+  });
+}
+
+export interface AiQuota {
+  month_used: number;
+  day_used: number;
+  month_limit: number;
+  day_limit: number;
+}
+
+export async function fetchAiQuota(): Promise<AiQuota | null> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return null;
+  return invoke("ai_quota", { authToken: token });
+}
+
+export interface QuotaError {
+  error: "day_limit" | "month_limit" | "global_budget";
+  month_used?: number;
+  day_used?: number;
+  month_limit?: number;
+  day_limit?: number;
+}
+
+// Los comandos de IA devuelven `quota:{json}` cuando el tier gratuito se agota.
+export function parseQuotaError(e: unknown): QuotaError | null {
+  const raw = typeof e === "string" ? e : e instanceof Error ? e.message : "";
+  if (!raw.startsWith("quota:")) return null;
+  try {
+    return JSON.parse(raw.slice(6)) as QuotaError;
+  } catch {
+    return null;
+  }
 }
 
 export async function sseConnect(
