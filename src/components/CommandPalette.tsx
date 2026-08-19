@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { resolveRequestUrl } from "@/lib/requestUrl";
 import { Search, ArrowRight, Clock, Folder } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
@@ -47,7 +48,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       method: req.method,
       label: req.name,
       subtitle: col.name,
-      url: (col.baseUrl ?? "") + req.path,
+      url: resolveRequestUrl(col.baseUrl, req.path),
       collectionId: col.id,
       body: req.body,
       headers: req.headers,

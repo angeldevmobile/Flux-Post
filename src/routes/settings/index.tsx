@@ -2,13 +2,17 @@
 import { GH_TOKEN_KEY, GH_USER_KEY } from "@/lib/githubKeys";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
-  ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
+  EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
   ExternalLink, Check, ClipboardPaste, X, FileUp, Play, Cookie, Terminal, GitBranch,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settings";
+import { Dropdown } from "@/components/Dropdown";
 import { clearHistory, getHistory, pruneHistory, exportDataAsJson, getAllCookies, deleteCookie, clearCookies, fetchAiQuota, type CookieEntry, type AiQuota } from "@/lib/tauri";
 import { APP_VERSION } from "@/lib/version";
+import { toast } from "sonner";
+import { useUserStore } from "@/stores/user";
+import { clearRemoteHistory, pruneRemoteHistory } from "@/lib/sync";
 
 type Section = "general" | "ai" | "appearance" | "keyboard" | "proxy" | "cookies" | "privacy" | "cli" | "github" | "about";
 
@@ -361,17 +365,6 @@ function AiSection() {
 
 function AppearanceSection() {
   const s = useSettingsStore();
-  const [showFont, setShowFont] = useState(false);
-  const fontRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showFont) return;
-    function onDown(e: MouseEvent) {
-      if (fontRef.current && !fontRef.current.contains(e.target as Node)) setShowFont(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [showFont]);
 
   const ACCENT_COLORS = ["#A855F7", "#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#EC4899", "#14B8A6"];
 
@@ -410,34 +403,25 @@ function AppearanceSection() {
 
       <Card title="Typography">
         <SettingRow label="Editor font" description="Font used in request/response body">
-          <div ref={fontRef} className="relative">
-            <button onClick={() => setShowFont(v => !v)}
-              className="flex items-center gap-2 px-3 rounded-md"
-              style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)", minWidth: 180 }}>
-              <span className="flex-1 text-left text-[12px]" style={{ fontFamily: `${s.editorFont}, monospace`, color: "var(--color-fg)" }}>{s.editorFont}</span>
-              <ChevronDown size={13} style={{ color: "var(--color-fg-3)" }} className="shrink-0" />
-            </button>
-            {showFont && (
-              <div className="absolute right-0 bottom-full mb-1 z-50 rounded-lg overflow-hidden"
-                style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", width: 180, boxShadow: "0 8px 24px #00000060" }}>
-                {EDITOR_FONTS.map(f => (
-                  <button key={f} onClick={() => { s.patch({ editorFont: f }); setShowFont(false); }}
-                    className="flex items-center w-full px-3 transition-colors hover:opacity-80"
-                    style={{ height: 34, fontSize: 12, fontFamily: `${f}, monospace`,
-                             color: s.editorFont === f ? "var(--color-accent)" : "var(--color-fg)" }}>
-                    {f}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <Dropdown
+            width={180}
+            label={<span style={{ fontFamily: `${s.editorFont}, monospace` }}>{s.editorFont}</span>}>
+            {close => EDITOR_FONTS.map(f => (
+              <button key={f} onClick={() => { s.patch({ editorFont: f }); close(); }}
+                className="flex items-center w-full px-3 transition-colors hover:opacity-80"
+                style={{ height: 34, fontSize: 12, fontFamily: `${f}, monospace`,
+                         color: s.editorFont === f ? "var(--color-accent)" : "var(--color-fg)" }}>
+                {f}
+              </button>
+            ))}
+          </Dropdown>
         </SettingRow>
         <SettingRow label="UI font size" description="Base size for interface text" last>
           <div className="flex items-center rounded-md overflow-hidden"
             style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)" }}>
             <button onClick={() => s.patch({ uiFontSize: Math.max(11, s.uiFontSize - 1) })}
               className="flex items-center justify-center transition-colors hover:opacity-80"
-              style={{ width: 30, height: "100%", borderRight: "1px solid var(--color-border)", fontSize: 16, color: "var(--color-fg-3)" }}>âˆ’</button>
+              style={{ width: 30, height: "100%", borderRight: "1px solid var(--color-border)", fontSize: 16, color: "var(--color-fg-3)" }}>{"\u2212"}</button>
             <span className="text-[12px] px-3" style={{ fontFamily: "Geist Mono, monospace", minWidth: 48, textAlign: "center", color: "var(--color-fg)" }}>{s.uiFontSize}px</span>
             <button onClick={() => s.patch({ uiFontSize: Math.min(18, s.uiFontSize + 1) })}
               className="flex items-center justify-center transition-colors hover:opacity-80"
@@ -696,19 +680,6 @@ function PrivacySection() {
   const [clearing, setClearing]       = useState(false);
   const [historyCount, setHistoryCount] = useState<number | null>(null);
   const [exporting, setExporting]     = useState(false);
-  const [showRetention, setShowRetention] = useState(false);
-  const retentionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showRetention) return;
-    function onDown(e: MouseEvent) {
-      if (retentionRef.current && !retentionRef.current.contains(e.target as Node)) {
-        setShowRetention(false);
-      }
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [showRetention]);
 
   useEffect(() => {
     getHistory().then(h => setHistoryCount(h.length)).catch(() => setHistoryCount(0));
@@ -718,7 +689,13 @@ function PrivacySection() {
     setClearing(true);
     try {
       await clearHistory();
+      // Sin borrar tambien la copia remota, la siguiente sincronizacion la repone.
+      const userId = useUserStore.getState().user?.id;
+      if (userId) await clearRemoteHistory(userId);
       setHistoryCount(0);
+      toast.success("Request history deleted");
+    } catch (e) {
+      toast.error(`Could not delete history: ${e}`);
     } finally { setClearing(false); }
   }
 
@@ -730,6 +707,9 @@ function PrivacySection() {
         { exportedAt: new Date().toISOString(), history },
         "flux-export.json",
       );
+      toast.success(`Exported ${history.length} requests to flux-export.json`);
+    } catch (e) {
+      toast.error(`Export failed: ${e}`);
     } finally { setExporting(false); }
   }
 
@@ -778,38 +758,28 @@ function PrivacySection() {
           </button>
         </div>
 
-        {/* History retention dropdown */}
-        <div ref={retentionRef} className="flex items-center gap-4 px-4" style={{ height: 52, position: "relative" }}>
-          <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>History retention</span>
-          </div>
-          <button onClick={() => setShowRetention(v => !v)}
-            className="flex items-center gap-2 px-3 rounded-md"
-            style={{ height: 34, width: 160, background: "var(--color-input)", border: "1px solid var(--color-border)", color: "var(--color-fg)" }}>
-            <span className="flex-1 text-left text-[13px]">{retentionLabel}</span>
-            <ChevronDown size={13} style={{ color: "var(--color-fg-3)" }} className="shrink-0" />
-          </button>
-          {showRetention && (
-            <div className="absolute right-4 bottom-full mb-1 z-50 rounded-lg overflow-hidden"
-              style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", width: 160, boxShadow: "0 8px 24px #00000060" }}>
-              {RETENTION_OPTIONS.map(o => (
-                <button key={o.value}
-                  onClick={async () => {
-                    s.patch({ historyRetentionDays: o.value });
-                    setShowRetention(false);
-                    if (o.value > 0) {
-                      await pruneHistory(o.value).catch(() => { /* el ajuste ya quedó guardado */ });
-                      getHistory().then(h => setHistoryCount(h.length)).catch(() => {});
-                    }
-                  }}
-                  className="flex items-center w-full px-3 transition-colors hover:opacity-80"
-                  style={{ height: 36, color: s.historyRetentionDays === o.value ? "var(--color-accent)" : "var(--color-fg)", fontSize: 13 }}>
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <SettingRow label="History retention" last>
+          <Dropdown width={160} label={retentionLabel}>
+            {close => RETENTION_OPTIONS.map(o => (
+              <button key={o.value}
+                onClick={async () => {
+                  s.patch({ historyRetentionDays: o.value });
+                  close();
+                  if (o.value > 0) {
+                    const userId = useUserStore.getState().user?.id;
+                    await pruneHistory(o.value).catch(() => { /* el ajuste ya quedó guardado */ });
+                    if (userId) await pruneRemoteHistory(userId, o.value).catch(() => {});
+                    getHistory().then(h => setHistoryCount(h.length)).catch(() => {});
+                  }
+                }}
+                className="flex items-center w-full px-3 transition-colors hover:opacity-80"
+                style={{ height: 36, fontSize: 13,
+                         color: s.historyRetentionDays === o.value ? "var(--color-accent)" : "var(--color-fg)" }}>
+                {o.label}
+              </button>
+            ))}
+          </Dropdown>
+        </SettingRow>
       </Card>
 
       <Card title="Sessions & Security">

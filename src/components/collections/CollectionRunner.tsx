@@ -3,6 +3,7 @@ import { Play, Square, X, CheckCircle, XCircle, Loader, ChevronDown, ChevronRigh
 import { useCollectionsStore } from "@/stores/collections";
 import { sendRequest, grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
 import { networkOptions } from "@/lib/networkOptions";
+import { resolveRequestUrl } from "@/lib/requestUrl";
 import { evaluateAssertions, type AssertionResult } from "@/lib/assertionEvaluator";
 import { methodColor, methodBg } from "@/lib/methods";
 import type { CollectionRequest, CollectionFolder } from "@/stores/collections";
@@ -108,9 +109,7 @@ export function CollectionRunner({ open, onClose }: Props) {
             idx === i ? { ...r, status: "done", durationMs: resp.durationMs, body: resp.body, assertions: [] } : r
           ));
         } else {
-          const url = col.baseUrl && !req.path.startsWith("http")
-            ? col.baseUrl.replace(/\/$/, "") + "/" + req.path.replace(/^\//, "")
-            : req.path;
+          const url = resolveRequestUrl(col.baseUrl, req.path);
           const resp = await sendRequest({
             method: req.method,
             url,

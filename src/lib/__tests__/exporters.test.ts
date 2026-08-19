@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { exportPostman, exportCurl, exportFetch, exportAxios, exportPythonRequests, exportGoHttp } from "../exporters";
+import { exportPostman, exportOpenAPI, exportCurl, exportFetch, exportAxios, exportPythonRequests, exportGoHttp } from "../exporters";
 import { importPostman, importCurl } from "../importers";
 import type { Collection } from "@/stores/collections";
 
@@ -183,5 +183,120 @@ describe("exportGoHttp", () => {
     expect(out).toContain("package main");
     expect(out).toContain("net/http");
     expect(out).toContain("https://api.example.com/users");
+  });
+});
+
+describe("exportPostman fidelity", () => {
+  const full = {
+    id: "c1", name: "Full", expanded: true, folders: [],
+    requests: [{
+      id: "r1", name: "Login", method: "POST" as const, path: "/login",
+      headers: { "X-Trace": "1" },
+      params: { verbose: "true" },
+      body: '{"a":1}', bodyType: "json",
+      auth: { type: "bearer", token: "{{TOKEN}}" },
+      scripts: { preRequest: "pm.environment.set('t', 1)", postResponse: "console.log(1)" },
+      extractors: [{ path: "json.token", variable: "TOKEN" }],
+      tests: [{ assert: "status == 200" }],
+    }],
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const doc = () => JSON.parse(exportPostman(full as any));
+  const req = () => doc().item[0].request;
+
+  it("carries the auth block instead of dropping it", () => {
+    expect(req().auth).toEqual({
+      type: "bearer",
+      bearer: [{ key: "token", value: "{{TOKEN}}", type: "string" }],
+    });
+  });
+
+  it("carries query params", () => {
+    expect(req().url.query).toEqual([{ key: "verbose", value: "true" }]);
+  });
+
+  it("carries the pre-request script", () => {
+    const pre = doc().item[0].event.find((e: { listen: string }) => e.listen === "prerequest");
+    expect(pre.script.exec).toEqual(["pm.environment.set('t', 1)"]);
+  });
+
+  it("keeps assertions and extractors visible as comments in the test script", () => {
+    const test = doc().item[0].event.find((e: { listen: string }) => e.listen === "test");
+    expect(test.script.exec).toContain("// Flux assertion: status == 200");
+    expect(test.script.exec).toContain("// Flux extractor: TOKEN = json.token");
+  });
+
+  it("maps a graphql body to the graphql mode", () => {
+    const gql = {
+      ...full,
+      requests: [{ ...full.requests[0], bodyType: "graphql", graphql: { query: "{ me }", variables: "{}" } }],
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body = JSON.parse(exportPostman(gql as any)).item[0].request.body;
+    expect(body.mode).toBe("graphql");
+    expect(body.graphql.query).toBe("{ me }");
+  });
+
+  it("maps a form body to urlencoded", () => {
+    const form = {
+      ...full,
+      requests: [{ ...full.requests[0], bodyType: "form", form: { user: "ana" } }],
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body = JSON.parse(exportPostman(form as any)).item[0].request.body;
+    expect(body.mode).toBe("urlencoded");
+    expect(body.urlencoded).toEqual([{ key: "user", value: "ana", type: "text" }]);
+  });
+});
+
+describe("exportOpenAPI fidelity", () => {
+  const base = {
+    id: "c1", name: "API", baseUrl: "https://api.test", expanded: true, folders: [],
+  };
+  const request = {
+    id: "r1", name: "Create user", method: "POST" as const, path: "/users",
+    headers: { "X-Trace": "abc", "Content-Type": "application/json" },
+    params: { verbose: "true" },
+    body: '{"name":"ana"}', bodyType: "json",
+    auth: { type: "bearer", token: "{{TOKEN}}" },
+    tests: [],
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const doc = (req: any = request) =>
+    JSON.parse(exportOpenAPI({ ...base, requests: [req] } as any));
+  const op = () => doc().paths["/users"].post;
+
+  it("carries params from the Params tab, not just from the url", () => {
+    const query = op().parameters.filter((p: { in: string }) => p.in === "query");
+    expect(query.map((p: { name: string }) => p.name)).toEqual(["verbose"]);
+  });
+
+  it("carries custom headers but not Content-Type", () => {
+    const headers = op().parameters.filter((p: { in: string }) => p.in === "header");
+    expect(headers.map((p: { name: string }) => p.name)).toEqual(["X-Trace"]);
+  });
+
+  it("declares the security scheme and references it", () => {
+    expect(doc().components.securitySchemes.bearerAuth).toEqual({ type: "http", scheme: "bearer" });
+    expect(op().security).toEqual([{ bearerAuth: [] }]);
+  });
+
+  it("omits components when no request is authenticated", () => {
+    expect(doc({ ...request, auth: { type: "none" } }).components).toBeUndefined();
+  });
+
+  it("maps a form body to urlencoded content", () => {
+    const body = doc({ ...request, bodyType: "form", form: { user: "ana" } }).paths["/users"].post.requestBody;
+    expect(Object.keys(body.content)).toEqual(["application/x-www-form-urlencoded"]);
+    expect(body.content["application/x-www-form-urlencoded"].example).toEqual({ user: "ana" });
+  });
+
+  it("describes a graphql body as query plus variables", () => {
+    const body = doc({
+      ...request, bodyType: "graphql", graphql: { query: "{ me }", variables: "{}" },
+    }).paths["/users"].post.requestBody;
+    expect(body.content["application/json"].example.query).toBe("{ me }");
   });
 });

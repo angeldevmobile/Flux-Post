@@ -2,15 +2,102 @@ import type { Collection, CollectionRequest, CollectionFolder } from "@/stores/c
 
 //   Postman v2.1                                
 
+/** Los tipos de auth de Flux, en la forma que espera Postman v2.1. */
+function authToPostman(auth: CollectionRequest["auth"]) {
+  if (!auth || auth.type === "none") return undefined;
+  const kv = (obj: Record<string, string | undefined>) =>
+    Object.entries(obj)
+      .filter(([, v]) => v)
+      .map(([key, value]) => ({ key, value, type: "string" }));
+
+  switch (auth.type) {
+    case "bearer":
+      return { type: "bearer", bearer: kv({ token: auth.token }) };
+    case "basic":
+      return { type: "basic", basic: kv({ username: auth.username, password: auth.password }) };
+    case "apikey":
+      return { type: "apikey", apikey: kv({ key: auth.key, value: auth.value, in: auth.in }) };
+    case "oauth2":
+      return {
+        type: "oauth2",
+        oauth2: kv({
+          grant_type: auth.grantType, clientId: auth.clientId, clientSecret: auth.clientSecret,
+          authUrl: auth.authUrl, accessTokenUrl: auth.tokenUrl, scope: auth.scopes,
+        }),
+      };
+    case "awsv4":
+      return {
+        type: "awsv4",
+        awsv4: kv({
+          accessKey: auth.accessKeyId, secretKey: auth.secretAccessKey,
+          sessionToken: auth.sessionToken, region: auth.region, service: auth.service,
+        }),
+      };
+    default:
+      return undefined;
+  }
+}
+
+/** Postman distingue el modo del cuerpo; Flux lo guarda en `bodyType`. */
+function bodyToPostman(req: CollectionRequest) {
+  if (req.bodyType === "graphql" && req.graphql) {
+    return {
+      mode: "graphql",
+      graphql: { query: req.graphql.query ?? "", variables: req.graphql.variables ?? "" },
+    };
+  }
+  if ((req.bodyType === "form" || req.bodyType === "multipart") && req.form) {
+    const fields = Object.entries(req.form).map(([key, value]) => ({ key, value, type: "text" }));
+    return req.bodyType === "multipart"
+      ? { mode: "formdata", formdata: fields }
+      : { mode: "urlencoded", urlencoded: fields };
+  }
+  return req.body ? { mode: "raw", raw: req.body } : undefined;
+}
+
+/**
+ * Los scripts y las aserciones viajan en el array `event` de Postman.
+ * Las aserciones declarativas de Flux no tienen equivalente directo, asi que se
+ * exportan como comentarios dentro del script de test: quien abra la coleccion
+ * las ve y puede traducirlas, en vez de perderlas en silencio.
+ */
+function eventsToPostman(req: CollectionRequest) {
+  const events: unknown[] = [];
+  const pre = req.scripts?.preRequest?.trim();
+  const post = req.scripts?.postResponse?.trim();
+
+  if (pre) {
+    events.push({ listen: "prerequest", script: { type: "text/javascript", exec: pre.split(/\r?\n/) } });
+  }
+
+  const testLines: string[] = [];
+  if (post) testLines.push(...post.split(/\r?\n/));
+  for (const t of req.tests ?? []) {
+    testLines.push(`// Flux assertion: ${t.assert}`);
+  }
+  for (const e of req.extractors ?? []) {
+    testLines.push(`// Flux extractor: ${e.variable} = ${e.path}`);
+  }
+  if (testLines.length > 0) {
+    events.push({ listen: "test", script: { type: "text/javascript", exec: testLines } });
+  }
+
+  return events.length > 0 ? events : undefined;
+}
+
 function reqToPostmanItem(req: CollectionRequest) {
+  const query = Object.entries(req.params ?? {}).map(([key, value]) => ({ key, value }));
+
   return {
     name: req.name,
     request: {
       method: req.method,
       header: Object.entries(req.headers ?? {}).map(([key, value]) => ({ key, value })),
-      url: { raw: req.path },
-      body: req.body ? { mode: "raw", raw: req.body } : undefined,
+      url: query.length > 0 ? { raw: req.path, query } : { raw: req.path },
+      body: bodyToPostman(req),
+      auth: authToPostman(req.auth),
     },
+    event: eventsToPostman(req),
     response: [],
   };
 }
@@ -171,17 +258,105 @@ function inferSchema(value: unknown): Record<string, unknown> {
   return { type: "string" };
 }
 
-function requestToOperation(req: CollectionRequest, tag: string): [string, Record<string, unknown>] {
+/** Nombre del esquema de seguridad en `components`, o null si no hay equivalente. */
+function securitySchemeFor(auth: CollectionRequest["auth"]): [string, Record<string, unknown>] | null {
+  if (!auth || auth.type === "none") return null;
+  switch (auth.type) {
+    case "bearer":
+      return ["bearerAuth", { type: "http", scheme: "bearer" }];
+    case "basic":
+      return ["basicAuth", { type: "http", scheme: "basic" }];
+    case "apikey":
+      return ["apiKeyAuth", {
+        type: "apiKey",
+        in: auth.in === "query" ? "query" : "header",
+        name: auth.key || "X-API-Key",
+      }];
+    case "oauth2":
+      return ["oauth2Auth", {
+        type: "oauth2",
+        flows: {
+          clientCredentials: {
+            tokenUrl: auth.tokenUrl ?? "",
+            scopes: Object.fromEntries((auth.scopes ?? "").split(/[\s,]+/).filter(Boolean).map(sc => [sc, sc])),
+          },
+        },
+      }];
+    default:
+      // AWS SigV4 no tiene equivalente en OpenAPI 3.0. Mejor omitirlo que
+      // emitir un esquema que diga otra cosa.
+      return null;
+  }
+}
+
+function requestBodyFor(req: CollectionRequest): Record<string, unknown> | undefined {
+  if (req.bodyType === "graphql" && req.graphql) {
+    return {
+      required: true,
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: { query: { type: "string" }, variables: { type: "object" } },
+          },
+          example: { query: req.graphql.query ?? "", variables: req.graphql.variables ?? "" },
+        },
+      },
+    };
+  }
+
+  if ((req.bodyType === "form" || req.bodyType === "multipart") && req.form) {
+    const properties = Object.fromEntries(
+      Object.keys(req.form).map(k => [k, { type: "string" }]),
+    );
+    const ct = req.bodyType === "multipart" ? "multipart/form-data" : "application/x-www-form-urlencoded";
+    return {
+      required: true,
+      content: { [ct]: { schema: { type: "object", properties }, example: req.form } },
+    };
+  }
+
+  if (!req.body) return undefined;
+
+  let schema: Record<string, unknown> = { type: "object" };
+  let example: unknown = req.body;
+  try { example = JSON.parse(req.body); schema = inferSchema(example); } catch { /* raw body */ }
+  const ct = (req.headers?.["Content-Type"] ?? req.headers?.["content-type"] ?? "application/json")
+    .split(";")[0].trim();
+  return { required: true, content: { [ct]: { schema, example } } };
+}
+
+function requestToOperation(
+  req: CollectionRequest,
+  tag: string,
+): [string, Record<string, unknown>, [string, Record<string, unknown>] | null] {
   let urlPath = req.path;
-  const queryParams: { name: string; in: string; required: boolean; schema: { type: string } }[] = [];
+  const params: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+
+  const addQuery = (name: string) => {
+    if (seen.has(`q:${name}`)) return;
+    seen.add(`q:${name}`);
+    params.push({ name, in: "query", required: false, schema: { type: "string" } });
+  };
 
   try {
     const parsed = new URL(req.path.startsWith("http") ? req.path : `http://x${req.path}`);
     urlPath = parsed.pathname;
-    parsed.searchParams.forEach((_, key) =>
-      queryParams.push({ name: key, in: "query", required: false, schema: { type: "string" } })
-    );
+    parsed.searchParams.forEach((_, key) => addQuery(key));
   } catch { /* use path as-is */ }
+
+  // Los params de la pestaña Params viven aparte de la URL y antes se perdian.
+  for (const name of Object.keys(req.params ?? {})) addQuery(name);
+
+  // Content-Type queda implicito en requestBody, no se duplica como cabecera.
+  for (const [name, value] of Object.entries(req.headers ?? {})) {
+    if (name.toLowerCase() === "content-type") continue;
+    params.push({
+      name, in: "header", required: false,
+      schema: { type: "string" }, example: value,
+    });
+  }
 
   const slugBase = urlPath.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
   const operation: Record<string, unknown> = {
@@ -190,18 +365,18 @@ function requestToOperation(req: CollectionRequest, tag: string): [string, Recor
     tags: [tag],
   };
 
-  if (queryParams.length > 0) operation.parameters = queryParams;
+  if (params.length > 0) operation.parameters = params;
 
-  if (req.body && !["GET", "HEAD"].includes(req.method)) {
-    let schema: Record<string, unknown> = { type: "object" };
-    let example: unknown = req.body;
-    try { example = JSON.parse(req.body); schema = inferSchema(example); } catch { /* raw body */ }
-    const ct = (req.headers?.["Content-Type"] ?? req.headers?.["content-type"] ?? "application/json").split(";")[0].trim();
-    operation.requestBody = { required: true, content: { [ct]: { schema, example } } };
+  if (!["GET", "HEAD"].includes(req.method)) {
+    const body = requestBodyFor(req);
+    if (body) operation.requestBody = body;
   }
 
+  const scheme = securitySchemeFor(req.auth);
+  if (scheme) operation.security = [{ [scheme[0]]: [] }];
+
   operation.responses = { "200": { description: "Successful response" } };
-  return [urlPath, operation];
+  return [urlPath, operation, scheme];
 }
 
 export function exportOpenAPI(col: Collection): string {
@@ -221,8 +396,11 @@ export function exportOpenAPI(col: Collection): string {
     ...walk(col.folders, ""),
   ];
 
+  const securitySchemes: Record<string, unknown> = {};
+
   for (const { req, tag } of tagged) {
-    const [urlPath, operation] = requestToOperation(req, tag);
+    const [urlPath, operation, scheme] = requestToOperation(req, tag);
+    if (scheme) securitySchemes[scheme[0]] = scheme[1];
     if (!paths[urlPath]) paths[urlPath] = {};
     paths[urlPath][req.method.toLowerCase()] = operation;
   }
@@ -232,6 +410,7 @@ export function exportOpenAPI(col: Collection): string {
     info: { title: col.name, version: "1.0.0" },
     ...(col.baseUrl ? { servers: [{ url: col.baseUrl }] } : {}),
     paths,
+    ...(Object.keys(securitySchemes).length > 0 ? { components: { securitySchemes } } : {}),
   };
 
   return JSON.stringify(doc, null, 2);

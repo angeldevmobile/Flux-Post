@@ -1,4 +1,5 @@
 import { useState, useId, useRef, useEffect } from "react";
+import { useAiAvailable } from "@/lib/aiAvailable";
 import { toast } from "sonner";
 import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X, Code2, TriangleAlert } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
@@ -655,9 +656,10 @@ export function RequestPanel() {
   const { url, setUrl, body, setBody, bodyType, setBodyType, graphqlQuery, setGraphqlQuery, graphqlVariables, setGraphqlVariables, preRequestScript, setPreRequestScript, postResponseScript, setPostResponseScript, extractors, setExtractors, authType, isLoading, setLoading, setResponse, setError, getRequest } = useRequestStore();
   const { resolveVariable } = useEnvironmentStore();
   const { showLineNumbers, claudeApiKey, claudeModel, smartAutocomplete } = useSettingsStore();
+  const aiAvailable = useAiAvailable();
 
   function makeAiEdit(content: string, lang: string) {
-    if (!claudeApiKey) return undefined;
+    if (!aiAvailable) return undefined;
     return (instruction: string) =>
       editContent(content, instruction, lang, claudeApiKey, claudeModel);
   }

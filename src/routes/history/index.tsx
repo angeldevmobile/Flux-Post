@@ -5,6 +5,9 @@ import { useRequestStore } from "@/stores/request";
 import { methodColor, methodBg } from "@/lib/methods";
 import { exportPostman } from "@/lib/exporters";
 import type { HttpMethod } from "@/lib/tauri";
+import { toast } from "sonner";
+import { useUserStore } from "@/stores/user";
+import { clearRemoteHistory } from "@/lib/sync";
 
 const STATUS_COLOR = (s: number) =>
   s >= 200 && s < 300 ? "#22C55E" : s >= 400 ? "#EF4444" : "#F59E0B";
@@ -76,7 +79,18 @@ export function HistoryRoute() {
       .catch(() => setEntries([]));
   }, []);
 
-  async function handleClear() { await clearHistory(); setEntries([]); }
+  async function handleClear() {
+    try {
+      await clearHistory();
+      // Tambien en Supabase: si no, la siguiente sincronizacion lo repone.
+      const userId = useUserStore.getState().user?.id;
+      if (userId) await clearRemoteHistory(userId);
+      setEntries([]);
+      toast.success("Request history deleted");
+    } catch (e) {
+      toast.error(`Could not delete history: ${e}`);
+    }
+  }
 
   function handleExport() {
     const col = {
@@ -96,6 +110,7 @@ export function HistoryRoute() {
       expanded: true,
     };
     exportDataAsJson(JSON.parse(exportPostman(col)), "history-export.postman_collection.json");
+    toast.success(`Exported ${col.requests.length} requests`);
   }
 
   function handleReplay(e: HistoryEntry) {

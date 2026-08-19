@@ -11,6 +11,7 @@ import { useUserStore } from "@/stores/user";
 import { methodColor, methodBg } from "@/lib/methods";
 import { exportPostman, exportOpenAPI } from "@/lib/exporters";
 import { exportDataAsJson } from "@/lib/tauri";
+import { toast } from "sonner";
 import { ImportModal } from "./ImportModal";
 import { CollectionRunner } from "./CollectionRunner";
 import { GitHubSyncModal } from "./GitHubSyncModal";
@@ -264,7 +265,7 @@ export function CollectionsSidebar() {
     }
   }
 
-  async function handleSelect(req: CollectionRequest) {
+  async function handleSelect(req: CollectionRequest, baseUrl?: string) {
     setActiveRequest(req.id);
 
     if ((req.kind ?? "http") === "grpc" && req.grpc) {
@@ -300,7 +301,7 @@ export function CollectionsSidebar() {
     // Reset first so anything the collection does not carry comes back as a
     // default rather than lingering from the previously open request.
     resetRequest();
-    useRequestStore.setState(fromCollectionRequest(req));
+    useRequestStore.setState(fromCollectionRequest(req, baseUrl));
   }
 
   const q = search.toLowerCase();
@@ -356,14 +357,14 @@ export function CollectionsSidebar() {
               <div className="absolute z-50 rounded-lg py-1 flex flex-col"
                 style={{ top: "100%", right: 0, marginTop: 4, minWidth: 160, background: "var(--color-card)", border: "1px solid var(--color-border)", boxShadow: "0 8px 24px #00000050" }}
                 onMouseLeave={() => setExportMenuId(null)}>
-                <button onClick={() => { exportDataAsJson(JSON.parse(exportPostman(col)), `${col.id}.postman_collection.json`); setExportMenuId(null); }}
+                <button onClick={() => { exportDataAsJson(JSON.parse(exportPostman(col)), `${col.id}.postman_collection.json`); setExportMenuId(null); toast.success(`Exported ${col.name}`); }}
                   className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
                   style={{ color: "var(--color-fg-2)" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                   Postman v2.1
                 </button>
-                <button onClick={() => { exportDataAsJson(JSON.parse(exportOpenAPI(col)), `${col.id}.openapi.json`); setExportMenuId(null); }}
+                <button onClick={() => { exportDataAsJson(JSON.parse(exportOpenAPI(col)), `${col.id}.openapi.json`); setExportMenuId(null); toast.success(`Exported ${col.name}`); }}
                   className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors w-full"
                   style={{ color: "var(--color-fg-2)" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--color-border)")}
@@ -413,11 +414,11 @@ export function CollectionsSidebar() {
         {col.expanded && (
           <>
             {col.requests.map(req => (
-              <RequestRow key={req.id} req={req} activeRequestId={activeRequestId} paddingLeft={28} onSelect={handleSelect} />
+              <RequestRow key={req.id} req={req} activeRequestId={activeRequestId} paddingLeft={28} onSelect={r => handleSelect(r, col.baseUrl)} />
             ))}
             {col.folders.map(folder => (
               <FolderRow key={folder.id} folder={folder} collectionId={col.id} depth={0}
-                activeRequestId={activeRequestId} onToggle={toggleFolder} onSelect={handleSelect} />
+                activeRequestId={activeRequestId} onToggle={toggleFolder} onSelect={r => handleSelect(r, col.baseUrl)} />
             ))}
           </>
         )}

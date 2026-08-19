@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAiAvailable } from "@/lib/aiAvailable";
 import { Play, ChevronDown, Loader2, Sparkles, X, FlaskConical } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
@@ -107,6 +108,7 @@ export function TestsRoute() {
   const { collections } = useCollectionsStore();
   const { resolveVariable } = useEnvironmentStore();
   const { claudeApiKey, claudeModel } = useSettingsStore();
+  const aiAvailable = useAiAvailable();
 
   const suites = useMemo(() =>
     collections.filter(c => c.requests.some(r => r.tests && r.tests.length > 0)),
@@ -175,7 +177,7 @@ export function TestsRoute() {
   }
 
   async function handleAnalyze() {
-    if (!activeResults || !claudeApiKey) return;
+    if (!activeResults || !aiAvailable) return;
     const failures = activeResults.flatMap(r =>
       r.assertions
         .filter(a => !a.passed)
@@ -273,7 +275,7 @@ export function TestsRoute() {
               )}
 
               {/* Analyze failures button — visible when there are failures and API key is set */}
-              {activeResults && totalFailed > 0 && claudeApiKey && (
+              {activeResults && totalFailed > 0 && aiAvailable && (
                 <button
                   onClick={handleAnalyze}
                   disabled={analyzing}

@@ -3,12 +3,18 @@ import * as monaco from "monaco-editor";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import { registerGraphQLCompletionProvider } from "./graphqlIntrospection";
 
 self.MonacoEnvironment = {
   getWorker(_: unknown, label: string) {
     if (label === "json") return new jsonWorker();
     if (label === "typescript" || label === "javascript") return new tsWorker();
+    // Sin estos dos, una respuesta HTML o XML pedia metodos que el worker
+    // generico no implementa: "Missing requestHandler or method: doHover".
+    if (label === "html" || label === "handlebars" || label === "razor") return new htmlWorker();
+    if (label === "css" || label === "scss" || label === "less") return new cssWorker();
     return new editorWorker();
   },
 };

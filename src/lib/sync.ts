@@ -82,6 +82,28 @@ async function pullHistory(userId: string) {
 // COLLECTIONS
 //                                          
 
+/**
+ * Borra el historial remoto. Sin esto, `clearHistory` solo vaciaba SQLite y la
+ * siguiente sincronizacion lo repescaba entero desde Supabase: el usuario creia
+ * haberlo borrado y reaparecia al reabrir la app.
+ */
+export async function clearRemoteHistory(userId: string): Promise<void> {
+  const { error } = await supabase.from("flux_history").delete().eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}
+
+/** Aplica la retencion tambien en Supabase, por el mismo motivo. */
+export async function pruneRemoteHistory(userId: string, days: number): Promise<void> {
+  if (days <= 0) return;
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
+  const { error } = await supabase
+    .from("flux_history")
+    .delete()
+    .eq("user_id", userId)
+    .lt("created_at", cutoff);
+  if (error) throw new Error(error.message);
+}
+
 export function pushCollection(userId: string, collection: Collection) {
   supabase.from("flux_collections").upsert({
     id: collection.id,

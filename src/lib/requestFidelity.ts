@@ -3,6 +3,7 @@ import type {
   CollectionRequest, CollectionScripts, HttpMethod,
 } from "@/lib/tauri";
 import type { AuthType, ApiKeyTarget, OAuthGrantType, BodyType, Extractor } from "@/stores/request";
+import { resolveRequestUrl } from "@/lib/requestUrl";
 
 /** The slice of the request store a collection can carry. */
 export interface RequestSnapshot {
@@ -131,11 +132,11 @@ export function toCollectionRequest(
  * carry come back as their defaults, so nothing leaks in from the request that
  * was open before.
  */
-export function fromCollectionRequest(req: CollectionRequest) {
+export function fromCollectionRequest(req: CollectionRequest, baseUrl?: string) {
   const a = req.auth;
   return {
     method: req.method,
-    url: req.path,
+    url: resolveRequestUrl(baseUrl, req.path),
     headers: rows(req.headers, "h"),
     params: rows(req.params, "p"),
     body: req.body ?? "",

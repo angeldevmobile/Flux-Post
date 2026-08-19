@@ -663,6 +663,13 @@ export function exportDataAsJson(data: object, filename = "flux-export.json"): v
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.style.display = "none";
+  // El ancla tiene que estar en el DOM para que el click cuente, y revocar la
+  // URL en el mismo tick cancelaba la descarga antes de que llegara a empezar.
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 2000);
 }

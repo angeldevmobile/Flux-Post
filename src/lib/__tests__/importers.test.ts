@@ -117,7 +117,10 @@ describe("importPostman", () => {
         },
       ],
     });
-    expect(col.requests[0].body).toBe("a=1&b=two%20words");
+    // Van a `form`, no aplanados a cadena: asi el editor los muestra como
+    // campos y el usuario puede tocarlos.
+    expect(col.requests[0].bodyType).toBe("form");
+    expect(col.requests[0].form).toEqual({ a: "1", b: "two words" });
   });
 
   it("accepts a plain-string url", () => {
@@ -179,10 +182,13 @@ describe("importOpenApi", () => {
     },
   };
 
-  it("prefixes paths with the first server url", () => {
+  it("puts the server url on the collection and keeps paths relative", () => {
     const col = importOpenApi(doc);
+    // Antes se concatenaba en cada ruta, asi que exportar de vuelta a OpenAPI
+    // duplicaba el host. El baseUrl vive en la coleccion, como en el exportador.
+    expect(col.baseUrl).toBe("https://api.petstore.io/v1");
     const all = [...col.requests, ...col.folders.flatMap(f => f.requests)];
-    expect(all.every(r => r.path.startsWith("https://api.petstore.io/v1"))).toBe(true);
+    expect(all.every(r => r.path.startsWith("/"))).toBe(true);
   });
 
   it("groups tagged operations into folders and leaves untagged at the root", () => {
@@ -312,5 +318,187 @@ describe("importCurl", () => {
   it("names the request after the url, or falls back when there is none", () => {
     expect(importCurl("curl https://api.example.com/x").name).toBe("https://api.example.com/x");
     expect(importCurl("curl").name).toBe("Imported cURL");
+  });
+});
+
+describe("importPostman fidelity", () => {
+  const wrap = (request: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
+    importPostman({
+      info: { name: "C" },
+      item: [{ name: "R", request, ...extra }],
+      ...(extra.collectionAuth ? { auth: extra.collectionAuth } : {}),
+    });
+
+  it("brings bearer auth across", () => {
+    const col = wrap({
+      method: "GET", url: { raw: "/x" },
+      auth: { type: "bearer", bearer: [{ key: "token", value: "T" }] },
+    });
+    expect(col.requests[0].auth).toEqual({ type: "bearer", token: "T" });
+  });
+
+  it("brings oauth2 across, mapping accessTokenUrl to tokenUrl", () => {
+    const col = wrap({
+      method: "GET", url: { raw: "/x" },
+      auth: { type: "oauth2", oauth2: [
+        { key: "clientId", value: "id" },
+        { key: "accessTokenUrl", value: "https://t" },
+        { key: "scope", value: "read write" },
+      ] },
+    });
+    expect(col.requests[0].auth).toMatchObject({
+      type: "oauth2", clientId: "id", tokenUrl: "https://t", scopes: "read write",
+    });
+  });
+
+  it("falls back to the collection auth when the request has none", () => {
+    const col = importPostman({
+      info: { name: "C" },
+      auth: { type: "bearer", bearer: [{ key: "token", value: "COL" }] },
+      item: [{ name: "R", request: { method: "GET", url: { raw: "/x" } } }],
+    });
+    expect(col.requests[0].auth).toEqual({ type: "bearer", token: "COL" });
+  });
+
+  it("brings scripts across from the event array", () => {
+    const col = wrap(
+      { method: "GET", url: { raw: "/x" } },
+      { event: [
+        { listen: "prerequest", script: { exec: ["const a = 1;", "console.log(a);"] } },
+        { listen: "test", script: { exec: ["pm.test('ok', () => {});"] } },
+      ] },
+    );
+    expect(col.requests[0].scripts).toEqual({
+      preRequest: "const a = 1;\nconsole.log(a);",
+      postResponse: "pm.test('ok', () => {});",
+    });
+  });
+
+  it("brings a graphql body across instead of dropping it", () => {
+    const col = wrap({
+      method: "POST", url: { raw: "/gql" },
+      body: { mode: "graphql", graphql: { query: "{ me }", variables: "{}" } },
+    });
+    expect(col.requests[0].bodyType).toBe("graphql");
+    expect(col.requests[0].graphql).toEqual({ query: "{ me }", variables: "{}" });
+  });
+
+  it("brings query params across from url.query", () => {
+    const col = wrap({
+      method: "GET",
+      url: { raw: "/x?page=2", query: [
+        { key: "page", value: "2" },
+        { key: "draft", value: "1", disabled: true },
+      ] },
+    });
+    expect(col.requests[0].params).toEqual({ page: "2" });
+  });
+
+  it("keeps folders nested instead of dropping the inner ones", () => {
+    const col = importPostman({
+      info: { name: "C" },
+      item: [{
+        name: "Outer",
+        item: [
+          { name: "Direct", request: { method: "GET", url: { raw: "/a" } } },
+          { name: "Inner", item: [{ name: "Deep", request: { method: "GET", url: { raw: "/b" } } }] },
+        ],
+      }],
+    });
+    const outer = col.folders[0];
+    expect(outer.requests).toHaveLength(1);
+    expect(outer.folders?.[0].name).toBe("Inner");
+    expect(outer.folders?.[0].requests[0].name).toBe("Deep");
+  });
+
+  it("tags a raw JSON body as json", () => {
+    const col = wrap({ method: "POST", url: { raw: "/x" }, body: { mode: "raw", raw: '{"a":1}' } });
+    expect(col.requests[0].bodyType).toBe("json");
+  });
+});
+
+describe("importOpenApi fidelity", () => {
+  const spec = {
+    info: { title: "API" },
+    servers: [{ url: "https://api.test" }],
+    components: {
+      securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } },
+    },
+    paths: {
+      "/users/{id}": {
+        get: {
+          summary: "Get user",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string" } },
+            { name: "expand", in: "query", schema: { type: "string" }, example: "profile" },
+            { name: "X-Trace", in: "header", schema: { type: "string" }, example: "abc" },
+          ],
+        },
+      },
+      "/users": {
+        post: {
+          summary: "Create",
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { name: { type: "string" }, age: { type: "integer" } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const col = () => importOpenApi(spec);
+  const find = (name: string) => {
+    const all = [...col().requests, ...col().folders.flatMap(f => f.requests)];
+    return all.find(r => r.name === name)!;
+  };
+
+  it("turns path parameters into Flux variables", () => {
+    expect(find("Get user").path).toBe("/users/{{id}}");
+  });
+
+  it("carries query and header parameters", () => {
+    expect(find("Get user").params).toEqual({ expand: "profile" });
+    expect(find("Get user").headers["X-Trace"]).toBe("abc");
+  });
+
+  it("resolves the security scheme into an auth block", () => {
+    expect(find("Get user").auth).toEqual({ type: "bearer", token: "" });
+  });
+
+  it("builds a body from the schema when the spec has no example", () => {
+    const req = find("Create");
+    expect(req.bodyType).toBe("json");
+    expect(JSON.parse(req.body!)).toEqual({ name: "", age: 0 });
+  });
+
+  it("maps a urlencoded request body to form fields", () => {
+    const formSpec = {
+      ...spec,
+      paths: {
+        "/login": {
+          post: {
+            summary: "Login",
+            requestBody: {
+              content: {
+                "application/x-www-form-urlencoded": {
+                  schema: { type: "object", properties: { user: { type: "string" } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const req = importOpenApi(formSpec).requests[0];
+    expect(req.bodyType).toBe("form");
+    expect(req.form).toEqual({ user: "" });
   });
 });

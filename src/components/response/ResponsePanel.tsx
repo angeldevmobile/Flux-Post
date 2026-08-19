@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useAiAvailable } from "@/lib/aiAvailable";
 import { Sparkles, Copy, Check, Timer, Bug, ImageIcon, Terminal, Trash2, Wrench, Loader2, Zap } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import { useSettingsStore, useUsingOwnKey } from "@/stores/settings";
 import { generateTests, debugAssist, fixAssertion, type AssertionFix } from "@/lib/tauri";
 import { handleQuotaError } from "@/lib/aiError";
+import { parseJsonLoose, stripFences } from "@/lib/aiParsing";
 import { CodeEditor } from "@/components/CodeEditor";
 import { useConsoleStore } from "@/stores/console";
 import type { LogLevel } from "@/stores/console";
@@ -122,6 +124,7 @@ export function ResponsePanel() {
     trackUsage,
   } = useSettingsStore();
   const usingOwnKey = useUsingOwnKey();
+  const aiAvailable = useAiAvailable();
 
   const { results: testResults } = useTestResultsStore();
   const [tab, setTab] = useState<RespTab>("Body");
@@ -156,7 +159,7 @@ export function ResponsePanel() {
         claudeApiKey,
         claudeModel,
       );
-      setAiResult(result);
+      setAiResult(stripFences(result));
       trackUsage("tests");
     } catch (e) { if (!handleQuotaError(e)) setAiResult(`Error: ${e}`); }
     finally { setAiLoading(false); }
@@ -199,12 +202,9 @@ export function ResponsePanel() {
         claudeApiKey,
         claudeModel,
       );
-      try {
-        const parsed = JSON.parse(result) as DebugResult;
-        setDebugResult(parsed);
-      } catch {
-        setDebugRaw(result);
-      }
+      const parsed = parseJsonLoose<DebugResult>(result);
+      if (parsed) setDebugResult(parsed);
+      else setDebugRaw(result);
       trackUsage("debugs");
     } catch (e) { if (!handleQuotaError(e)) setDebugRaw(`Error: ${e}`); }
     finally { setAiLoading(false); }
@@ -489,7 +489,7 @@ export function ResponsePanel() {
                     <span style={{ fontSize: 12, color: r.pass ? "#22C55E" : "#EF4444" }}>{r.pass ? "✓" : "✗"}</span>
                     <span className="flex-1 text-[12px]" style={{ color: "var(--color-fg-2)" }}>{r.name}</span>
                     {r.error && <span className="text-[11px] truncate max-w-32" style={{ color: "#EF4444", fontFamily: "Geist Mono, monospace" }}>{r.error}</span>}
-                    {!r.pass && claudeApiKey && response && (
+                    {!r.pass && aiAvailable && response && (
                       <button
                         onClick={() => handleFixAssertion(i, r.name)}
                         disabled={fixLoading[i]}

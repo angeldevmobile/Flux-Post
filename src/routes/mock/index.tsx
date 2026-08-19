@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAiAvailable } from "@/lib/aiAvailable";
 import { Server, Plus, Trash2, Play, Square, Sparkles, Copy, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/lib/tauri";
 import type { MockEndpoint, MockStatus } from "@/lib/tauri";
 import { handleQuotaError } from "@/lib/aiError";
+import { stripFences } from "@/lib/aiParsing";
 import { useSettingsStore } from "@/stores/settings";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "*"];
@@ -39,6 +41,7 @@ function defaultEndpoint(): MockEndpoint {
 
 export function MockRoute() {
   const { claudeApiKey, claudeModel } = useSettingsStore();
+  const aiAvailable = useAiAvailable();
   const [endpoints, setEndpoints] = useState<MockEndpoint[]>([defaultEndpoint()]);
   const [status, setStatus] = useState<MockStatus>({ running: false, port: 3001, endpointCount: 0 });
   const [port, setPort] = useState(3001);
@@ -99,12 +102,12 @@ export function MockRoute() {
   }
 
   async function generateBody(ep: MockEndpoint) {
-    if (!claudeApiKey) { toast.error("Add your Claude API key in Settings → AI & Claude"); return; }
+    if (!aiAvailable) { toast.error("Sign in to use the free AI tier, or add your own key in Settings → AI & Claude"); return; }
     setAiLoading(prev => ({ ...prev, [ep.id]: true }));
     try {
       const prompt = `Generate a realistic JSON response body for a ${ep.method} ${ep.path} endpoint that returns status ${ep.status}. Return only the JSON object, no explanation.`;
       const body = await editContent("", prompt, "json", claudeApiKey, claudeModel);
-      updateEndpoint(ep.id, { body });
+      updateEndpoint(ep.id, { body: stripFences(body) });
     } catch (e) {
       if (!handleQuotaError(e)) toast.error(String(e));
     } finally {
@@ -178,11 +181,11 @@ export function MockRoute() {
           )}
         </div>
 
-        {!claudeApiKey && (
+        {!aiAvailable && (
           <div className="flex items-start gap-2 rounded-lg px-3 py-2.5" style={{ background: "#F59E0B10", border: "1px solid #F59E0B30" }}>
             <AlertCircle size={13} style={{ color: "#F59E0B", marginTop: 1, flexShrink: 0 }} />
             <span className="text-[12px]" style={{ color: "#F59E0B" }}>
-              Add your Claude API key in Settings → AI &amp; Claude to enable AI-generated response bodies.
+              Sign in to use the free AI tier, or add your own Claude API key in Settings → AI &amp; Claude, to generate response bodies.
             </span>
           </div>
         )}
@@ -248,7 +251,7 @@ export function MockRoute() {
                   <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>enabled</span>
                 </label>
 
-                {claudeApiKey && (
+                {aiAvailable && (
                   <button onClick={() => generateBody(ep)}
                     disabled={aiLoading[ep.id]}
                     className="flex items-center gap-1 rounded shrink-0 transition-opacity hover:opacity-80 disabled:opacity-40"
