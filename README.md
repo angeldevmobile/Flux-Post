@@ -21,7 +21,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 | Declarative assertions | No | `status == 200` without scripts |
 | WebSocket | Basic | Full duplex log with timestamps |
 | Cloud sync | Postman servers | Your own Supabase, you own the data |
-| CLI runner for CI/CD | Newman (paid) | Free, open source |
+| CLI runner for CI/CD | Newman (paid) | Free, open source, runs your scripts and assertions |
 | Code snippets | Manual copy | One-click, any language |
 | Auto variable extraction | Paid Team plan | Free, no scripts needed |
 | Mock servers | Cloud-hosted, limited free | 100% local, instant, AI-generated bodies |
@@ -42,7 +42,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Code snippet export: copy as `curl`, `fetch`, `axios`, `Python requests`, or `Go http`
 
 ### Collections
-- Import from Postman v2.1, OpenAPI 3.x, cURL
+- Import from Postman v2.1, OpenAPI 3.x, cURL, keeping auth, query params, scripts, body types and nested folders
 - Export as Postman v2.1 or OpenAPI 3.0
 - Folder structure with nested requests
 - Per-request test assertions
@@ -211,7 +211,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - Local mock server with AI-generated bodies, hot-reload endpoints, and wildcard paths
 - Load test with concurrent runner, live progress, P50/P95/P99/throughput, latency histogram
 - Request timeline (waterfall): TTFB and download breakdown on every response
-- CLI runner: `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines
+- CLI runner: `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines, with an embedded JavaScript engine so pre/post scripts and `pm.test()` run in CI exactly as they do in the app
 - OpenAPI 3.0 export from any collection
 - gRPC: `.proto` import, server reflection, persistent proto library, unary calls, and server / client / bidirectional streaming
 - GitHub integration: browse repos and sync collections as YAML

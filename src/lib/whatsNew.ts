@@ -21,6 +21,7 @@ export const RELEASES: Release[] = [
       "AI is now free to try: 100 actions a month, up to 20 a day, no API key and no setup. Your own key still works as before, unlimited and going straight from your machine to Anthropic.",
       "Collections now save the whole request: auth, query params, pre and post-request scripts, extractors, GraphQL and form bodies. Reopening a request gives back what you built.",
       "The app, the collection runner and the CLI now share one assertion engine, so the same assertion means the same thing everywhere.",
+      "The CLI now runs pre and post-request scripts, so collections that authenticate through a script work in CI instead of being skipped.",
       "Heads up: an assertion with an unrecognised path used to resolve to null and pass. It now fails with `unknown path`. A CI pipeline that was silently green may start reporting real failures.",
       "Security: selecting a collection request or replaying from history carried the previous request's auth over to the new one. All entry points now reset the request first.",
       "Also: gRPC streaming, the QUERY method, nested collection folders, and a CLI that reports what it cannot run instead of running something subtly different.",

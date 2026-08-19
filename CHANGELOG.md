@@ -12,6 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 ## [0.2.0] — 2026-08-17
 
 ### Added
+- The CLI runs pre and post-request scripts. It embeds a JavaScript engine and the same `pm` shim the app uses, so a collection that authenticates through a pre-request script now works in CI instead of being skipped with a warning. `pm.test()` results count as assertions, so a failing Postman-style test fails the build, and `console.log` output appears under each request.
 - AI features are free to try: every signed-in account gets 100 AI actions a month, up to 20 a day, running on Claude Haiku 4.5 with no API key and no setup. Prompts on the free tier are relayed through a Flux proxy, which is how the quota is applied; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
 - Settings → AI & Claude shows the free-tier consumption for the month and the day, and a toggle chooses between the free tier and your own key without having to delete the key to switch
 - Hitting a limit explains which one and when it resets, with a shortcut to add your own key
@@ -23,6 +24,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - CLI reports what it cannot do instead of running a request that quietly differs: gRPC requests are skipped, pre/post scripts are announced, and AWS SigV4 fails with a message rather than going out unsigned
 
 ### Security
+- A Content Security Policy is now applied to the webview, which had none. Everything loads from the app itself; the only outbound destination allowed from the frontend is your own Supabase project, and `object-src`, `frame-ancestors` and `base-uri` are locked down. `unsafe-eval` is kept deliberately: pre and post-request scripts run through `new Function()`, and without it the whole scripting feature would fail in release builds only.
+- Fonts are served from the bundle instead of a third-party CDN. Flux no longer contacts fonts.bunny.net on launch, typography works offline, and the policy above needs no exception for it.
 - An assertion whose left side was not recognised resolved to null, so `anything.at.all == null` passed against any response — including in CI, where the run exited 0. Unknown paths now fail with `unknown path '…'`. Pipelines that were silently green may start reporting real failures.
 
 ### Changed

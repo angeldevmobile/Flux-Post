@@ -1,3 +1,4 @@
+mod scripts;
 use clap::{Parser, Subcommand};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -628,6 +629,9 @@ struct RequestResult {
     duration_ms: u64,
     assertions: Vec<AssertionResult>,
     error: Option<String>,
+    /// Salida de `console.log` de los scripts: sin esto, depurar un script que
+    /// falla solo en CI seria a ciegas.
+    logs: Vec<String>,
 }
 
 async fn run_request(
@@ -636,6 +640,26 @@ async fn run_request(
     base_url: Option<&str>,
     env: &HashMap<String, String>,
 ) -> RequestResult {
+    // El script de pre-request suele pedir un token, asi que corre antes de
+    // resolver variables: lo que escriba en el entorno tiene que aplicarse ya.
+    let mut env = env.clone();
+    let mut script_headers: HashMap<String, String> = HashMap::new();
+    let mut script_error: Option<String> = None;
+    let mut logs: Vec<String> = Vec::new();
+
+    if let Some(pre) = req.scripts.as_ref().and_then(|s| s.pre_request.as_deref()) {
+        if !pre.trim().is_empty() {
+            let out = scripts::run_pre_request(pre, &env);
+            env.extend(out.env);
+            script_headers.extend(out.headers);
+            logs.extend(out.logs);
+            if let Some(e) = out.error {
+                script_error = Some(format!("pre-request script: {e}"));
+            }
+        }
+    }
+    let env = &env;
+
     let url = match base_url {
         Some(base) => resolve_vars(
             &format!("{}/{}", base.trim_end_matches('/'), req.path.trim_start_matches('/')),
@@ -660,6 +684,7 @@ async fn run_request(
                     duration_ms: 0,
                     assertions: vec![],
                     error: Some(e),
+                    logs: vec![],
                 }
             }
         },
@@ -682,6 +707,9 @@ async fn run_request(
         builder = builder.header(k, resolve_vars(v, env));
     }
     for (k, v) in &applied.headers {
+        builder = builder.header(k, v);
+    }
+    for (k, v) in &script_headers {
         builder = builder.header(k, v);
     }
 
@@ -723,6 +751,7 @@ async fn run_request(
             duration_ms: start.elapsed().as_millis() as u64,
             assertions: vec![],
             error: Some(e.to_string()),
+            logs: vec![],
         },
         Ok(resp) => {
             let duration_ms = start.elapsed().as_millis() as u64;
@@ -744,11 +773,41 @@ async fn run_request(
                 headers: &headers,
                 duration_ms,
             };
-            let assertions: Vec<AssertionResult> = req
+            let mut assertions: Vec<AssertionResult> = req
                 .tests
                 .iter()
                 .map(|t| evaluate_assertion(&t.assert, &ctx))
                 .collect();
+
+            // Los `pm.test()` del script post cuentan como aserciones, para que
+            // una coleccion importada de Postman falle la build igual que una
+            // escrita en Flux.
+            let mut post_error = None;
+            if let Some(post) = req.scripts.as_ref().and_then(|s| s.post_response.as_deref()) {
+                if !post.trim().is_empty() {
+                    let out = scripts::run_post_response(
+                        post,
+                        env,
+                        scripts::ScriptResponse {
+                            status,
+                            body: &body_raw,
+                            headers: &headers,
+                            duration_ms: duration_ms as u128,
+                        },
+                    );
+                    logs.extend(out.logs);
+                    for t in out.tests {
+                        assertions.push(AssertionResult {
+                            assertion: t.name,
+                            passed: t.passed,
+                            detail: t.error,
+                        });
+                    }
+                    if let Some(e) = out.error {
+                        post_error = Some(format!("post-response script: {e}"));
+                    }
+                }
+            }
 
             let passed = assertions.iter().filter(|a| a.passed).count();
             let failed = assertions.iter().filter(|a| !a.passed).count();
@@ -759,7 +818,8 @@ async fn run_request(
                 failed,
                 duration_ms,
                 assertions,
-                error: None,
+                error: script_error.or(post_error),
+                logs,
             }
         }
     }
@@ -923,9 +983,6 @@ async fn main() {
                 let with_tests: Vec<&&YamlRequest> =
                     all_requests.iter().filter(|r| !r.tests.is_empty()).collect();
 
-                // Scripts run in the app's JS engine, which the CLI does not have.
-                // Silently skipping them would make assertions fail for reasons
-                // nobody can see from the output.
                 let with_scripts = with_tests
                     .iter()
                     .filter(|r| {
@@ -951,7 +1008,7 @@ async fn main() {
                     }
                     if with_scripts > 0 {
                         println!(
-                            "  {}{} request(s) have pre/post scripts, which the CLI does not run{}",
+                            "  {}running pre/post scripts on {} request(s){}",
                             DIM, with_scripts, RESET
                         );
                     }
@@ -991,6 +1048,9 @@ async fn main() {
                                         println!("         {}{}{}", DIM, d, RESET);
                                     }
                                 }
+                            }
+                            for line in &result.logs {
+                                println!("    {}› {}{}", DIM, line, RESET);
                             }
                         }
                     }

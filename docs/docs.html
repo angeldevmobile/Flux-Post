@@ -792,7 +792,7 @@
     <header class="topbar">
       <div class="topbar-left">
         <a href="index.html" class="topbar-logo">Flux</a>
-        <span class="topbar-version">v0.1.6</span>
+        <span class="topbar-version">v0.2.0</span>
         <div class="topbar-sep"></div>
         <span class="topbar-title">Documentation</span>
       </div>
@@ -2344,6 +2344,44 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <p>Flux can import collections from <strong>Postman v2.1</strong> and <strong>OpenAPI 3.0</strong>. Go to
             <strong>File → Import</strong> or drag a file onto the sidebar.</p>
 
+          <h3>What comes across</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>From Postman</th>
+                <th>From OpenAPI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Auth: bearer, basic, API key, OAuth&nbsp;2.0, AWS SigV4. Collection-level auth is inherited by
+                  requests that do not define their own.</td>
+                <td>Auth from <code>securitySchemes</code>: bearer, basic, API key and OAuth&nbsp;2.0. Credentials come
+                  in empty, since a spec does not carry them.</td>
+              </tr>
+              <tr>
+                <td>Query params from <code>url.query</code>, skipping disabled ones.</td>
+                <td>Query and header parameters, with their <code>example</code> as the value.</td>
+              </tr>
+              <tr>
+                <td>Pre-request and test scripts from the <code>event</code> array.</td>
+                <td>Path parameters become <code>&#123;&#123;variables&#125;&#125;</code>, so an environment can fill
+                  them.</td>
+              </tr>
+              <tr>
+                <td>Bodies in raw, JSON, urlencoded, form-data and GraphQL, each with its body type set.</td>
+                <td>Bodies for JSON, urlencoded and multipart. When the spec has no <code>example</code>, a sample is
+                  built from the schema.</td>
+              </tr>
+              <tr>
+                <td>Folders at any depth.</td>
+                <td>Tags become folders; the first <code>servers</code> entry becomes the collection base URL.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Postman tests arrive as post-response scripts and keep working, in the app and in
+            <a href="#" onclick="show('cli');return false;">CI</a>.</p>
+
           <div class="callout info">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2454,9 +2492,15 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <p>Click <strong>Export</strong> to download your full request history as a JSON file. Useful for auditing,
             sharing, or importing into analytics tools.</p>
 
+          <h2>Retention</h2>
+          <p><strong>Settings → Data &amp; Privacy → History retention</strong> keeps the last 7, 30 or 90 days, or
+            everything. Older entries are deleted when you change the setting and again each time Flux starts, locally
+            and in your synced copy.</p>
+
           <h2>Clearing history</h2>
-          <p>Click <strong>Clear History</strong> in the Settings → Data & Privacy section or from the History screen's
-            overflow menu. This action is irreversible.</p>
+          <p>Click <strong>Clear History</strong> in the Settings → Data &amp; Privacy section or from the History
+            screen's overflow menu. This deletes the local database <em>and</em> the copy in your Supabase project, so
+            signing in on another device will not bring it back. The action is irreversible.</p>
 
           <div class="callout info">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3157,17 +3201,30 @@ flux run ./my-api --bail</code></pre>
             </tbody>
           </table>
 
+          <h2>Scripts</h2>
+          <p>The CLI embeds a JavaScript engine and the same <code>pm</code> shim the app uses, so pre and
+            post-response scripts run in CI exactly as they do on your machine. A pre-request script that fetches a
+            token and sets it with <code>pm.environment.set()</code> works before the request goes out, and headers
+            added with <code>pm.request.headers.upsert()</code> are sent.</p>
+          <p>Each <code>pm.test()</code> counts as an assertion, so a failing test fails the run and exits
+            <code>1</code>, and <code>console.log()</code> output appears under its request.</p>
+          <pre><code><span class="token-cmt">My API   4 requests with tests</span>
+<span class="token-cmt">  running pre/post scripts on 2 request(s)</span>
+
+<span class="token-cmt">  Create user   214ms</span>
+    <span class="token-str">&#10003;</span>  status == 201
+    <span class="token-str">&#10003;</span>  body has an id
+    <span class="token-kw">&#10007;</span>  response time is under 200ms
+         <span class="token-cmt">Expected 214 &lt; 200</span>
+    <span class="token-cmt">&#8250; token set to abc123</span></code></pre>
+
           <h2>What it does not do</h2>
           <p>The CLI announces these at the start of a run instead of quietly running something different:</p>
           <ul>
-            <li><strong>Pre and post-response scripts</strong> are skipped, because there is no JavaScript engine.
-              Anything a CI run depends on should come from the request itself or from <code>--env</code>. Use an
-              <a href="#" onclick="show('extract');return false;">extractor</a> instead of a script where you can.</li>
             <li><strong>gRPC requests</strong> are skipped. Only HTTP runs here.</li>
           </ul>
           <pre><code><span class="token-cmt">My API   4 requests with tests</span>
-<span class="token-cmt">  skipped 1 gRPC request(s), not supported by the CLI runner</span>
-<span class="token-cmt">  2 request(s) have pre/post scripts, which the CLI does not run</span></code></pre>
+<span class="token-cmt">  skipped 1 gRPC request(s), not supported by the CLI runner</span></code></pre>
         </section>
 
         <!-- ═══════════════ SETTINGS ═══════════════ -->
@@ -3368,8 +3425,9 @@ flux run ./my-api --bail</code></pre>
         <!-- ═══════════════ PRIVACY ═══════════════ -->
         <section class="doc-section" id="sec-settings-privacy">
           <div class="page-eyebrow">Settings</div>
-          <h1 class="page-title">Data & Privacy</h1>
-          <p class="page-lead">Flux stores all data locally. This page explains what is stored, where, and how to delete
+          <h1 class="page-title">Data &amp; Privacy</h1>
+          <p class="page-lead">Flux is local first: everything works offline and lives on your machine. Signing in adds
+            optional sync to your own Supabase project. This page explains what is stored, where, and how to delete
             it.</p>
 
           <h2>What Flux stores</h2>
@@ -3378,34 +3436,45 @@ flux run ./my-api --bail</code></pre>
               <tr>
                 <th>Data</th>
                 <th>Location</th>
-                <th>Shared?</th>
+                <th>Leaves your machine?</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td>Collections</td>
                 <td>Selected directory on disk (YAML files)</td>
-                <td>Only via GitHub Sync if enabled</td>
+                <td>Synced to your Supabase project when signed in, and to GitHub if you enable GitHub Sync</td>
               </tr>
               <tr>
                 <td>History</td>
-                <td><code>{app_data}/history.db</code> (SQLite)</td>
-                <td>Never</td>
+                <td><code>{app_data}/flux.db</code> (SQLite)</td>
+                <td>Method, URL, status, duration and environment are synced when signed in. Request and response
+                  bodies are never stored or synced.</td>
+              </tr>
+              <tr>
+                <td>Environments</td>
+                <td>Browser local storage</td>
+                <td>Synced when signed in, variable values included. Keep secrets out of committed collections.</td>
               </tr>
               <tr>
                 <td>Settings</td>
-                <td><code>{app_data}/settings.json</code></td>
-                <td>Never</td>
+                <td>Browser local storage (<code>flux-settings</code>)</td>
+                <td>Synced when signed in, except your API key and client TLS certificates</td>
               </tr>
               <tr>
                 <td>Cookies</td>
-                <td><code>{app_data}/cookies.db</code> (SQLite)</td>
+                <td><code>{app_data}/flux.db</code> (SQLite)</td>
                 <td>Never</td>
               </tr>
               <tr>
                 <td>Claude API key</td>
-                <td>OS keychain / <code>{app_data}/settings.json</code> (encrypted)</td>
-                <td>Sent only to Anthropic</td>
+                <td>Browser local storage (<code>flux_claude_key</code>), unencrypted</td>
+                <td>Never synced. Sent only to Anthropic, from your machine.</td>
+              </tr>
+              <tr>
+                <td>Client TLS certificates</td>
+                <td>Browser local storage, unencrypted</td>
+                <td>Never</td>
               </tr>
               <tr>
                 <td>Proto library</td>
@@ -3435,9 +3504,12 @@ flux run ./my-api --bail</code></pre>
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg></span>
             <div class="callout-body">
-              <div class="callout-title">Your requests stay on your machine</div>
-              <div class="callout-text">Flux never proxies, logs, or stores request or response data on any Flux server.
-                Every request goes directly from your machine to the target API.</div>
+              <div class="callout-title">Your requests go straight to the target API</div>
+              <div class="callout-text">Flux never proxies, logs or stores the requests you send. Every one goes
+                directly from your machine to the target API. The single exception is the free AI tier: when you have
+                no API key of your own, the AI prompt (which for debug assist includes part of the response you are
+                inspecting) is relayed through a Flux proxy so the quota can be applied. With your own key nothing is
+                relayed. See <a href="#" onclick="show('ai');return false;">AI Features</a>.</div>
             </div>
           </div>
         </section>

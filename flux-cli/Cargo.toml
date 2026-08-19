@@ -15,3 +15,4 @@ serde_yaml = "0.9"
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 base64 = "0.22"
+boa_engine = "0.21.1"
