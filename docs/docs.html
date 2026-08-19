@@ -1369,14 +1369,14 @@ duration &lt; 500            <span class="token-cmt">// now works in all three</
             <a href="#" onclick="show('resp-tests');return false;">Tests</a> for the full syntax.</p>
 
           <h3>AI without an API key</h3>
-          <p>Every signed-in account gets 100 AI actions a month, up to 20 a day, running on Claude Haiku&nbsp;4.5 with
-            nothing to configure. Free-tier prompts are relayed through a small Flux proxy, which is how the quota is
+          <p>Every signed-in account gets 100 AI actions a month, up to 20 a day, with nothing to
+            configure. Free-tier prompts are relayed through a small Flux proxy, which is how the quota is
             applied at all; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
             <a href="#" onclick="show('settings-privacy');return false;">Privacy</a> spells out what each mode sends.</p>
           <p>Settings&nbsp;&rarr;&nbsp;AI&nbsp;&amp;&nbsp;Claude shows what you have spent this month and today, and a
             toggle switches between the free tier and your own key without having to delete the key first. Hitting a
-            limit says which one and when it resets. The model selector is disabled on the free tier, which always uses
-            <code>claude-haiku-4-5</code>, instead of accepting a choice that was silently ignored. See
+            limit says which one and when it resets. The model selector is disabled on the free tier, which runs on a
+            fixed model, instead of accepting a choice that was silently ignored. See
             <a href="#" onclick="show('ai');return false;">AI &amp; Claude</a>.</p>
 
           <h3>Pre and post-request scripts run in CI</h3>

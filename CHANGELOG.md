@@ -13,7 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ### Added
 - The CLI runs pre and post-request scripts. It embeds a JavaScript engine and the same `pm` shim the app uses, so a collection that authenticates through a pre-request script now works in CI instead of being skipped with a warning. `pm.test()` results count as assertions, so a failing Postman-style test fails the build, and `console.log` output appears under each request.
-- AI features are free to try: every signed-in account gets 100 AI actions a month, up to 20 a day, running on Claude Haiku 4.5 with no API key and no setup. Prompts on the free tier are relayed through a Flux proxy, which is how the quota is applied; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
+- AI features are free to try: every signed-in account gets 100 AI actions a month, up to 20 a day, with no API key and no setup. Prompts on the free tier are relayed through a Flux proxy, which is how the quota is applied; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
 - Settings → AI & Claude shows the free-tier consumption for the month and the day, and a toggle chooses between the free tier and your own key without having to delete the key to switch
 - Hitting a limit explains which one and when it resets, with a shortcut to add your own key
 - "What's new" in the bell: release notes ship inside the binary, with a marker when there is something unread
@@ -32,7 +32,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - One assertion engine, one language. The collection runner, the Tests screen and the CLI used three different implementations: `json.token == null` passed in one and failed in another, `duration < 500` only worked in two of the three. All three now evaluate through the same engine, `json.` and `body.` are interchangeable, and `headers.x` and `headers["x"]` both work. A shared contract table is asserted by both the TypeScript and Rust test suites so they cannot drift apart again.
 - Assertion failures now say what they got (`expected status == 404 — got 200`) instead of a bare value
 - `body_type` in collection files is now written as `bodyType`, matching the rest of the schema; the old spelling is still read
-- The model selector is disabled on the free tier, which always uses `claude-haiku-4-5`, instead of accepting a choice that was silently ignored
+- The model selector is hidden on the free tier, which runs on a fixed model, instead of accepting a choice that was silently ignored
 
 ---
 
