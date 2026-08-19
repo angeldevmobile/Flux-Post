@@ -188,7 +188,7 @@ pub async fn generate_tests(
         request.url,
         request.body.as_deref().unwrap_or("(none)"),
         response.status,
-        &response.body.chars().take(2000).collect::<String>(),
+        response.body.chars().take(2000).collect::<String>(),
     );
 
     call_claude(&auth, "generate_tests", &model_or_default(model), system, &user, 1024).await
@@ -240,7 +240,7 @@ Always tie your fix to a specific tab or UI element in Flux. Never give generic 
         request.url,
         if headers_str.is_empty() { "  (none)".to_string() } else { headers_str },
         request.body.as_deref().unwrap_or("(none)"),
-        &response.body.chars().take(2000).collect::<String>(),
+        response.body.chars().take(2000).collect::<String>(),
     );
 
     call_claude(&auth, "debug_assist", &model_or_default(model), system, &user, 1024).await
@@ -311,7 +311,7 @@ pub async fn fix_assertion(
         req_url,
         req_body.as_deref().unwrap_or("(none)"),
         actual_status,
-        &actual_body.chars().take(2000).collect::<String>(),
+        actual_body.chars().take(2000).collect::<String>(),
     );
 
     let raw = call_claude(&auth, "fix_assertion", &model_or_default(model), system, &user, 512).await?;

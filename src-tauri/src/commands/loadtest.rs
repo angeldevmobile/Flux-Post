@@ -120,7 +120,7 @@ pub async fn run_load_test(
             let errors = error_count.load(Ordering::Relaxed);
             let elapsed_secs = gs.elapsed().as_secs_f64().max(0.001);
 
-            if done % (total / 20).max(1) == 0 || done == total {
+            if done.is_multiple_of((total / 20).max(1)) || done == total {
                 let lats = latencies.lock().await;
                 let avg_ms = if lats.is_empty() { 0.0 } else {
                     lats.iter().sum::<u64>() as f64 / lats.len() as f64
