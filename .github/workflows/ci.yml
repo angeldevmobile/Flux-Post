@@ -49,7 +49,10 @@ jobs:
             librsvg2-dev \
             patchelf
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned, not @stable: with -D warnings below, every Rust release can
+      # turn a lint that did not exist yesterday into a red main. That is what
+      # broke CI on 0.2.0. Bump this deliberately, not by the calendar.
+      - uses: dtolnay/rust-toolchain@1.97.0
         with:
           components: clippy, rustfmt
 

@@ -132,6 +132,7 @@
 
       /*   SEARCH (decorative)   */
       .topbar-search {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -142,6 +143,81 @@
         border: 1px solid var(--border);
         cursor: pointer;
         transition: border-color .15s;
+      }
+
+      .topbar-search:focus-within {
+        border-color: var(--accent-50);
+      }
+
+      .topbar-search input {
+        width: 150px;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--fg-2);
+        font-family: inherit;
+        font-size: 12px;
+        cursor: text;
+      }
+
+      .topbar-search input::placeholder {
+        color: var(--fg-4);
+      }
+
+      .search-results {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        width: 360px;
+        max-height: 60vh;
+        overflow-y: auto;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px;
+        z-index: 200;
+        cursor: default;
+      }
+
+      .search-results.open {
+        display: block;
+      }
+
+      .search-hit {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 10px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .search-hit:hover,
+      .search-hit.active {
+        background: var(--border);
+      }
+
+      .search-hit-title {
+        display: block;
+        font-size: 12.5px;
+        color: var(--fg-2);
+      }
+
+      .search-hit-ctx {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--fg-4);
+      }
+
+      .search-empty {
+        padding: 10px;
+        font-size: 12px;
+        color: var(--fg-4);
       }
 
       .topbar-search:hover {
@@ -797,13 +873,14 @@
         <span class="topbar-title">Documentation</span>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search" onclick="document.querySelector('#search-input')?.focus()">
+        <div class="topbar-search" onclick="document.getElementById('search-input').focus()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
-          <span>Search docs...</span>
+          <input id="search-input" type="text" placeholder="Search docs..." autocomplete="off" spellcheck="false">
           <kbd>Ctrl K</kbd>
+          <div class="search-results" id="search-results"></div>
         </div>
         <a href="index.html" class="topbar-link">Home</a>
         <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="topbar-link">GitHub</a>
@@ -1262,7 +1339,7 @@
             <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/CHANGELOG.md" target="_blank"
               rel="noopener">CHANGELOG.md</a>.</p>
 
-          <h2>0.1.8</h2>
+          <h2>0.2.0</h2>
 
           <div class="callout warn">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -1290,6 +1367,34 @@ headers["Content-Type"]   <span class="token-cmt">// same as headers.content-typ
 duration &lt; 500            <span class="token-cmt">// now works in all three</span></code></pre>
           <p>Failures also say what they got: <code>expected status == 404, got 200</code>. See
             <a href="#" onclick="show('resp-tests');return false;">Tests</a> for the full syntax.</p>
+
+          <h3>AI without an API key</h3>
+          <p>Every signed-in account gets 100 AI actions a month, up to 20 a day, running on Claude Haiku&nbsp;4.5 with
+            nothing to configure. Free-tier prompts are relayed through a small Flux proxy, which is how the quota is
+            applied at all; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
+            <a href="#" onclick="show('settings-privacy');return false;">Privacy</a> spells out what each mode sends.</p>
+          <p>Settings&nbsp;&rarr;&nbsp;AI&nbsp;&amp;&nbsp;Claude shows what you have spent this month and today, and a
+            toggle switches between the free tier and your own key without having to delete the key first. Hitting a
+            limit says which one and when it resets. The model selector is disabled on the free tier, which always uses
+            <code>claude-haiku-4-5</code>, instead of accepting a choice that was silently ignored. See
+            <a href="#" onclick="show('ai');return false;">AI &amp; Claude</a>.</p>
+
+          <h3>Pre and post-request scripts run in CI</h3>
+          <p>The CLI embeds a JavaScript engine and the same <code>pm</code> shim the app uses. A collection that
+            authenticates through a pre-request script now runs in CI instead of being skipped with a warning:</p>
+          <pre><code>flux run collection.yaml <span class="token-cmt">// scripts execute, no longer skipped</span></code></pre>
+          <p><code>pm.test()</code> results count as assertions, so a failing Postman-style test fails the build, and
+            <code>console.log</code> output appears under each request. See
+            <a href="#" onclick="show('cli');return false;">CLI Runner</a> for what it still does not do.</p>
+
+          <h3>A Content Security Policy for the webview</h3>
+          <p>The webview shipped without one. Everything now loads from the app itself, the only outbound destination
+            allowed from the frontend is your own Supabase project, and <code>object-src</code>,
+            <code>frame-ancestors</code> and <code>base-uri</code> are locked down. <code>unsafe-eval</code> is kept on
+            purpose: pre and post-request scripts run through <code>new Function()</code>, and without it the whole
+            scripting feature would break in release builds only.</p>
+          <p>Fonts are served from the bundle instead of a third-party CDN. Flux no longer contacts
+            <code>fonts.bunny.net</code> on launch, and typography works offline.</p>
 
           <h3>Collections carry the whole request</h3>
           <p>Saving a request used to keep only its method, URL, headers and body. Auth, query params, pre and
@@ -1319,7 +1424,7 @@ duration &lt; 500            <span class="token-cmt">// now works in all three</
             kept the previously open request's auth, scripts and extractors. A bearer token set for one API could go
             out to a different host. All three reset the request first now.</p>
 
-          <h3>Also in 0.1.8</h3>
+          <h3>Also in 0.2.0</h3>
           <ul>
             <li>Collections support folders nested at any depth, and every request keeps a stable id, so deleting or
               reordering no longer renumbers everything below it.</li>
@@ -3526,42 +3631,24 @@ flux run ./my-api --bail</code></pre>
       const sections = document.querySelectorAll('.doc-section');
       const sidebarItems = document.querySelectorAll('.sidebar-item');
 
-      const tocMap = {
-        'whatsnew': ['0.1.8', '0.1.7'],
-        'intro': ['Why Flux?', 'Tech stack'],
-        'install': ['Download', 'Account', 'System requirements'],
-        'quickstart': [],
-        'request': ['Method selector', 'The QUERY method', 'Environment interpolation', 'Keyboard shortcuts'],
-        'params': ['Adding parameters', 'Bulk edit'],
-        'headers': ['Common headers', 'Header inheritance'],
-        'auth': ['Auth types', 'Saving auth to a collection'],
-        'body': ['Body types'],
-        'prereq': ['Available globals'],
-        'postreq': ['Available globals'],
-        'extract': ['How it works'],
-        'response': ['Status bar', 'Tabs'],
-        'resp-body': ['View modes', 'Copy & Save'],
-        'resp-headers': ['Headers tab', 'Cookies tab'],
-        'resp-tests': ['Writing tests', 'Paths', 'Operators', 'Absent fields', 'Where assertions run', 'AI-generated tests', 'Test suite integration'],
-        'resp-timeline': ['Phases'],
-        'resp-console': ['Log levels'],
-        'collections': ['Collection structure', 'Request YAML schema', 'Mixed HTTP and gRPC collections', 'Collection Runner', 'Import'],
-        'environments': ['Variable scopes', 'Creating an environment', 'Secret variables'],
-        'history': ['Searching history', 'Replaying a request', 'Exporting history'],
-        'ai': ['Setup', 'Available models', 'AI features'],
-        'github': ['Connecting a repository', 'Auto-sync'],
-        'grpc': ['Getting started', 'Loading a proto', 'Proto Library', 'Invoking a method', 'Stream types', 'Streaming calls', 'Saving to a collection'],
-        'websocket': ['Connecting', 'Message log', 'Sending messages'],
-        'sse': ['Connecting', 'Event log', 'Filtering', 'Export'],
-        'loadtest': ['Configuration', 'Results'],
-        'mock': ['Creating a mock route', 'Response configuration', 'Request log'],
-        'compare': ['How it works', 'Use cases'],
-        'cli': ['Installation', 'Running a collection', 'Options', 'Exit codes', 'What the CLI supports', 'What it does not do'],
-        'settings': ['General', 'AI & Claude', 'Appearance', 'Keyboard Shortcuts'],
-        'settings-proxy': ['Proxy configuration'],
-        'settings-cookies': ['Viewing cookies', 'Managing cookies'],
-        'settings-privacy': ['What Flux stores', 'Deleting your data', 'Telemetry'],
-      };
+      //   On-this-page index
+      //
+      //   Antes era un mapa de titulos escrito a mano, en paralelo al
+      //   documento y sin nada que los atara. Ahora sale de los <h2>/<h3>
+      //   reales de la seccion visible, asi que no hay nada que mantener.
+      const slugify = t => t.toLowerCase().trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-');
+
+      // El topbar es fixed y taparia el encabezado al saltar a el.
+      function topOffset() {
+        const h = getComputedStyle(document.documentElement).getPropertyValue('--topbar-h');
+        return (parseInt(h, 10) || 52) + 24;
+      }
+
+      const docTop = el => el.getBoundingClientRect().top + window.scrollY;
+
+      let tocHeadings = [];
 
       function show(id) {
         sections.forEach(s => s.classList.toggle('visible', s.id === 'sec-' + id));
@@ -3575,14 +3662,173 @@ flux run ./my-api --bail</code></pre>
 
       function buildToc(id) {
         const toc = document.getElementById('toc');
-        const headings = tocMap[id] || [];
-        if (!headings.length) { toc.innerHTML = ''; return; }
+        const section = document.getElementById('sec-' + id);
+        tocHeadings = section ? Array.from(section.querySelectorAll('h2, h3')) : [];
+
+        if (!tocHeadings.length) { toc.innerHTML = ''; return; }
+
+        // Los encabezados del documento no traen id, hay que darselo para
+        // poder enlazarlos.
+        tocHeadings.forEach((h, i) => {
+          if (!h.id) h.id = id + '-' + (slugify(h.textContent) || i);
+        });
+
         toc.innerHTML = '<div class="toc-label">On this page</div>' +
-          headings.map(h =>
-            `<a class="toc-item" href="#">${h}</a>`
+          tocHeadings.map(h =>
+            `<a class="toc-item" href="#${h.id}" data-target="${h.id}">${h.textContent}</a>`
           ).join('');
+
+        toc.querySelectorAll('.toc-item').forEach(a => {
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            const el = document.getElementById(a.dataset.target);
+            if (el) window.scrollTo({ top: docTop(el) - topOffset(), behavior: 'smooth' });
+          });
+        });
+
+        markActiveHeading();
       }
+
+      function markActiveHeading() {
+        if (!tocHeadings.length) return;
+        const y = window.scrollY + topOffset() + 8;
+        let current = tocHeadings[0];
+        for (const h of tocHeadings) {
+          if (docTop(h) <= y) current = h;
+        }
+        document.querySelectorAll('.toc-item').forEach(a =>
+          a.classList.toggle('active', a.dataset.target === current.id)
+        );
+      }
+
+      window.addEventListener('scroll', markActiveHeading, { passive: true });
+
       buildToc('intro');
+
+      //   Search
+      //
+      //   The topbar box used to be decoration: it focused a #search-input
+      //   that did not exist, and nothing listened for Ctrl+K. The index is
+      //   built from the document itself, so new sections are searchable
+      //   without registering them anywhere.
+      const searchIndex = [];
+
+      (function buildSearchIndex() {
+        const pageLabels = {};
+        sidebarItems.forEach(btn => {
+          const m = (btn.getAttribute('onclick') || '').match(/show\('([^']+)'\)/);
+          if (m) pageLabels[m[1]] = btn.textContent.trim();
+        });
+
+        document.querySelectorAll('.doc-section').forEach(section => {
+          const id = section.id.replace(/^sec-/, '');
+          const title = section.querySelector('.page-title');
+          const page = pageLabels[id] || (title ? title.textContent.trim() : id);
+
+          if (title) searchIndex.push({ id, text: page, page: 'Page', anchor: null });
+
+          section.querySelectorAll('h2, h3').forEach((h, i) => {
+            if (!h.id) h.id = id + '-' + (slugify(h.textContent) || i);
+            searchIndex.push({ id, text: h.textContent.trim(), page, anchor: h.id });
+          });
+        });
+      })();
+
+      const searchInput = document.getElementById('search-input');
+      const searchResults = document.getElementById('search-results');
+      let searchHits = [];
+      let searchCursor = -1;
+
+      const escapeHtml = t => t.replace(/[&<>"]/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+      function closeSearch() {
+        searchResults.classList.remove('open');
+        searchResults.innerHTML = '';
+        searchHits = [];
+        searchCursor = -1;
+      }
+
+      function runSearch() {
+        const q = searchInput.value.trim().toLowerCase();
+        if (q.length < 2) { closeSearch(); return; }
+
+        // Un titulo que empieza por lo tecleado va antes que uno que solo
+        // lo contiene por la mitad.
+        searchHits = searchIndex
+          .map(e => {
+            const t = e.text.toLowerCase();
+            const at = t.indexOf(q);
+            return at === -1 ? null : { ...e, rank: at === 0 ? 0 : 1, at };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.rank - b.rank || a.at - b.at)
+          .slice(0, 12);
+
+        searchCursor = searchHits.length ? 0 : -1;
+        searchResults.innerHTML = searchHits.length
+          ? searchHits.map((h, i) =>
+              `<button class="search-hit${i === 0 ? ' active' : ''}" data-i="${i}">` +
+              `<span class="search-hit-title">${escapeHtml(h.text)}</span>` +
+              `<span class="search-hit-ctx">${escapeHtml(h.page)}</span></button>`
+            ).join('')
+          : '<div class="search-empty">No matches for &ldquo;' + escapeHtml(searchInput.value.trim()) + '&rdquo;</div>';
+
+        searchResults.classList.add('open');
+        searchResults.querySelectorAll('.search-hit').forEach(b =>
+          b.addEventListener('click', e => {
+            e.stopPropagation();
+            openHit(Number(b.dataset.i));
+          }));
+      }
+
+      function moveSearchCursor(delta) {
+        if (!searchHits.length) return;
+        searchCursor = (searchCursor + delta + searchHits.length) % searchHits.length;
+        searchResults.querySelectorAll('.search-hit').forEach((b, i) => {
+          b.classList.toggle('active', i === searchCursor);
+          if (i === searchCursor) b.scrollIntoView({ block: 'nearest' });
+        });
+      }
+
+      function openHit(i) {
+        const hit = searchHits[i];
+        if (!hit) return;
+        show(hit.id);
+        closeSearch();
+        searchInput.blur();
+        // show() sube al principio de la pagina, asi que el salto al
+        // encabezado tiene que ir despues de que pinte.
+        if (hit.anchor) {
+          requestAnimationFrame(() => {
+            const el = document.getElementById(hit.anchor);
+            if (el) window.scrollTo({ top: docTop(el) - topOffset() });
+          });
+        }
+      }
+
+      searchInput.addEventListener('input', runSearch);
+      searchInput.addEventListener('focus', runSearch);
+
+      searchInput.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveSearchCursor(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); moveSearchCursor(-1); }
+        else if (e.key === 'Enter') { e.preventDefault(); openHit(searchCursor); }
+        else if (e.key === 'Escape') { closeSearch(); searchInput.blur(); }
+      });
+
+      document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        }
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.topbar-search')) closeSearch();
+      });
+
     </script>
 
   </body>

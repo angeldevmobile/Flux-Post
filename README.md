@@ -11,7 +11,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 | | Postman | Flux |
 |---|---|---|
 | RAM usage | 200–400 MB | < 30 MB |
-| Installer size | ~150 MB | ~9 MB |
+| Installer size | ~150 MB | 11–15 MB |
 | Requires account | Yes | Yes, free — email or GitHub |
 | AI test generation | Paid plan | Free tier included, or your own key |
 | AI debug on errors | No | 4xx/5xx analysis + one-click Apply fixes |
@@ -117,9 +117,10 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 |---|---|---|
 | Windows | `Flux_x.x.x_x64-setup.exe` | Run the installer. Flux auto-updates in the background. |
 | macOS (Apple Silicon) | `Flux_x.x.x_aarch64.dmg` | Drag to Applications. First launch: right-click, Open to bypass Gatekeeper. |
-| macOS (Intel) | `Flux_x.x.x_x86_64.dmg` | Same as above. |
+| macOS (Intel) | `Flux_x.x.x_x64.dmg` | Same as above. |
 | Linux (.deb) | `Flux_x.x.x_amd64.deb` | `sudo dpkg -i Flux_*.deb` |
-| Linux (AppImage) | `Flux_x.x.x_amd64.AppImage` | `chmod +x Flux_*.AppImage && ./Flux_*.AppImage` |
+| Linux (.rpm) | `Flux-x.x.x-1.x86_64.rpm` | `sudo rpm -i Flux-*.rpm` |
+| Linux (AppImage) | `Flux_x.x.x_amd64.AppImage` | `chmod +x Flux_*.AppImage && ./Flux_*.AppImage`. Bundles WebKitGTK, so it is ~88 MB against ~15 MB for the `.deb`. |
 
 ---
 

@@ -42,7 +42,8 @@ jobs:
           node-version: lts/*
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Same version as ci.yml so what is checked is what is shipped.
+      - uses: dtolnay/rust-toolchain@1.97.0
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
@@ -87,10 +88,14 @@ jobs:
 
             | Platform | File |
             |---|---|
-            | Windows | `.msi` installer |
-            | macOS (Apple Silicon) | `.dmg` |
-            | macOS (Intel) | `.dmg` |
-            | Linux | `.AppImage` / `.deb` |
+            | Windows | `Flux_*_x64-setup.exe` |
+            | macOS (Apple Silicon) | `Flux_*_aarch64.dmg` |
+            | macOS (Intel) | `Flux_*_x64.dmg` |
+            | Linux | `Flux_*_amd64.deb` / `Flux-*.x86_64.rpm` / `Flux_*_amd64.AppImage` |
+
+            The `.sig` files and `latest.json` are for the auto-updater, not
+            for downloading. The AppImage bundles WebKitGTK, so it is ~88 MB
+            against ~15 MB for the `.deb`.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
