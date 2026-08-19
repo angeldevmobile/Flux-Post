@@ -36,6 +36,12 @@ const TARGETS = [
     patterns: [new RegExp(String.raw`(^version = ")${SEMVER}(")`, 'm')],
   },
   {
+    file: 'flux-cli/Cargo.toml',
+    // Only the [package] version. The CLI ships inside the app as a resource,
+    // so `flux --version` has to agree with the app it came in.
+    patterns: [new RegExp(String.raw`(^version = ")${SEMVER}(")`, 'm')],
+  },
+  {
     file: 'src/lib/version.ts',
     patterns: [new RegExp(String.raw`(APP_VERSION = ")${SEMVER}(")`)],
   },

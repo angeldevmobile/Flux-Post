@@ -43,3 +43,10 @@ prost-types = "0.13"
 protox = "0.7"
 tonic-reflection = "0.12"
 bytes = "1"
+
+# Mismo criterio que en flux-cli: el binario de la app son 26,9 MB de los
+# 41 MB instalados. Estas opciones solo alargan la compilacion.
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

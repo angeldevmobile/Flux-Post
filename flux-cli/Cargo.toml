@@ -1,6 +1,6 @@
 [package]
 name = "flux-cli"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [[bin]]
@@ -16,3 +16,11 @@ serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 base64 = "0.22"
 boa_engine = "0.21.1"
+
+# El binario se empaqueta dentro de la app como recurso, asi que su tamano
+# cuenta en el instalador. Estas tres opciones no cambian el comportamiento,
+# solo alargan la compilacion.
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
