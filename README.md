@@ -13,7 +13,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 | RAM usage | 200–400 MB | < 30 MB |
 | Installer size | ~150 MB | ~9 MB |
 | Requires account | Yes | Yes, free — email or GitHub |
-| AI test generation | Paid plan | Built-in (Claude) |
+| AI test generation | Paid plan | Free tier included, or your own key |
 | AI debug on errors | No | 4xx/5xx analysis + one-click Apply fixes |
 | AI script editing | No | Natural language edits |
 | SSE / EventStream | No | Full streaming viewer |
@@ -89,7 +89,9 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Download: time to receive the full response body after headers
 - Proportional bar chart with exact millisecond values
 
-### AI (Claude API, your key)
+### AI (free tier included, or bring your own key)
+During the beta every signed-in account gets 100 AI actions a month, up to 20 a day, with nothing to configure. On the free tier prompts are relayed through a Flux proxy, which is how the quota is applied. Add your own Claude API key for unlimited use: it never leaves your device and calls go straight to Anthropic.
+
 - Generate test assertions from any response
 - Debug assist on 4xx/5xx errors: Flux-aware analysis with structured explanation (what, cause, steps) and one-click Apply fixes — suggested headers, params, or body values are applied directly to the request without leaving the panel
 - Edit pre/post scripts with natural language
@@ -126,7 +128,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 1. **Send a request** — type a URL in the top bar, pick a method, press `Ctrl+Enter`.
 2. **Save to a collection** — click the `+` in the sidebar to organize requests in folders.
 3. **Use environment variables** — go to Environments and add `{{BASE_URL}}` style variables to reuse across requests.
-4. **Enable AI features** — add your Claude API key in Settings, AI and Claude, to unlock one-click test generation and debug assist.
+4. **Try the AI features** — they work out of the box on the free tier. For unlimited use, add your own Claude API key in Settings, AI and Claude.
 5. **Import existing work** — import a Postman collection, OpenAPI spec, or cURL command from the sidebar import button.
 6. **Mock an API** — go to Mock Server, add endpoints, hit Start. Your local server is live on `http://localhost:3001`.
 7. **Stress-test an endpoint** — go to Load Test, set total requests and concurrency, hit Run.

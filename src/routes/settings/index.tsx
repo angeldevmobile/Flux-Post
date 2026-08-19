@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { GH_TOKEN_KEY, GH_USER_KEY } from "@/lib/githubKeys";
 import {
   Settings2, Sparkles, Palette, Keyboard, Network, Shield, Info,
   ChevronDown, EyeOff, Eye, Download, History, LogOut, Trash2, TriangleAlert,
@@ -360,6 +361,18 @@ function AiSection() {
 
 function AppearanceSection() {
   const s = useSettingsStore();
+  const [showFont, setShowFont] = useState(false);
+  const fontRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showFont) return;
+    function onDown(e: MouseEvent) {
+      if (fontRef.current && !fontRef.current.contains(e.target as Node)) setShowFont(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showFont]);
+
   const ACCENT_COLORS = ["#A855F7", "#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#EC4899", "#14B8A6"];
 
   const themes: { id: "dark" | "light" | "system"; label: string; bg: string; lineColor: string }[] = [
@@ -397,10 +410,26 @@ function AppearanceSection() {
 
       <Card title="Typography">
         <SettingRow label="Editor font" description="Font used in request/response body">
-          <div className="flex items-center gap-2 px-3 rounded-md"
-            style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)", minWidth: 180 }}>
-            <span className="flex-1 text-[12px]" style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg)" }}>{s.editorFont}</span>
-            <ChevronDown size={13} style={{ color: "var(--color-fg-3)" }} className="shrink-0" />
+          <div ref={fontRef} className="relative">
+            <button onClick={() => setShowFont(v => !v)}
+              className="flex items-center gap-2 px-3 rounded-md"
+              style={{ height: 32, background: "var(--color-input)", border: "1px solid var(--color-border)", minWidth: 180 }}>
+              <span className="flex-1 text-left text-[12px]" style={{ fontFamily: `${s.editorFont}, monospace`, color: "var(--color-fg)" }}>{s.editorFont}</span>
+              <ChevronDown size={13} style={{ color: "var(--color-fg-3)" }} className="shrink-0" />
+            </button>
+            {showFont && (
+              <div className="absolute right-0 bottom-full mb-1 z-50 rounded-lg overflow-hidden"
+                style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", width: 180, boxShadow: "0 8px 24px #00000060" }}>
+                {EDITOR_FONTS.map(f => (
+                  <button key={f} onClick={() => { s.patch({ editorFont: f }); setShowFont(false); }}
+                    className="flex items-center w-full px-3 transition-colors hover:opacity-80"
+                    style={{ height: 34, fontSize: 12, fontFamily: `${f}, monospace`,
+                             color: s.editorFont === f ? "var(--color-accent)" : "var(--color-fg)" }}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </SettingRow>
         <SettingRow label="UI font size" description="Base size for interface text" last>
@@ -652,6 +681,8 @@ function CertFilePicker({ label, value, accept, onLoad, onClear }: {
     </div>
   );
 }
+
+const EDITOR_FONTS = ["Geist Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "monospace"];
 
 const RETENTION_OPTIONS = [
   { label: "7 days",   value: 7  },
@@ -1038,8 +1069,6 @@ function AboutSection() {
 }
 
 
-const GH_TOKEN_KEY = "flux_github_token";
-const GH_USER_KEY  = "flux_github_user";
 
 function GitHubSection() {
   const [user, setUser] = useState<{ login: string; avatar_url: string; name: string | null } | null>(() => {

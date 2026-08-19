@@ -315,24 +315,34 @@ pub async fn fix_assertion(
     );
 
     let raw = call_claude(&auth, "fix_assertion", &model_or_default(model), system, &user, 512).await?;
+    Ok(parse_assertion_fix(&raw))
+}
 
-    serde_json::from_str::<AssertionFix>(&raw).map_err(|_| {
-        // fallback: treat entire response as an assertion fix
-        AssertionFix {
-            kind: "assertion".to_string(),
-            value: raw.trim().to_string(),
-            explanation: "Claude returned an unstructured suggestion.".to_string(),
+/// Recorta al primer objeto JSON del texto, saltandose fences o prosa alrededor.
+fn extract_json_object(raw: &str) -> Option<&str> {
+    let start = raw.find('{')?;
+    let end = raw.rfind('}')?;
+    (end > start).then(|| &raw[start..=end])
+}
+
+/// El prompt pide JSON sin fences, pero los modelos lo envuelven a menudo y los
+/// mas pequenos mas todavia. Antes, cualquier envoltorio convertia una sugerencia
+/// valida en un `Err` que el frontend enseñaba como fallo. Ahora se intenta
+/// rescatar el objeto y, si no hay nada parseable, se devuelve el texto como
+/// sugerencia en vez de perderlo.
+fn parse_assertion_fix(raw: &str) -> AssertionFix {
+    if let Ok(fix) = serde_json::from_str::<AssertionFix>(raw.trim()) {
+        return fix;
+    }
+    if let Some(candidate) = extract_json_object(raw) {
+        if let Ok(fix) = serde_json::from_str::<AssertionFix>(candidate) {
+            return fix;
         }
-        .to_string_err()
-    })
-}
-
-trait ToStringErr {
-    fn to_string_err(self) -> String;
-}
-impl ToStringErr for AssertionFix {
-    fn to_string_err(self) -> String {
-        format!("{}|{}|{}", self.kind, self.value, self.explanation)
+    }
+    AssertionFix {
+        kind: "assertion".to_string(),
+        value: raw.trim().to_string(),
+        explanation: "Claude returned an unstructured suggestion.".to_string(),
     }
 }
 
@@ -355,4 +365,49 @@ pub async fn analyze_test_failures(
     );
 
     call_claude(&auth, "analyze_test_failures", &model_or_default(model), system, &user, 1024).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const JSON: &str = r#"{"kind":"header","value":"Accept: application/json","explanation":"The API needs it."}"#;
+
+    #[test]
+    fn parses_plain_json() {
+        let fix = parse_assertion_fix(JSON);
+        assert_eq!(fix.kind, "header");
+        assert_eq!(fix.value, "Accept: application/json");
+    }
+
+    #[test]
+    fn parses_json_wrapped_in_markdown_fences() {
+        let raw = format!("```json
+{}
+```", JSON);
+        assert_eq!(parse_assertion_fix(&raw).kind, "header");
+    }
+
+    #[test]
+    fn parses_json_with_prose_around_it() {
+        let raw = format!("Sure, here is the fix:
+{}
+Hope that helps.", JSON);
+        assert_eq!(parse_assertion_fix(&raw).kind, "header");
+    }
+
+    #[test]
+    fn keeps_unstructured_text_as_a_suggestion_instead_of_failing() {
+        let fix = parse_assertion_fix("  status == 201  ");
+        assert_eq!(fix.kind, "assertion");
+        assert_eq!(fix.value, "status == 201");
+        assert!(!fix.explanation.is_empty());
+    }
+
+    #[test]
+    fn ignores_braces_that_do_not_form_an_object() {
+        let fix = parse_assertion_fix("} not json {");
+        assert_eq!(fix.kind, "assertion");
+        assert_eq!(fix.value, "} not json {");
+    }
 }

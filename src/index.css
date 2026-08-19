@@ -1,4 +1,4 @@
-@import url("https://fonts.bunny.net/css?family=geist:400,500,600,700|geist-mono:400|inter:400,500,600");
+@import "./fonts.css";
 @import "tailwindcss";
 
 @theme {
@@ -64,7 +64,6 @@ input::placeholder, textarea::placeholder {
 }
 
 /* Compact mode: reduce row heights and padding */
-html.compact body { font-size: 12px; }
 html.compact input, html.compact textarea { font-size: 12px; }
 
 /* Disable animations */

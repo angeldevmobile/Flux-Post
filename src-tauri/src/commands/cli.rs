@@ -65,25 +65,52 @@ fn get_install_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 }
 
 #[cfg(target_os = "windows")]
-fn add_to_user_path(dir: &str) -> Result<bool, String> {
-    let escaped = dir.replace('\'', "''");
-    let script = format!(
-        "$dir = '{}'; \
-         $current = [Environment]::GetEnvironmentVariable('Path', 'User'); \
-         if ($null -eq $current) {{ $current = '' }}; \
-         $parts = $current -split ';' | Where-Object {{ $_ -ne '' }}; \
-         if ($parts -notcontains $dir) {{ \
-             $new = ($parts + $dir) -join ';'; \
-             [Environment]::SetEnvironmentVariable('Path', $new, 'User'); \
-             Write-Output 'added' \
-         }} else {{ \
-             Write-Output 'exists' \
-         }}",
-        escaped
-    );
+fn windows_path_script(dir: &str, remove: bool) -> String {
+    // Se escribe en el registro en vez de usar
+    // [Environment]::SetEnvironmentVariable: ese metodo devuelve el PATH ya
+    // expandido, asi que reescribirlo convertiria entradas como
+    // %USERPROFILE%\bin en rutas literales y dejaria el PATH del usuario
+    // roto, ademas de cambiar el tipo de REG_EXPAND_SZ a REG_SZ.
+    // DoNotExpandEnvironmentNames + ExpandString lo conservan intacto.
+    const SCRIPT: &str = r#"
+$ErrorActionPreference = 'Stop'
+$dir = '@DIR@'
+$key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+try {
+    $opts = [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames
+    $current = $key.GetValue('Path', '', $opts)
+    if ($null -eq $current) { $current = '' }
+    $parts = @($current -split ';' | Where-Object { $_ -ne '' })
+    $before = $parts.Count
+    $changed = $false
+    @MUTATE@
+    if ($changed) {
+        $kind = [Microsoft.Win32.RegistryValueKind]::ExpandString
+        $key.SetValue('Path', ($parts -join ';'), $kind)
+        Write-Output 'changed'
+    } else {
+        Write-Output 'unchanged'
+    }
+} finally {
+    $key.Close()
+}
+"#;
 
+    let mutate = if remove {
+        "$parts = @($parts | Where-Object { $_ -ne $dir }); $changed = $parts.Count -ne $before"
+    } else {
+        "if ($parts -notcontains $dir) { $parts = @($parts) + $dir; $changed = $true }"
+    };
+
+    SCRIPT
+        .replace("@DIR@", &dir.replace("'", "''"))
+        .replace("@MUTATE@", mutate)
+}
+
+#[cfg(target_os = "windows")]
+fn run_windows_path_script(script: &str) -> Result<bool, String> {
     let out = std::process::Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+        .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()
         .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
 
@@ -92,7 +119,17 @@ fn add_to_user_path(dir: &str) -> Result<bool, String> {
         return Err(format!("PATH update failed: {}", err));
     }
 
-    Ok(String::from_utf8_lossy(&out.stdout).trim() == "added")
+    Ok(String::from_utf8_lossy(&out.stdout).trim() == "changed")
+}
+
+#[cfg(target_os = "windows")]
+fn add_to_user_path(dir: &str) -> Result<bool, String> {
+    run_windows_path_script(&windows_path_script(dir, false))
+}
+
+#[cfg(target_os = "windows")]
+fn remove_from_user_path(dir: &str) -> Result<bool, String> {
+    run_windows_path_script(&windows_path_script(dir, true))
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -117,6 +154,31 @@ fn add_to_user_path(dir: &str) -> Result<bool, String> {
         }
     }
     Ok(added)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn remove_from_user_path(dir: &str) -> Result<bool, String> {
+    let export_line = format!("export PATH=\"{}:$PATH\"", dir);
+    let home = std::env::var("HOME").map_err(|_| "HOME not set".to_string())?;
+
+    let mut removed = false;
+    for rc in &[".zshrc", ".bashrc", ".profile"] {
+        let path = std::path::Path::new(&home).join(rc);
+        let Ok(content) = std::fs::read_to_string(&path) else { continue };
+        if !content.contains(&export_line) {
+            continue;
+        }
+        let kept: Vec<&str> = content
+            .lines()
+            .filter(|l| l.trim() != export_line)
+            .collect();
+        if std::fs::write(&path, kept.join("
+") + "
+").is_ok() {
+            removed = true;
+        }
+    }
+    Ok(removed)
 }
 
 #[tauri::command]
@@ -179,5 +241,7 @@ pub fn uninstall_cli(app: tauri::AppHandle) -> Result<(), String> {
     if bin.exists() {
         std::fs::remove_file(&bin).map_err(|e| e.to_string())?;
     }
+    // Sin esto, desinstalar dejaba la entrada del PATH para siempre.
+    let _ = remove_from_user_path(&install_dir.to_string_lossy());
     Ok(())
 }

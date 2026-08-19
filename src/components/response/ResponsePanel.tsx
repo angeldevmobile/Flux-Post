@@ -22,7 +22,13 @@ function formatBytes(n: number) {
   return n < 1024 ? `${n} B` : `${(n / 1024).toFixed(1)} KB`;
 }
 
+// Por encima de esto no se reformatea ni se abre Monaco: parsear y renderizar
+// un cuerpo así bloquea el hilo principal. El tope de descarga (Settings →
+// Proxy & Network) es mucho más alto porque protege memoria, no la interfaz.
+const HEAVY_BODY_BYTES = 2 * 1024 * 1024;
+
 function formatBody(body: string, lang: string): string {
+  if (body.length > HEAVY_BODY_BYTES) return body;
   if (lang === "json") {
     try { return JSON.stringify(JSON.parse(body), null, 2); } catch { /* keep raw */ }
   }
@@ -136,7 +142,8 @@ export function ResponsePanel() {
   const formattedBody = response && !isBinary ? formatBody(response.body, lang) : "";
 
   // Monaco body: text response in the Body tab with no error
-  const useMonaco = tab === "Body" && !!response && !isBinary && !error;
+  const isHeavyBody = (response?.body.length ?? 0) > HEAVY_BODY_BYTES;
+  const useMonaco = tab === "Body" && !!response && !isBinary && !error && !isHeavyBody;
 
   async function handleGenerateTests() {
     if (!response || !autoGenerateTests) return;
@@ -337,6 +344,23 @@ export function ResponsePanel() {
                 <p className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>{formatBytes(response.size)}</p>
               </div>
             )
+          )}
+
+          {/* Heavy text body — plain render, no editor and no reformatting */}
+          {tab === "Body" && response && !isBinary && !error && isHeavyBody && (
+            <div className="flex flex-col gap-2">
+              <div className="rounded-lg px-3 py-2 text-[11px]"
+                style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-3)" }}>
+                Body is {formatBytes(response.size)}. Shown as plain text without formatting, so the editor does not freeze.
+              </div>
+              <pre className="text-[11px] whitespace-pre-wrap break-all"
+                style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)" }}>
+                {response.body.slice(0, HEAVY_BODY_BYTES)}
+              </pre>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+                Showing the first {formatBytes(HEAVY_BODY_BYTES)}. Use Copy to get the whole body.
+              </span>
+            </div>
           )}
 
           {/* Empty body tab */}

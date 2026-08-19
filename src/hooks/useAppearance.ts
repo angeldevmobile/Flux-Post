@@ -50,9 +50,11 @@ export function useAppearance() {
     root.style.setProperty("--color-accent-50", `rgba(${r},${g},${b},0.5)`);
   }, [accentColor]);
 
+  // El estilo inline gana sobre `html.compact body`, así que el tamaño se
+  // resuelve aquí en vez de en CSS: si no, el modo compacto no hacía nada.
   useEffect(() => {
-    document.body.style.fontSize = `${uiFontSize}px`;
-  }, [uiFontSize]);
+    document.body.style.fontSize = `${compactMode ? 12 : uiFontSize}px`;
+  }, [uiFontSize, compactMode]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("compact", compactMode);
@@ -63,17 +65,28 @@ export function useAppearance() {
   }, [animations]);
 
   useEffect(() => {
-    const root = document.documentElement;
-    const resolved = theme === "system"
-      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : theme;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
 
-    const vars = resolved === "light" ? LIGHT_VARS : DARK_VARS;
-    for (const [key, val] of Object.entries(vars)) {
-      root.style.setProperty(key, val);
+    function apply() {
+      const root = document.documentElement;
+      const resolved = theme === "system"
+        ? (media.matches ? "dark" : "light")
+        : theme;
+
+      const vars = resolved === "light" ? LIGHT_VARS : DARK_VARS;
+      for (const [key, val] of Object.entries(vars)) {
+        root.style.setProperty(key, val);
+      }
+      root.setAttribute("data-theme", resolved);
+      document.body.style.background = vars["--color-bg"];
+      document.body.style.color = vars["--color-fg"];
     }
-    root.setAttribute("data-theme", resolved);
-    document.body.style.background = vars["--color-bg"];
-    document.body.style.color = vars["--color-fg"];
+
+    apply();
+    // Con el tema en "system", seguir al sistema operativo en vivo en vez de
+    // quedarse con lo que hubiera al arrancar.
+    if (theme !== "system") return;
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
   }, [theme]);
 }

@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { GH_TOKEN_KEY } from "@/lib/githubKeys";
 import { GitBranch, X, Search, Lock, Globe, ChevronRight, ArrowDown, ArrowUp, Check, Loader2, AlertCircle } from "lucide-react";
 import { githubListYamlFiles, githubWriteYamlFile } from "@/lib/tauri";
 
-const GH_TOKEN_KEY = "flux_github_token";
 
 interface GitHubRepo {
   id: number;

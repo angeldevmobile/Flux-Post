@@ -16,7 +16,6 @@ interface SettingsStore {
   autoGenerateTests: boolean;
   aiDebugAssist: boolean;
   smartAutocomplete: boolean;
-  nlSearch: boolean;
 
   // Usage (resets monthly)
   tokensUsed: number;
@@ -90,7 +89,6 @@ export const useSettingsStore = create<SettingsStore>()(
       autoGenerateTests: true,
       aiDebugAssist: true,
       smartAutocomplete: false,
-      nlSearch: false,
 
       // Usage
       tokensUsed: 0,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { GH_TOKEN_KEY, GH_USER_KEY } from "@/lib/githubKeys";
 import { flushSync } from "react-dom";
 import { Search, Lock, Globe, ArrowDown, ArrowUp, Check, Loader2, AlertCircle, LogOut, RefreshCw, X, ExternalLink, Folder, FileText, ChevronRight, Home } from "lucide-react";
 import { GitHubIcon } from "@/components/GitHubIcon";
@@ -6,8 +7,6 @@ import { githubListYamlFiles, githubWriteYamlFileSubdir } from "@/lib/tauri";
 import { loadCollections } from "@/lib/tauri";
 import { useCollectionsStore } from "@/stores/collections";
 
-const GH_TOKEN_KEY  = "flux_github_token";
-const GH_USER_KEY   = "flux_github_user";
 const COLLECTIONS_DIR_KEY = "flux_collections_dir";
 
 interface GitHubRepo {

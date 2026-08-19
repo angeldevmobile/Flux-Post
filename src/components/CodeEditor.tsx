@@ -91,7 +91,7 @@ export function CodeEditor({
   showLineNumbers = false, readOnly = false, noBorder = false,
   onAiEdit,
 }: CodeEditorProps) {
-  const { theme, wordWrap } = useSettingsStore();
+  const { theme, wordWrap, editorFont } = useSettingsStore();
   const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const [aiOpen, setAiOpen] = useState(false);
@@ -205,7 +205,7 @@ export function CodeEditor({
           beforeMount={defineThemes}
           options={{
             fontSize: 12,
-            fontFamily: "Geist Mono, JetBrains Mono, Fira Code, monospace",
+            fontFamily: `${editorFont}, Geist Mono, monospace`,
             lineHeight: 20,
             lineNumbers: showLineNumbers ? "on" : "off",
             minimap: { enabled: false },
