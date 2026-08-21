@@ -200,6 +200,23 @@ nav {
   justify-content: center;
 }
 
+.ph-badge {
+  display: inline-block;
+  margin-top: 28px;
+  line-height: 0;
+  transition: opacity .15s;
+}
+
+.ph-badge:hover {
+  opacity: .85;
+}
+
+.ph-badge img {
+  width: 250px;
+  height: 54px;
+  max-width: 100%;
+}
+
 /* stats */
 .stats {
   display: flex;

@@ -3838,14 +3838,28 @@ flux run ./my-api --bail</code></pre>
         if (!e.target.closest('.topbar-search')) closeSearch();
       });
 
-      /* ── Download click tracking, sent to GA4 only, nothing shown on the page ── */
+      /* ── Outbound click tracking, sent to GA4 only, nothing shown on the page ──
+         Both events share the link_location parameter, so one custom dimension
+         in GA4 covers downloads and CTAs alike. */
       document.addEventListener('click', function (e) {
-        const link = e.target.closest('a[data-dl]');
-        if (!link || typeof gtag !== 'function') return;
-        gtag('event', 'download_click', {
-          link_location: link.dataset.dl,
-          link_url: link.href,
-        });
+        if (typeof gtag !== 'function') return;
+
+        const download = e.target.closest('a[data-dl]');
+        if (download) {
+          gtag('event', 'download_click', {
+            link_location: download.dataset.dl,
+            link_url: download.href,
+          });
+          return;
+        }
+
+        const cta = e.target.closest('a[data-cta]');
+        if (cta) {
+          gtag('event', 'cta_click', {
+            link_location: cta.dataset.cta,
+            link_url: cta.href,
+          });
+        }
       });
 
 
