@@ -57,7 +57,7 @@
           </svg>
         </a>
       </div>
-      <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" class="btn btn-primary">
+      <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="nav" class="btn btn-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -81,7 +81,7 @@
       <h1>Open-source API client with built-in <span>AI</span>, Load Testing and Mock Servers.</h1>
       <p>Built with Rust. Under 30 MB RAM. No Electron. Free account, sign up with email or GitHub.</p>
       <div class="hero-actions">
-        <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank"
+        <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="hero"
           class="btn btn-primary btn-lg">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -89,7 +89,7 @@
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Download for free
+          <span class="dl-label">Download for free</span>
         </a>
         <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="btn btn-secondary btn-lg">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -113,10 +113,13 @@
           <span class="stat-value" style="font-size:15px;letter-spacing:0">AI · Load · Mock</span>
           <span class="stat-label">Built in, zero extra tools</span>
         </div>
+        <!-- Downloads counter, hidden for now. Uncomment this block and the
+             fetch below (search "GitHub download counter") to show it publicly.
         <div class="stat">
-          <span class="stat-value" id="stat-downloads">—</span>
+          <span class="stat-value" id="stat-downloads">–</span>
           <span class="stat-label">Downloads</span>
         </div>
+        -->
         <div class="stat">
           <span class="stat-value">MIT</span>
           <span class="stat-label">License</span>
@@ -1284,11 +1287,14 @@
             <span class="platform-file">Flux_x.x.x_x64-setup.exe</span>
           </div>
           <ol>
-            <li>Download the .exe installer from the Releases page.</li>
+            <li>Download the .exe installer with the button below.</li>
             <li>Run the installer and follow the on-screen prompts.</li>
             <li>Flux installs to the user folder, no administrator rights required.</li>
             <li>Auto-updates run silently in the background when a new version is available.</li>
           </ol>
+          <div class="dl-row">
+            <a class="dl-btn" href="https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux_0.2.0_x64-setup.exe" data-dl="win-exe"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download .exe</a>
+          </div>
         </div>
 
         <div class="platform">
@@ -1306,6 +1312,10 @@
             <li>First launch: right-click Flux in Applications and choose Open to bypass Gatekeeper.</li>
             <li>Future launches work normally from Spotlight or the Dock.</li>
           </ol>
+          <div class="dl-row">
+            <a class="dl-btn" href="https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux_0.2.0_aarch64.dmg" data-dl="mac-arm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Apple Silicon .dmg</a>
+            <a class="dl-btn" href="https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux_0.2.0_x64.dmg" data-dl="mac-intel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Intel .dmg</a>
+          </div>
         </div>
 
         <div class="platform">
@@ -1328,10 +1338,15 @@
               run it directly.</li>
             <li>No installation needed for the AppImage, move it to any folder you prefer.</li>
           </ol>
+          <div class="dl-row">
+            <a class="dl-btn" href="https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux_0.2.0_amd64.deb" data-dl="linux-deb"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>.deb</a>
+            <a class="dl-btn" href="https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux-0.2.0-1.x86_64.rpm" data-dl="linux-rpm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>.rpm</a>
+            <a class="dl-btn" href="https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux_0.2.0_amd64.AppImage" data-dl="linux-appimage"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>.AppImage</a>
+          </div>
         </div>
 
         <div class="install-cta">
-          <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" class="btn btn-primary">
+          <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="install" class="btn btn-primary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -1340,7 +1355,7 @@
             </svg>
             Download latest release
           </a>
-          <a href="https://github.com/angeldevmobile/Flux-Post/releases" target="_blank" class="btn btn-secondary"
+          <a href="https://github.com/angeldevmobile/Flux-Post/releases" target="_blank" data-dl="install-all" class="btn btn-secondary"
             style="font-size:13px;">
             All releases
           </a>
@@ -1536,7 +1551,9 @@
     </footer>
 
     <script>
-      /* ── GitHub download counter (real installers only, excludes .sig / .json / .tar.gz) ── */
+      /* ── GitHub download counter, disabled while the stat is hidden ──
+         Re-enable together with the "Downloads" stat in the hero.
+         Private numbers meanwhile: npm run stats
       (async function () {
         try {
           const res = await fetch('https://api.github.com/repos/angeldevmobile/Flux-Post/releases');
@@ -1551,6 +1568,52 @@
           if (el) el.textContent = total >= 1000 ? (total / 1000).toFixed(1) + 'k' : String(total);
         } catch (_) {}
       })();
+      */
+
+      /* ── Main download button ──
+         Windows gets the installer directly. macOS cannot be told apart by chip
+         from the browser (navigator.platform says MacIntel on Apple Silicon too)
+         and Linux has three package formats, so both go to the platform cards
+         where every file is one click away. The href in the HTML points at the
+         Releases page and stays as the fallback if this never runs. */
+      (function () {
+        const WINDOWS_INSTALLER =
+          'https://github.com/angeldevmobile/Flux-Post/releases/latest/download/Flux_0.2.0_x64-setup.exe';
+
+        const ua = navigator.userAgent;
+        if (/Android|iPhone|iPad|iPod|Mobile/.test(ua)) return;
+
+        let href, label;
+        if (/Windows NT/.test(ua)) {
+          href = WINDOWS_INSTALLER;
+          label = 'Download for Windows';
+        } else if (/Mac OS X|Macintosh/.test(ua)) {
+          href = '#install';
+          label = 'Download for macOS';
+        } else if (/Linux|X11/.test(ua)) {
+          href = '#install';
+          label = 'Download for Linux';
+        } else {
+          return;
+        }
+
+        document.querySelectorAll('a[data-dl="nav"], a[data-dl="hero"]').forEach(link => {
+          link.href = href;
+          link.removeAttribute('target');
+          const text = link.querySelector('.dl-label');
+          if (text) text.textContent = label;
+        });
+      })();
+
+      /* ── Download click tracking, sent to GA4 only, nothing shown on the page ── */
+      document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[data-dl]');
+        if (!link || typeof gtag !== 'function') return;
+        gtag('event', 'download_click', {
+          link_location: link.dataset.dl,
+          link_url: link.href,
+        });
+      });
 
       /* ── FAQ toggle ── */
       document.querySelectorAll('.faq-q').forEach(btn => {

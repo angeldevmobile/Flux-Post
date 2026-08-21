@@ -51,6 +51,15 @@ const TARGETS = [
       new RegExp(String.raw`(<span class="badge">v)${SEMVER}(</span>)`),
       // Illustrative User-Agent in the AI-debug demo.
       new RegExp(String.raw`(Flux/)${SEMVER}()`, 'g'),
+      // Direct download links in the platform cards, plus the installer URL
+      // inside the main-download script. These are real asset names: get one
+      // wrong and the link 404s, which is why every file has its own pattern.
+      new RegExp(String.raw`(/download/Flux_)${SEMVER}(_x64-setup.exe)`, 'g'),
+      new RegExp(String.raw`(/download/Flux_)${SEMVER}(_aarch64.dmg)`, 'g'),
+      new RegExp(String.raw`(/download/Flux_)${SEMVER}(_x64.dmg)`, 'g'),
+      new RegExp(String.raw`(/download/Flux_)${SEMVER}(_amd64.deb)`, 'g'),
+      new RegExp(String.raw`(/download/Flux_)${SEMVER}(_amd64.AppImage)`, 'g'),
+      new RegExp(String.raw`(/download/Flux-)${SEMVER}(-1.x86_64.rpm)`, 'g'),
     ],
   },
   {

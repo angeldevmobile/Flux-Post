@@ -523,6 +523,39 @@ section {
   margin-top: 1px;
 }
 
+.dl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color .15s, color .15s;
+}
+
+.dl-btn:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.dl-btn svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
 .install-cta {
   padding: 16px 24px;
   background: var(--bg-card);

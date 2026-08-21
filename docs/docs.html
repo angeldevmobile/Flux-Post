@@ -13,6 +13,15 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet" />
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCQF29NN2W"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ZCQF29NN2W');
+    </script>
+
     <style>
       *,
       *::before,
@@ -1208,7 +1217,7 @@
             host machine.</p>
 
           <h2>Download</h2>
-          <p>Go to the <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank">latest
+          <p>Go to the <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="docs-install">latest
               release</a> on GitHub and download the installer for your platform.</p>
 
           <table>
@@ -3828,6 +3837,17 @@ flux run ./my-api --bail</code></pre>
       document.addEventListener('click', e => {
         if (!e.target.closest('.topbar-search')) closeSearch();
       });
+
+      /* ── Download click tracking, sent to GA4 only, nothing shown on the page ── */
+      document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[data-dl]');
+        if (!link || typeof gtag !== 'function') return;
+        gtag('event', 'download_click', {
+          link_location: link.dataset.dl,
+          link_url: link.href,
+        });
+      });
+
 
     </script>
 
