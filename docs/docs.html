@@ -849,6 +849,55 @@
         }
       }
 
+      /*   STAR CTA   */
+      /* Sits outside every .doc-section, so it stays at the bottom of whatever
+         section show() has open instead of appearing only once. */
+      .doc-cta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 56px;
+        padding: 20px 24px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--elevated);
+      }
+
+      .doc-cta-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--fg-2);
+      }
+
+      .doc-cta-text {
+        font-size: 13px;
+        color: var(--fg-4);
+        margin-top: 2px;
+      }
+
+      .doc-cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        flex-shrink: 0;
+        padding: 9px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--fg);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card);
+        transition: border-color .15s, background .15s;
+      }
+
+      .doc-cta-btn:hover {
+        border-color: var(--accent-50);
+        background: var(--accent-10);
+      }
+
       @media (max-width: 768px) {
         .sidebar {
           transform: translateX(-100%);
@@ -892,7 +941,7 @@
           <div class="search-results" id="search-results"></div>
         </div>
         <a href="index.html" class="topbar-link">Home</a>
-        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="topbar-link">GitHub</a>
+        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="topbar-link" data-cta="github-topbar">GitHub</a>
       </div>
     </header>
 
@@ -3627,6 +3676,21 @@ flux run ./my-api --bail</code></pre>
             </div>
           </div>
         </section>
+
+        <div class="doc-cta">
+          <div>
+            <div class="doc-cta-title">Flux is free and open source</div>
+            <div class="doc-cta-text">A star helps other developers find it.</div>
+          </div>
+          <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" rel="noopener noreferrer"
+            class="doc-cta-btn" data-cta="star-docs">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            Star on GitHub
+          </a>
+        </div>
 
       </main>
 

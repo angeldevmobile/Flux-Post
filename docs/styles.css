@@ -230,6 +230,12 @@ nav {
   width: 100%;
 }
 
+/* The downloads stat stays hidden until its number loads. Needs the explicit
+   rule because the display:flex below beats the browser default for [hidden]. */
+.stat[hidden] {
+  display: none;
+}
+
 .stat {
   flex: 1;
   display: flex;

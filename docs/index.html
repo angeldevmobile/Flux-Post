@@ -127,13 +127,13 @@
           <span class="stat-value" style="font-size:15px;letter-spacing:0">AI · Load · Mock</span>
           <span class="stat-label">Built in, zero extra tools</span>
         </div>
-        <!-- Downloads counter, hidden for now. Uncomment this block and the
-             fetch below (search "GitHub download counter") to show it publicly.
-        <div class="stat">
-          <span class="stat-value" id="stat-downloads">–</span>
+        <!-- Total installer downloads, straight from the GitHub API. Starts
+             hidden and the script at the bottom of the page reveals it once it
+             has a real number, so a rate limit never leaves a dash on screen. -->
+        <div class="stat" id="stat-downloads-wrap" hidden>
+          <span class="stat-value" id="stat-downloads">·</span>
           <span class="stat-label">Downloads</span>
         </div>
-        -->
         <div class="stat">
           <span class="stat-value">MIT</span>
           <span class="stat-label">License</span>
@@ -1557,7 +1557,7 @@
           </svg>
           LinkedIn
         </a>
-        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank">Repo</a>
+        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" data-cta="repo-footer">Repo</a>
         <a href="https://github.com/angeldevmobile/Flux-Post/releases" target="_blank">Releases</a>
         <a href="https://github.com/angeldevmobile/Flux-Post/issues" target="_blank">Issues</a>
         <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" target="_blank">License</a>
@@ -1565,24 +1565,56 @@
     </footer>
 
     <script>
-      /* ── GitHub download counter, disabled while the stat is hidden ──
-         Re-enable together with the "Downloads" stat in the hero.
-         Private numbers meanwhile: npm run stats
+      /* ── Public download counter ──
+         Total installers pulled from every release, straight off the GitHub
+         API. The number is GitHub's own, nobody can pump it from a browser
+         console, which is why downloads is the only public counter here.
+
+         Cached for an hour: unauthenticated GitHub allows 60 requests per hour
+         per IP and offices behind a single address burn through that fast.
+
+         Deeper numbers stay private: npm run stats, plus GA4 for traffic. */
       (async function () {
-        try {
-          const res = await fetch('https://api.github.com/repos/angeldevmobile/Flux-Post/releases');
-          if (!res.ok) return;
+        const CACHE_KEY = 'flux:downloads';
+        const CACHE_MS = 60 * 60 * 1000;
+        const INSTALLER_EXTS = ['.exe', '.msi', '.dmg', '.deb', '.rpm', '.AppImage'];
+
+        async function totalDownloads() {
+          try {
+            const hit = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+            if (hit && Date.now() - hit.t < CACHE_MS) return hit.v;
+          } catch (_) {}
+
+          const res = await fetch(
+            'https://api.github.com/repos/angeldevmobile/Flux-Post/releases?per_page=100');
+          if (!res.ok) throw new Error('github unavailable');
           const releases = await res.json();
-          const installerExts = ['.exe', '.msi', '.dmg', '.deb', '.rpm', '.AppImage'];
-          const total = releases.reduce((sum, r) =>
+
+          const v = releases.reduce((sum, r) =>
             sum + r.assets
-              .filter(a => installerExts.some(ext => a.name.endsWith(ext)))
+              .filter(a => INSTALLER_EXTS.some(ext => a.name.endsWith(ext)))
               .reduce((s, a) => s + a.download_count, 0), 0);
-          const el = document.getElementById('stat-downloads');
-          if (el) el.textContent = total >= 1000 ? (total / 1000).toFixed(1) + 'k' : String(total);
-        } catch (_) {}
+
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), v }));
+          } catch (_) {}
+          return v;
+        }
+
+        try {
+          const total = await totalDownloads();
+          const value = document.getElementById('stat-downloads');
+          const stat = document.getElementById('stat-downloads-wrap');
+          if (!value || !stat) return;
+
+          value.textContent =
+            total >= 1000 ? (total / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(total);
+          stat.hidden = false;
+        } catch (_) {
+          /* Rate limited or offline: the stat stays hidden and the hero looks
+             exactly as it did before this script ran. */
+        }
       })();
-      */
 
       /* ── Main download button ──
          Windows gets the installer directly. macOS cannot be told apart by chip
