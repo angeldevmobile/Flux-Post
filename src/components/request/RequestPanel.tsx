@@ -4,10 +4,11 @@ import { toast } from "sonner";
 import { Send, Plus, Trash2, ChevronDown, Bookmark, Eye, EyeOff, FileUp, X, Code2, TriangleAlert } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
-import { sendRequest, saveHistory, saveCollection, editContent } from "@/lib/tauri";
+import { sendRequest, saveCollection, editContent } from "@/lib/tauri";
+import { recordHistory } from "@/lib/history";
 import { networkOptions } from "@/lib/networkOptions";
 import { trackEvent, trackCrash, trackPerf } from "@/lib/analytics";
-import { pushHistory, pushCollection } from "@/lib/sync";
+import { pushCollection } from "@/lib/sync";
 import { useUserStore } from "@/stores/user";
 import { methodColor, methodBg, HTTP_METHODS } from "@/lib/methods";
 import { useEnvironmentStore } from "@/stores/environment";
@@ -104,7 +105,7 @@ function SavePopover({ onClose }: { onClose: () => void }) {
       await saveCollection(dir, updated);
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
       const userId = useUserStore.getState().user?.id;
-      if (userId) pushCollection(userId, updated);
+      if (userId) void pushCollection(updated);
       toast.success(`Saved to ${col.name}`);
       onClose();
     } finally {
@@ -771,18 +772,12 @@ export function RequestPanel() {
         }
       }
 
-      const { environments: envs, activeId: envActiveId } = useEnvironmentStore.getState();
-      const envName = envs.find(e => e.id === envActiveId)?.name ?? "";
-      const timestamp = new Date().toISOString();
-      await saveHistory(resolved.method, resolved.url, resp.status, resp.durationMs, envName);
-      const userId = useUserStore.getState().user?.id;
-      if (userId) {
-        pushHistory(userId, {
-          method: resolved.method, url: resolved.url,
-          status: resp.status, durationMs: resp.durationMs,
-          environment: envName, timestamp,
-        });
-      }
+      await recordHistory({
+        method: resolved.method,
+        url: resolved.url,
+        status: resp.status,
+        durationMs: resp.durationMs,
+      });
     } catch (e) {
       const msg = String(e);
       setError(msg);

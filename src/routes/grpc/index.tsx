@@ -5,14 +5,15 @@ import { useGrpcStore, type GrpcMetadataEntry } from "@/stores/grpcStore";
 import {
   grpcImportProto, grpcReflect, grpcInvoke, grpcLoadProtoById,
   grpcStreamOpen, grpcStreamSend, grpcStreamCloseSend, grpcStreamCancel,
-  saveHistory, saveCollection,
+  saveCollection,
   type GrpcService, type GrpcStreamEvent,
 } from "@/lib/tauri";
+import { recordHistory } from "@/lib/history";
 import { generateProtoFromServices } from "@/lib/protoText";
 import { useProtoLibraryStore } from "@/stores/protoLibraryStore";
 import { useCollectionsStore } from "@/stores/collections";
 import type { CollectionFolder } from "@/stores/collections";
-import { pushHistory, pushCollection } from "@/lib/sync";
+import { pushCollection } from "@/lib/sync";
 import { CodeEditor } from "@/components/CodeEditor";
 import { useEnvironmentStore } from "@/stores/environment";
 import { useUserStore } from "@/stores/user";
@@ -290,7 +291,7 @@ function GrpcSavePopover({
       await saveCollection(dir, updated);
       useCollectionsStore.setState({ collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c) });
       const userId = useUserStore.getState().user?.id;
-      if (userId) pushCollection(userId, updated);
+      if (userId) void pushCollection(updated);
       toast.success(`Saved to ${col.name}`);
       onClose();
     } finally {
@@ -593,18 +594,12 @@ export function GrpcRoute() {
 
       const resolvedEp = resolveVariable(endpoint.trim());
       const histUrl = `${resolvedEp}/${selectedService}/${selectedMethod}`;
-      const { environments: envs, activeId: envActiveId } = useEnvironmentStore.getState();
-      const envName = envs.find(e => e.id === envActiveId)?.name ?? "";
-      const timestamp = new Date().toISOString();
-      await saveHistory("gRPC", histUrl, 200, resp.durationMs, envName);
-      const userId = useUserStore.getState().user?.id;
-      if (userId) {
-        pushHistory(userId, {
-          method: "gRPC", url: histUrl,
-          status: 200, durationMs: resp.durationMs,
-          environment: envName, timestamp,
-        });
-      }
+      await recordHistory({
+        method: "gRPC",
+        url: histUrl,
+        status: 200,
+        durationMs: resp.durationMs,
+      });
     } catch (e) {
       setError(String(e));
     } finally {

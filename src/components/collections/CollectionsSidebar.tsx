@@ -256,7 +256,7 @@ export function CollectionsSidebar() {
         collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c),
       });
       const userId = useUserStore.getState().user?.id;
-      if (userId) pushCollection(userId, updated);
+      if (userId) void pushCollection(updated);
       setEditingDescId(null);
     } catch (e) {
       setLoadError(String(e));

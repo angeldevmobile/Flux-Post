@@ -1,5 +1,7 @@
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { checkSchemaVersion } from "@/lib/schemaVersion";
+import { getKnownVersion, setKnownVersion } from "@/lib/syncVersions";
 import { useSettingsStore } from "@/stores/settings";
 import { useCollectionsStore, type Collection } from "@/stores/collections";
 import { useEnvironmentStore, type Environment } from "@/stores/environment";
@@ -104,24 +106,88 @@ export async function pruneRemoteHistory(userId: string, days: number): Promise<
   if (error) throw new Error(error.message);
 }
 
-export function pushCollection(userId: string, collection: Collection) {
-  supabase.from("flux_collections").upsert({
-    id: collection.id,
-    user_id: userId,
-    data: collection,
-    updated_at: new Date().toISOString(),
-  }).then(() => {}, () => {});
+interface PutCollectionRow {
+  version: number;
+  conflict: boolean;
+  remote: Collection | null;
+}
+
+export type PushResult =
+  | { status: "saved" }
+  /** Alguien escribio despues de la version sobre la que se edito. */
+  | { status: "conflict"; remote: Collection }
+  | { status: "failed" };
+
+/**
+ * Guarda la coleccion en la nube declarando sobre que version se edito.
+ *
+ * Antes era un `upsert` fire-and-forget: el ultimo en escribir ganaba, sin
+ * aviso ni forma de recuperar lo pisado. Ahora el servidor rechaza el guardado
+ * si la version base ya no es la suya.
+ *
+ * En conflicto **no** se actualiza la version conocida a proposito. Si se
+ * actualizara, el siguiente guardado pasaria el control y pisaria el cambio
+ * ajeno en silencio, que es exactamente el fallo que esto viene a cerrar.
+ *
+ * El fichero local ya esta escrito antes de llamar aqui, asi que un conflicto
+ * nunca le cuesta al usuario lo que acaba de teclear.
+ */
+export async function pushCollection(collection: Collection): Promise<PushResult> {
+  if (_sessionInvalid) return { status: "failed" };
+
+  try {
+    const { data, error } = await supabase.rpc("flux_put_collection", {
+      p_id: collection.id,
+      p_data: collection,
+      p_base: getKnownVersion(collection.id),
+    });
+
+    if (error) {
+      if (isSupabase401(error)) { markSessionInvalid(); return { status: "failed" }; }
+      toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+      return { status: "failed" };
+    }
+
+    const row = (data as PutCollectionRow[] | null)?.[0];
+    if (!row) return { status: "failed" };
+
+    if (row.conflict) {
+      toast.warning(
+        `"${collection.name}" changed somewhere else. Your edit is saved on this machine but not in the cloud.`,
+        { id: `conflict-${collection.id}`, duration: 8000 },
+      );
+      return { status: "conflict", remote: row.remote as Collection };
+    }
+
+    setKnownVersion(collection.id, row.version);
+    return { status: "saved" };
+  } catch {
+    toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    return { status: "failed" };
+  }
 }
 
 async function pullCollections(userId: string) {
   const { data } = await supabase
     .from("flux_collections")
-    .select("data")
+    .select("data, version")
     .eq("user_id", userId);
 
   if (!data) return;
   for (const row of data) {
-    useCollectionsStore.getState().loadCollection(row.data as Collection);
+    const collection = row.data as Collection;
+    useCollectionsStore.getState().loadCollection(collection);
+
+    // Primer arranque tras la actualizacion: una coleccion que ya existe en
+    // las dos partes no tiene base registrada, y sin base cada guardado
+    // saldria como conflicto. Se siembra una sola vez con la version remota.
+    //
+    // La hipotesis es que local y remoto coinciden, que es lo que dejaba el
+    // comportamiento anterior de ultimo-en-escribir-gana. Si no coinciden, el
+    // resultado es el que ya se obtenia antes, no una regresion.
+    if (getKnownVersion(collection.id) === null) {
+      setKnownVersion(collection.id, row.version as number);
+    }
   }
 }
 
@@ -287,9 +353,28 @@ export function stopEnvironmentsSync() {
   environmentsTimer = null;
 }
 
-//                                          
+//
+// SCHEMA VERSION
+//
+
+/**
+ * Avisa una vez si la base de datos va por detras de lo que esta version de la
+ * app espera. No bloquea el sync: lo que ya funcione seguira funcionando, y lo
+ * que dependa de una migracion ausente fallara por su cuenta con su propio
+ * mensaje. El aviso existe para que ese fallo no parezca un misterio.
+ */
+async function warnIfSchemaBehind(): Promise<void> {
+  const check = await checkSchemaVersion();
+  if (check.status !== "behind") return;
+  toast.warning(
+    `The database is behind this version of Flux (${check.found} < ${check.required}). Some features may not work until the pending migrations are applied.`,
+    { id: "schema-behind", duration: 8000 },
+  );
+}
+
+//
 // ON LOGIN — pull everything
-//                                          
+//
 
 let _syncInProgress = false;
 
@@ -311,6 +396,8 @@ export async function syncOnLogin(userId: string) {
         return;
       }
     }
+
+    await warnIfSchemaBehind();
 
     // Pull first, then start subscriptions (avoids echoing pulled data back immediately)
     await Promise.allSettled([
