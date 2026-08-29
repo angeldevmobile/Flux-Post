@@ -81,3 +81,34 @@ export function forget(id: string): void {
   delete map[id];
   write(map);
 }
+
+/** Que hacer con una coleccion que el servidor devuelve al sincronizar. */
+export type PullDecision =
+  /** No esta en esta maquina: traerla. */
+  | "take"
+  /** Existe en los dos lados sin base registrada: anotar version, no tocar contenido. */
+  | "seed"
+  /** Al dia, o lo local va por delante y ya se subira. */
+  | "skip"
+  /** El remoto ha avanzado y aqui no hay nada pendiente: adoptarlo. */
+  | "adopt"
+  /** Ha avanzado en los dos sitios: que decida el usuario. */
+  | "conflict";
+
+/**
+ * La decision, aislada de Supabase y del disco para poder probarla.
+ *
+ * Es el punto del sync donde un fallo se traduce directamente en trabajo
+ * perdido, asi que conviene que sea una tabla legible y no una escalera de
+ * condiciones repartida entre efectos secundarios.
+ */
+export function decidePull(
+  existsLocally: boolean,
+  entry: SyncEntry | null,
+  remoteVersion: number,
+): PullDecision {
+  if (!existsLocally) return "take";
+  if (!entry || entry.version === null) return "seed";
+  if (remoteVersion <= entry.version) return "skip";
+  return entry.dirty ? "conflict" : "adopt";
+}

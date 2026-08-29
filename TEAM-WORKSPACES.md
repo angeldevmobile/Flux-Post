@@ -287,7 +287,12 @@ returning version;
 ```
 
 Cero filas devueltas = conflicto. La UI muestra un diff y deja elegir.
-**Para ese diff se reutiliza la pantalla de compare que ya existe** (`src/routes/compare/`).
+
+> Una nota sobre esto, porque estaba mal en la primera version de este
+> documento: la pantalla de compare **no** sirve para el diff. Lanza la misma
+> request contra varios entornos y compara respuestas; no es un visor de
+> diferencias generico. El diff usa el `DiffEditor` de Monaco, que ya viene con
+> `@monaco-editor/react`.
 
 Realtime: canal por workspace con filtro `workspace_id=eq.<id>` sobre `postgres_changes`,
 más un canal de *presence* para «quién está viendo qué request» — que es la señal visible
@@ -349,14 +354,18 @@ para escribir migraciones está en `supabase/README.md`.
 Beneficia a los usuarios actuales, no necesita workspaces, y es prerrequisito de
 Realtime.
 
-- Columna `version` y concurrencia optimista en las tablas actuales.
-- Eliminar el `if (exists) return s;` de `loadCollection`; resolver por versión.
-- `pushCollection` deja de ser fire-and-forget: reporta error y reintenta.
-- UI de conflicto reutilizando la pantalla de compare.
-- **Enmascarar los secretos de la URL antes de persistir el historial** (§1.2 C). El store
-  ya sabe qué claves son secretas: basta revertirlas a `{{VAR}}` antes de escribir en
-  SQLite y en `flux_history`. No depende de nada del resto del plan y arregla una fuga
-  que existe hoy.
+- [x] Columna `version` y concurrencia optimista (`20260828000002`): el contador lo lleva un
+      trigger, no la RPC, porque los clientes ya instalados siguen escribiendo por `upsert`
+      directo y si no la versión se congelaría. `updated_at` pasa a ponerlo el servidor.
+- [x] `pushCollection` declara su versión base y deja de ser fire-and-forget.
+- [x] El pull adopta el remoto cuando va por delante y no hay cambios locales pendientes.
+      Lo que hace posible distinguirlo es la marca `dirty` de `src/lib/syncVersions.ts`,
+      puesta **antes** de intentar el push, de modo que cualquier interrupción deje el
+      error del lado de preguntar.
+- [x] UI de conflicto: `src/components/ConflictDialog.tsx`, con `DiffEditor` de Monaco.
+- [x] **Enmascarar los secretos de la URL antes de persistir el historial** (§1.2 C). El
+      store ya sabe qué claves son secretas: se revierten a `{{VAR}}` antes de escribir en
+      SQLite y en `flux_history`, en `src/lib/history.ts`, único punto de escritura.
 
 **Salida:** editar en la máquina A y abrir en la B muestra el cambio. Editar en las dos a
 la vez produce un conflicto visible, nunca una pérdida silenciosa. Ninguna URL del

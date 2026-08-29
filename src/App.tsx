@@ -5,6 +5,7 @@ import { useAppearance } from "@/hooks/useAppearance";
 import { TopBar } from "@/components/TopBar";
 import { ProductTour } from "@/components/ProductTour";
 import { WhatsNewDialog } from "@/components/WhatsNewDialog";
+import { ConflictDialog } from "@/components/ConflictDialog";
 import { Login } from "@/routes/auth/Login";
 import { SignUp } from "@/routes/auth/SignUp";
 import { RequestsRoute } from "@/routes/requests";
@@ -107,6 +108,7 @@ function AppShell() {
       <GitHubModal open={githubOpen} onClose={() => setGithubOpen(false)} />
       <ProductTour open={showTour} onDone={() => setShowTour(false)} />
       {!showTour && <WhatsNewDialog onNavigate={setRoute} />}
+      <ConflictDialog />
     </div>
   );
 }

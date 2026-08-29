@@ -1,7 +1,8 @@
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { checkSchemaVersion } from "@/lib/schemaVersion";
-import { getEntry, markDirty, markSynced } from "@/lib/syncVersions";
+import { getEntry, markDirty, markSynced, decidePull } from "@/lib/syncVersions";
+import { useConflictsStore, type Conflict } from "@/stores/conflicts";
 import { useSettingsStore } from "@/stores/settings";
 import { useCollectionsStore, type Collection } from "@/stores/collections";
 import { useEnvironmentStore, type Environment } from "@/stores/environment";
@@ -114,7 +115,7 @@ export async function pruneRemoteHistory(userId: string, days: number): Promise<
  * que hay que escribirlo: dejarlo solo en memoria haria que el proximo
  * `loadCollections` resucitara la version vieja.
  */
-async function adoptRemoteCollection(remote: Collection, version: number): Promise<void> {
+export async function adoptRemoteCollection(remote: Collection, version: number): Promise<void> {
   const dir = localStorage.getItem("flux_collections_dir");
   if (!dir) return;   // sin carpeta configurada no hay ficheros que actualizar
 
@@ -180,11 +181,15 @@ export async function pushCollection(collection: Collection): Promise<PushResult
     if (!row) return { status: "failed" };
 
     if (row.conflict) {
-      toast.warning(
-        `"${collection.name}" changed somewhere else. Your edit is saved on this machine but not in the cloud.`,
-        { id: `conflict-${collection.id}`, duration: 8000 },
-      );
-      return { status: "conflict", remote: row.remote as Collection };
+      const remote = row.remote as Collection;
+      useConflictsStore.getState().raise({
+        id: collection.id,
+        name: collection.name,
+        local: collection,
+        remote,
+        remoteVersion: row.version,
+      });
+      return { status: "conflict", remote };
     }
 
     markSynced(collection.id, row.version);
@@ -209,39 +214,38 @@ async function pullCollections(userId: string) {
     const store = useCollectionsStore.getState();
     const local = store.collections.find((c) => c.id === remote.id);
 
-    // No esta en esta maquina: se trae y punto.
-    if (!local) {
-      store.loadCollection(remote);
-      markSynced(remote.id, remoteVersion);
-      continue;
+    switch (decidePull(local !== undefined, getEntry(remote.id), remoteVersion)) {
+      case "take":
+        store.loadCollection(remote);
+        markSynced(remote.id, remoteVersion);
+        break;
+
+      // Existe en los dos lados sin base registrada. Pasa al actualizar desde
+      // una version anterior al versionado. Se anota la version sin tocar el
+      // contenido local: la hipotesis es que coinciden, que es lo que dejaba
+      // el comportamiento anterior de ultimo-en-escribir-gana. Si no
+      // coinciden, el resultado es el que ya se obtenia antes.
+      case "seed":
+        markSynced(remote.id, remoteVersion);
+        break;
+
+      case "skip":
+        break;
+
+      case "adopt":
+        await adoptRemoteCollection(remote, remoteVersion);
+        break;
+
+      case "conflict":
+        useConflictsStore.getState().raise({
+          id: remote.id,
+          name: remote.name,
+          local: local as Collection,
+          remote,
+          remoteVersion,
+        });
+        break;
     }
-
-    const entry = getEntry(remote.id);
-
-    // Existe en los dos lados sin base registrada. Pasa al actualizar desde
-    // una version anterior al versionado. Se siembra sin tocar el contenido
-    // local: la hipotesis es que coinciden, que es lo que dejaba el
-    // comportamiento anterior de ultimo-en-escribir-gana. Si no coinciden, el
-    // resultado es el que ya se obtenia antes, no una regresion.
-    if (!entry || entry.version === null) {
-      markSynced(remote.id, remoteVersion);
-      continue;
-    }
-
-    // Al dia, o lo local va por delante y ya se subira.
-    if (remoteVersion <= entry.version) continue;
-
-    // El remoto ha avanzado y aqui hay cambios sin confirmar. No se pisa
-    // nada: se avisa y que decida el usuario.
-    if (entry.dirty) {
-      toast.warning(
-        `"${remote.name}" changed somewhere else, and this machine has unsaved changes of its own.`,
-        { id: `conflict-${remote.id}`, duration: 8000 },
-      );
-      continue;
-    }
-
-    await adoptRemoteCollection(remote, remoteVersion);
   }
 }
 
@@ -405,6 +409,27 @@ export function stopEnvironmentsSync() {
   environmentsUnsubscribe = null;
   if (environmentsTimer) clearTimeout(environmentsTimer);
   environmentsTimer = null;
+}
+
+//
+// CONFLICT RESOLUTION
+//
+
+/**
+ * Se queda la version de esta maquina y pisa la del servidor.
+ *
+ * El truco es adoptar la version remota como base antes de reintentar: con
+ * ella el guardado deja de ser un conflicto y pasa el control de la RPC. No es
+ * saltarse la comprobacion, es declarar que se ha visto lo que habia.
+ */
+export async function keepLocalCollection(conflict: Conflict): Promise<PushResult> {
+  markSynced(conflict.id, conflict.remoteVersion);
+  return pushCollection(conflict.local);
+}
+
+/** Se queda la version del servidor y descarta la local. */
+export async function keepRemoteCollection(conflict: Conflict): Promise<void> {
+  await adoptRemoteCollection(conflict.remote, conflict.remoteVersion);
 }
 
 //

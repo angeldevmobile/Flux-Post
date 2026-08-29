@@ -11,8 +11,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - Request history no longer stores the value of a secret variable. The URL was saved after variable interpolation, so sending `?api_key={{API_KEY}}` wrote the literal key into local history and, with sync enabled, into the cloud — masked in the environments panel, in plain text in the table. Secret values are now rewritten back to `{{VAR}}` before the entry is written, in one place both the HTTP and gRPC paths go through. Values shorter than four characters are left alone: they occur throughout ordinary URLs and masking them would make history unreadable without protecting anything that was really a secret.
 - Entries written before this version can still hold a secret value. Cloud history will be cleared once this version is in wide use; the history on your own machine is not touched, and nothing re-uploads it.
 
+### Fixed
+- Editing the same collection on two machines no longer loses one of the edits. Saving uploaded the whole collection and the last write won, silently and unrecoverably — and the pull side made it worse by discarding the cloud copy whenever a collection with that id already existed locally, so the other machine's change was never even seen. Saving now declares which version it started from and the server rejects it if someone else got there first; a conflict opens a side-by-side diff where you choose which version survives. When the cloud is ahead and this machine has nothing pending, the change is simply applied.
+- `updated_at` on synced collections is now set by the server. It was sent by the client, so a machine with a skewed clock always won or always lost.
+
 ### Changed
 - Replaying a request from history now restores the variable rather than the value it resolved to, so the request goes out with the current credential instead of whatever was valid when the entry was recorded
+- The database schema now lives in versioned migrations under `supabase/migrations/`, applied from scratch in CI on every pull request. Flux warns at sign-in if the database it is talking to is missing migrations this version expects.
 
 ---
 
