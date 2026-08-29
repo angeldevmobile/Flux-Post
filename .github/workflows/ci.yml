@@ -85,3 +85,29 @@ jobs:
       # one in src/lib/__tests__/assertions.test.ts.
       - name: Tests (flux-cli)
         run: cargo test --manifest-path flux-cli/Cargo.toml
+
+  migrations:
+    name: Migrations (apply from scratch)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Levanta el stack local, que aplica supabase/migrations/ en orden sobre
+      # una base vacia. Sin esto, la primera vez que una migracion se ejecuta
+      # de verdad es en produccion. No necesita secretos: el Postgres es el
+      # efimero del runner.
+      - name: Start local stack
+        run: supabase start
+
+      # Rehace la base desde cero. Detecta la migracion que solo funciona
+      # porque el objeto ya existia de antes en la maquina de quien la escribio.
+      - name: Reapply from an empty database
+        run: supabase db reset
+
+      - name: Stop
+        if: always()
+        run: supabase stop --no-backup

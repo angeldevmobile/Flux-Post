@@ -25,3 +25,7 @@ flux-cli/target/
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI (estado local del enlace y del entorno de desarrollo)
+supabase/.temp/
+supabase/.branches/

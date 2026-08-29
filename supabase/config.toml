@@ -1,0 +1,6 @@
+# Configuracion del CLI de Supabase.
+#
+# `project_id` es el nombre local del proyecto, no la referencia del proyecto
+# remoto: esa se fija fuera del repositorio con
+#   supabase link --project-ref <ref>
+project_id = "flux"
