@@ -27,6 +27,8 @@ interface CollectionsStore {
   activeRequestId: string | null;
   setActiveRequest: (id: string | null) => void;
   loadCollection: (collection: Collection) => void;
+  /** Sustituye una que ya esta cargada. `loadCollection` no pisa a proposito. */
+  replaceCollection: (collection: Collection) => void;
   addCollection: (collection: Collection) => void;
   toggleCollection: (id: string) => void;
   toggleFolder: (collectionId: string, folderId: string) => void;
@@ -57,6 +59,13 @@ export const useCollectionsStore = create<CollectionsStore>((set) => ({
       if (exists) return s;
       return { collections: [...s.collections, collection] };
     }),
+
+  replaceCollection: (collection) =>
+    set((s) => ({
+      collections: s.collections.map((c) =>
+        c.id === collection.id ? { ...collection, expanded: c.expanded } : c
+      ),
+    })),
 
   addCollection: (collection) =>
     set((s) => ({ collections: [...s.collections, collection] })),

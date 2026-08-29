@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { checkSchemaVersion } from "@/lib/schemaVersion";
-import { getKnownVersion, setKnownVersion } from "@/lib/syncVersions";
+import { getEntry, markDirty, markSynced } from "@/lib/syncVersions";
 import { useSettingsStore } from "@/stores/settings";
 import { useCollectionsStore, type Collection } from "@/stores/collections";
 import { useEnvironmentStore, type Environment } from "@/stores/environment";
@@ -106,6 +106,29 @@ export async function pruneRemoteHistory(userId: string, days: number): Promise<
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Trae la version remota al disco y al store.
+ *
+ * Solo se llama cuando no hay cambios locales sin confirmar, asi que no puede
+ * pisar trabajo del usuario. El fichero YAML es la fuente de verdad local, asi
+ * que hay que escribirlo: dejarlo solo en memoria haria que el proximo
+ * `loadCollections` resucitara la version vieja.
+ */
+async function adoptRemoteCollection(remote: Collection, version: number): Promise<void> {
+  const dir = localStorage.getItem("flux_collections_dir");
+  if (!dir) return;   // sin carpeta configurada no hay ficheros que actualizar
+
+  try {
+    const { saveCollection } = await import("@/lib/tauri");
+    await saveCollection(dir, remote);
+    useCollectionsStore.getState().replaceCollection(remote);
+    markSynced(remote.id, version);
+  } catch {
+    // El fichero manda. Si no se pudo escribir, no se toca el store ni se
+    // marca como sincronizada: se reintentara en el proximo arranque.
+  }
+}
+
 interface PutCollectionRow {
   version: number;
   conflict: boolean;
@@ -133,13 +156,18 @@ export type PushResult =
  * nunca le cuesta al usuario lo que acaba de teclear.
  */
 export async function pushCollection(collection: Collection): Promise<PushResult> {
+  // Antes de intentarlo, no despues: si esto se queda a medias (sin red, la
+  // app cerrada, un fallo del servidor) la coleccion tiene que quedar marcada
+  // como no confirmada, para que el pull no la pise mas tarde.
+  markDirty(collection.id);
+
   if (_sessionInvalid) return { status: "failed" };
 
   try {
     const { data, error } = await supabase.rpc("flux_put_collection", {
       p_id: collection.id,
       p_data: collection,
-      p_base: getKnownVersion(collection.id),
+      p_base: getEntry(collection.id)?.version ?? null,
     });
 
     if (error) {
@@ -159,7 +187,7 @@ export async function pushCollection(collection: Collection): Promise<PushResult
       return { status: "conflict", remote: row.remote as Collection };
     }
 
-    setKnownVersion(collection.id, row.version);
+    markSynced(collection.id, row.version);
     return { status: "saved" };
   } catch {
     toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
@@ -174,20 +202,46 @@ async function pullCollections(userId: string) {
     .eq("user_id", userId);
 
   if (!data) return;
-  for (const row of data) {
-    const collection = row.data as Collection;
-    useCollectionsStore.getState().loadCollection(collection);
 
-    // Primer arranque tras la actualizacion: una coleccion que ya existe en
-    // las dos partes no tiene base registrada, y sin base cada guardado
-    // saldria como conflicto. Se siembra una sola vez con la version remota.
-    //
-    // La hipotesis es que local y remoto coinciden, que es lo que dejaba el
+  for (const row of data) {
+    const remote = row.data as Collection;
+    const remoteVersion = row.version as number;
+    const store = useCollectionsStore.getState();
+    const local = store.collections.find((c) => c.id === remote.id);
+
+    // No esta en esta maquina: se trae y punto.
+    if (!local) {
+      store.loadCollection(remote);
+      markSynced(remote.id, remoteVersion);
+      continue;
+    }
+
+    const entry = getEntry(remote.id);
+
+    // Existe en los dos lados sin base registrada. Pasa al actualizar desde
+    // una version anterior al versionado. Se siembra sin tocar el contenido
+    // local: la hipotesis es que coinciden, que es lo que dejaba el
     // comportamiento anterior de ultimo-en-escribir-gana. Si no coinciden, el
     // resultado es el que ya se obtenia antes, no una regresion.
-    if (getKnownVersion(collection.id) === null) {
-      setKnownVersion(collection.id, row.version as number);
+    if (!entry || entry.version === null) {
+      markSynced(remote.id, remoteVersion);
+      continue;
     }
+
+    // Al dia, o lo local va por delante y ya se subira.
+    if (remoteVersion <= entry.version) continue;
+
+    // El remoto ha avanzado y aqui hay cambios sin confirmar. No se pisa
+    // nada: se avisa y que decida el usuario.
+    if (entry.dirty) {
+      toast.warning(
+        `"${remote.name}" changed somewhere else, and this machine has unsaved changes of its own.`,
+        { id: `conflict-${remote.id}`, duration: 8000 },
+      );
+      continue;
+    }
+
+    await adoptRemoteCollection(remote, remoteVersion);
   }
 }
 
