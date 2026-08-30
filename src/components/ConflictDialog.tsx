@@ -8,21 +8,47 @@ import { keepLocalCollection, keepRemoteCollection } from "@/lib/sync";
 import type { Collection } from "@/stores/collections";
 
 /**
- * `expanded` es estado de la barra lateral, no contenido. Sin quitarlo, abrir
- * o cerrar una carpeta apareceria como diferencia y el diff se llenaria de
- * ruido que no explica nada.
+ * Deja los dos lados en la misma forma para que el diff solo marque lo que de
+ * verdad cambia.
+ *
+ * Hacen falta dos normalizaciones:
+ *
+ * 1. Ordenar las claves. El lado local llega con el orden de JavaScript y el
+ *    remoto con el que Postgres le da al guardarlo como `jsonb`, que las
+ *    reordena por longitud y alfabeticamente. Sin ordenar, practicamente cada
+ *    linea sale marcada aunque el contenido sea identico.
+ * 2. Quitar `expanded`, que es estado de la barra lateral y no contenido:
+ *    abrir o cerrar una carpeta no es un cambio que resolver.
+ * 3. Quitar lo vacio y lo nulo. Una coleccion recien leida del disco pasa por
+ *    Rust, que rellena `params: {}`, `form: {}` y `extractors: []`; la que se
+ *    subio desde memoria no los lleva. Significan lo mismo, asi que marcarlos
+ *    como diferencia solo estorba a quien tiene que decidir.
  */
-function forDiff(collection: Collection): string {
-  const clean = JSON.parse(JSON.stringify(collection)) as Record<string, unknown>;
-  const strip = (node: Record<string, unknown>) => {
-    delete node.expanded;
-    for (const value of Object.values(node)) {
-      if (Array.isArray(value)) value.forEach((v) => typeof v === "object" && v && strip(v as Record<string, unknown>));
-      else if (typeof value === "object" && value) strip(value as Record<string, unknown>);
+function isEmpty(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "object") return Object.keys(value as object).length === 0;
+  return false;
+}
+
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(source).sort()) {
+      if (key === "expanded") continue;
+      const normalized = canonical(source[key]);
+      if (isEmpty(normalized)) continue;
+      out[key] = normalized;
     }
-  };
-  strip(clean);
-  return JSON.stringify(clean, null, 2);
+    return out;
+  }
+  return value;
+}
+
+function forDiff(collection: Collection): string {
+  return JSON.stringify(canonical(collection), null, 2);
 }
 
 function ConflictBody({ conflict, onDone }: { conflict: Conflict; onDone: () => void }) {
@@ -90,6 +116,13 @@ function ConflictBody({ conflict, onDone }: { conflict: Conflict; onDone: () => 
           language="json"
           theme={isDark ? "flux-dark" : "flux-light"}
           beforeMount={defineThemes}
+          // Al cerrar el dialogo, Monaco desecha sus modelos antes de que el
+          // widget del diff se entere y lanza un error sin capturar. Como
+          // `initCrashReporting` engancha `window.onerror`, cada conflicto
+          // resuelto acababa escribiendo un informe de crash falso en
+          // `crash_reports`. Reteniendo los modelos no hay carrera que perder.
+          keepCurrentOriginalModel
+          keepCurrentModifiedModel
           options={{
             readOnly: true,
             renderSideBySide: true,
