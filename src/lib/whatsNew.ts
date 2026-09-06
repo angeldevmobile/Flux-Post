@@ -13,6 +13,19 @@ export interface Release {
 // offline-first y esto no debería depender de la red.
 export const RELEASES: Release[] = [
   {
+    version: "0.2.1",
+    date: "2026-09-05",
+    title: "Fixes to what Flux sends, and what it never should have",
+    major: true,
+    points: [
+      "Usage telemetry was sending the request URL after variable interpolation, so a request to `?api_key={{API_KEY}}` put the literal key in the analytics table. It now reports only the method, the scheme, and whether the host was localhost — never the URL, and never the hostname.",
+      "Crash reports are now redacted before they leave your machine: URLs, home-directory paths, e-mail addresses and credential-shaped strings are stripped.",
+      "Anonymous usage analytics now actually works if you turn it on. It has been silently discarded for months for anyone not signed in, which is most people. It remains off by default — Settings → Data & Privacy.",
+      "Update checks now go through Flux's own endpoint instead of GitHub, so we can tell how many installations are still active. It stores a salted hash of your IP, never the address, and the salt is thrown away after two days. GitHub stays configured as a fallback, so updates keep working if the service is down.",
+      "The Data & Privacy page in the docs now lists exactly what is sent and what never is, with links to the code. The previous description was wrong.",
+    ],
+  },
+  {
     version: "0.2.0",
     date: "2026-08-17",
     title: "Free AI tier, collections that keep everything, one assertion engine",

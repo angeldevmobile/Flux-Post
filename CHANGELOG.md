@@ -5,15 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## [Unreleased]
+## [0.2.1] — 2026-09-05
 
 ### Security
 - Request history no longer stores the value of a secret variable. The URL was saved after variable interpolation, so sending `?api_key={{API_KEY}}` wrote the literal key into local history and, with sync enabled, into the cloud — masked in the environments panel, in plain text in the table. Secret values are now rewritten back to `{{VAR}}` before the entry is written, in one place both the HTTP and gRPC paths go through. Values shorter than four characters are left alone: they occur throughout ordinary URLs and masking them would make history unreadable without protecting anything that was really a secret.
 - Entries written before this version can still hold a secret value. Cloud history will be cleared once this version is in wide use; the history on your own machine is not touched, and nothing re-uploads it.
+- Usage telemetry no longer sends the request URL. `request_send` reported `resolved.url`, which is the URL *after* variable interpolation, so a request to `?api_key={{API_KEY}}` sent the literal key to the analytics table. Only the method, the scheme and whether the host was localhost are reported now. The hostname is dropped too: an internal host like `api.staging.acme.local` identifies the user's employer.
+- Crash reports are redacted before leaving the machine. URLs, home-directory paths (which carry the user's real name), e-mail addresses, credential-shaped strings and long tokens are stripped by a single function covered by tests.
+- The telemetry reporting views were readable by anyone. They were created over tables with row-level security assuming they would inherit it; a Postgres view runs with its *owner's* privileges, and the owner bypasses RLS. `telemetry_crashes` served real crash messages to anyone holding the anon key, which ships inside every Flux binary. Fixed the same day it was introduced, before any release carried it.
 
 ### Fixed
 - Editing the same collection on two machines no longer loses one of the edits. Saving uploaded the whole collection and the last write won, silently and unrecoverably — and the pull side made it worse by discarding the cloud copy whenever a collection with that id already existed locally, so the other machine's change was never even seen. Saving now declares which version it started from and the server rejects it if someone else got there first; a conflict opens a side-by-side diff where you choose which version survives. When the cloud is ahead and this machine has nothing pending, the change is simply applied.
 - `updated_at` on synced collections is now set by the server. It was sent by the client, so a machine with a skewed clock always won or always lost.
+- Anonymous usage telemetry was being discarded in silence. The row-level security policy only allowed inserts `to authenticated`, and signing in to Flux is optional, so the majority of installations — which never authenticate — had every event rejected by Postgres and swallowed by an empty `catch`. Months of data were lost without a single symptom. Telemetry now goes through an edge function that validates the payload and writes with a service role, and the tables stay closed to the anon role.
+
+### Added
+- Flux can now measure how it is actually used, not just how many people visit the website. An anonymous per-installation identifier makes it possible to count active installations and retention instead of loose event counts. It identifies a copy of Flux, not a person: it is a random UUID, is not linked to a Flux account, and clearing local data resets it. Off by default — Settings → Data & Privacy → Send usage analytics.
+- Update checks now go through Flux's own endpoint, which serves the same manifest proxied from GitHub and counts the installation as active. GitHub remains configured as a second endpoint, so if the service is down updates keep working. The check stores a salted hash of the IP and user agent, never the address itself; the salt rotates daily and is discarded after two days. Documented in the app's Data & Privacy page.
+- `npm run stats:app` reports real usage — active installations, retention, which sections of the app get opened, and grouped crashes.
 
 ### Changed
 - Replaying a request from history now restores the variable rather than the value it resolved to, so the request goes out with the current credential instead of whatever was valid when the entry was recorded

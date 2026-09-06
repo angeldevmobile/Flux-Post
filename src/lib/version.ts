@@ -1,2 +1,2 @@
 // Written by `npm run release <version>` — do not edit by hand.
-export const APP_VERSION = "0.2.0";
+export const APP_VERSION = "0.2.1";
