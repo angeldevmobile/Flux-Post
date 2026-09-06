@@ -1,0 +1,46 @@
+name: Feature request
+description: Something Flux should do and doesn't
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If you are not sure yet whether this is a feature or just a question,
+        [Discussions](https://github.com/angeldevmobile/Flux-Post/discussions)
+        is the better place to start.
+
+  # Pedir el problema antes que la solución no es burocracia: la solución
+  # propuesta suele ser la que el usuario conoce de otra herramienta, y el
+  # problema de fondo admite respuestas mejores.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: >
+        The problem, not the solution. "I need to reuse the token from a login
+        response across twenty requests" tells us more than "add global
+        variables" — Flux may already do it another way, or the right fix may
+        not be the one you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: How you work around it today
+      description: What you do instead, in Flux or in another tool.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like Flux to do
+      description: If you have a concrete idea, describe it here.
+
+  - type: input
+    id: context
+    attributes:
+      label: What do you use Flux for
+      description: >
+        Optional, and genuinely useful. REST at work, gRPC on a side project,
+        load testing in CI — it changes how a request gets prioritised.
+      placeholder: "Mostly REST and WebSocket testing against a staging API"

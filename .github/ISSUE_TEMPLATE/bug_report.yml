@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in Flux is broken or behaves differently than documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The fields below exist so the first reply can be an
+        answer instead of three questions.
+
+  # Flux redacts crash reports before sending them, but an issue is typed by
+  # hand into a public page. This is the reminder that the automatic redaction
+  # cannot cover.
+  - type: checkboxes
+    id: no-secrets
+    attributes:
+      label: Before you post
+      options:
+        - label: >
+            I have removed API keys, tokens, cookies and internal hostnames from
+            anything I pasted below. This issue is public.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Flux version
+      description: Settings → About, or the title bar. Please don't write "latest".
+      placeholder: "0.2.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux (deb)
+        - Linux (rpm)
+        - Linux (AppImage)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: >
+        The single most useful field. A bug nobody can reproduce usually stays
+        open until it is closed as stale.
+      placeholder: |
+        1. Open a new request
+        2. Set the method to QUERY
+        3. Send it
+        4. The response panel stays empty
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      description: >
+        If Flux showed an error, paste it here. Check it for credentials first —
+        error messages in an API client often contain the URL that failed.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, a collection that reproduces it, what you tried.

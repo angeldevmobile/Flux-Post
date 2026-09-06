@@ -1,0 +1,17 @@
+# Las incidencias en blanco quedan desactivadas a propósito: sin plantilla, un
+# reporte llega sin versión ni sistema operativo y la primera respuesta se gasta
+# en pedirlos. Quien no venga a reportar un fallo tiene los enlaces de abajo.
+blank_issues_enabled: false
+
+contact_links:
+  - name: Question, idea or feedback
+    url: https://github.com/angeldevmobile/Flux-Post/discussions
+    about: Anything that isn't a concrete bug. Questions about the docs are welcome.
+
+  - name: Documentation
+    url: https://fluxapi.dev/docs.html
+    about: Setup, features and the full list of what Flux sends and never sends.
+
+  - name: Security issue
+    url: https://github.com/angeldevmobile/Flux-Post/blob/main/SECURITY.md
+    about: Please do not open a public issue for a vulnerability. See SECURITY.md.
