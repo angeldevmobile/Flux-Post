@@ -1,10 +1,3 @@
-#!/usr/bin/env node
-// Usage: npm run release <version>
-//
-// Every place the version is written down lives in TARGETS below. Add new ones
-// there or they will silently drift. The updater's latest.json is not included:
-// tauri-action generates it at release time and uploads it as a release asset.
-
 const fs = require('fs');
 const path = require('path');
 

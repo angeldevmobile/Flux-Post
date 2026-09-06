@@ -1,19 +1,4 @@
 #!/usr/bin/env node
-/*
- * Uso real de Flux, leído de la telemetría propia.
- *
- *   SUPABASE_SERVICE_KEY=eyJ... npm run stats:app
- *   SUPABASE_SERVICE_KEY=eyJ... npm run stats:app -- --days 60
- *
- * Complementa `npm run stats`, que cuenta descargas de GitHub. Descargas y uso
- * son dos números distintos: la diferencia entre ambos es la gente que instaló
- * Flux y no volvió, que es justo lo que ninguna métrica de la landing ve.
- *
- * La service key NO se guarda en el repo. Está en el panel de Supabase, en
- * Project Settings → API → service_role. Da acceso total a la base de datos:
- * no la pegues en un script, no la subas, no la pases por chat.
- */
-
 const PROJECT_URL = 'https://zmzfupygrhseljaxzyeb.supabase.co';
 
 const KEY = process.env.SUPABASE_SERVICE_KEY;

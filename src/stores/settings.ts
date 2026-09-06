@@ -62,6 +62,12 @@ interface SettingsStore {
   // Onboarding
   tourSeen: boolean;
   lastSeenVersion: string;
+  /**
+   * Si ya se preguntó por la telemetría. Va aparte de `analytics` a propósito:
+   * quien dijo que no deja `analytics` en false igual que quien no ha contestado,
+   * y sin este flag volveríamos a preguntárselo en cada arranque.
+   */
+  analyticsAsked: boolean;
 
   // Actions
   setTimeoutMs: (v: number) => void;
@@ -135,6 +141,7 @@ export const useSettingsStore = create<SettingsStore>()(
       // Onboarding
       tourSeen: false,
       lastSeenVersion: "0.0.0",
+      analyticsAsked: false,
 
       // Actions
       setTimeoutMs: (timeoutMs) => set({ timeoutMs }),

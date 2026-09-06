@@ -1,14 +1,3 @@
-#!/usr/bin/env node
-/*
- * Private release stats for Flux.
- *
- *   npm run stats
- *   GITHUB_TOKEN=ghp_xxx npm run stats   (raises the API rate limit to 5000/h)
- *
- * Prints download counts per release and per platform. Nothing is published:
- * this only reads the public GitHub API from your machine.
- */
-
 const REPO = 'angeldevmobile/Flux-Post';
 
 const PLATFORMS = [
