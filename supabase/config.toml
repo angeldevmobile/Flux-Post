@@ -4,3 +4,27 @@
 # remoto: esa se fija fuera del repositorio con
 #   supabase link --project-ref <ref>
 project_id = "flux"
+
+# ─────────────────────────────────────
+# Edge functions
+#
+#   telemetry  → mantiene la verificación de JWT. No exige sesión de usuario:
+#                la anon key la satisface, y la app la manda en la cabecera
+#                `Authorization`. Apagarla dejaría un endpoint de escritura
+#                abierto a internet. La anon key es pública (va en el binario),
+#                así que no es una barrera fuerte, pero sí frena el abuso
+#                casual sin cerrarle la puerta a nadie legítimo.
+#
+#   app-update → sin verificación, y no hay alternativa: la llama el updater
+#                de Tauri desde Rust, que no manda cabecera `Authorization` y
+#                cuyo endpoint es una URL fija en tauri.conf.json sin sitio
+#                donde añadirla.
+#
+# OJO: esto solo lo aplica el CLI. Si despliegas desde el panel de Supabase,
+# hay que ponerlo a mano en Settings → Verify JWT with legacy secret.
+# ─────────────────────────────────────
+[functions.telemetry]
+verify_jwt = true
+
+[functions.app-update]
+verify_jwt = false

@@ -24,7 +24,7 @@ import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
 import { loadSession, saveSession, clearSessionDb, pruneHistory } from "@/lib/tauri";
-import { initCrashReporting, trackEvent } from "@/lib/analytics";
+import { initCrashReporting, trackEvent, flushEvents } from "@/lib/analytics";
 import { checkForUpdates, installAndRestart } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
 import { useNavStore } from "@/stores/nav";
@@ -54,6 +54,13 @@ function AppShell() {
     if (days > 0) pruneHistory(days).catch(() => { /* no bloquea el arranque */ });
   }, []);
 
+  // Qué partes de Flux se usan de verdad. Medirlo aquí y no en cada ruta cubre
+  // gRPC, SSE, WebSocket, load test y mock de una vez, y evita que añadir una
+  // ruta nueva signifique acordarse de instrumentarla.
+  useEffect(() => {
+    trackEvent("route_view", { route });
+  }, [route]);
+
   // Check for updates 4s after mount — non-blocking, silent on failure
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -61,7 +68,16 @@ function AppShell() {
       if (!update) return;
       toast(`v${update.version} available`, {
         description: update.body ?? "A new version of Flux is ready.",
-        action: { label: "Update & Restart", onClick: () => installAndRestart(update) },
+        action: {
+          label: "Update & Restart",
+          onClick: () => {
+            // Cuánta gente acepta actualizar frente a cuánta lo ignora: sin
+            // esto no hay forma de saber si una release llega a la base.
+            trackEvent("update_installed", { to: update.version });
+            void flushEvents(true); // la app se reinicia justo después
+            installAndRestart(update);
+          },
+        },
         duration: Infinity,
       });
     }, 4000);

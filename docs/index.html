@@ -1675,6 +1675,59 @@
         }
       });
 
+      /* ── Engagement depth ──
+         GA4 daba 13 s de interacción media y 62,5 % de rebote sin ninguna forma
+         de saber si eso era "la landing no convence" o "GA4 no sabe medir una
+         página de scroll largo". Sin ningún evento después de la carga, GA4
+         cuenta la sesión como rebote aunque alguien lea la página entera.
+
+         Estos dos eventos separan las dos cosas: quien llega al 50 % leyó de
+         verdad. `scroll_depth` lleva el porcentaje como parámetro para no
+         gastar cuatro nombres de evento distintos. */
+      (function () {
+        if (typeof gtag !== 'function') return;
+
+        const marks = [25, 50, 75, 90];
+        const fired = new Set();
+
+        function check() {
+          const doc = document.documentElement;
+          const scrollable = doc.scrollHeight - window.innerHeight;
+          if (scrollable <= 0) return;
+          const pct = (window.scrollY / scrollable) * 100;
+          for (const m of marks) {
+            if (pct >= m && !fired.has(m)) {
+              fired.add(m);
+              gtag('event', 'scroll_depth', { percent: m });
+            }
+          }
+          if (fired.size === marks.length) window.removeEventListener('scroll', onScroll);
+        }
+
+        /* rAF en vez de llamar a check() en cada evento: el scroll dispara
+           decenas de veces por gesto y esto corre en el hilo principal. */
+        let ticking = false;
+        function onScroll() {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(function () { check(); ticking = false; });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        /* Marca de lectura real. Es el evento que hay que leer junto al rebote:
+           una visita de 30 s con scroll no es un rebote por mucho que GA4 la
+           cuente así. No corre mientras la pestaña está en segundo plano. */
+        let engaged = 0;
+        const timer = setInterval(function () {
+          if (document.visibilityState !== 'visible') return;
+          engaged += 5;
+          if (engaged >= 30) {
+            gtag('event', 'engaged_30s');
+            clearInterval(timer);
+          }
+        }, 5000);
+      })();
+
       /* ── FAQ toggle ── */
       document.querySelectorAll('.faq-q').forEach(btn => {
         btn.addEventListener('click', () => btn.closest('.faq-item').classList.toggle('open'));

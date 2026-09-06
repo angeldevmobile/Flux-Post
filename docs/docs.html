@@ -3656,9 +3656,86 @@ flux run ./my-api --bail</code></pre>
           </ul>
 
           <h2>Telemetry</h2>
-          <p>Flux collects anonymous crash reports (via Tauri's built-in crash reporter) to improve stability. No
-            request data, URLs, headers, or response bodies are ever included. You can opt out by toggling <strong>Send
-              crash reports</strong> in this section.</p>
+          <p>Flux is an API client: the URLs, tokens and payloads you work with are the most sensitive
+            things on your screen. <strong>None of them ever leave your machine.</strong> What follows is
+            the complete list of what Flux can send, and it is deliberately short.</p>
+
+          <p>Everything here is controlled from <strong>Settings &rarr; Data &amp; Privacy</strong>:</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Toggle</th>
+                <th>Default</th>
+                <th>What it sends</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Send usage analytics</td>
+                <td><strong>Off</strong></td>
+                <td>Which sections of the app you open, and that a request was sent &mdash; its method,
+                  whether the scheme was <code>https</code>, and whether it pointed at localhost.</td>
+              </tr>
+              <tr>
+                <td>Send crash reports</td>
+                <td>On</td>
+                <td>The error message, with URLs, file paths, e-mails and credential-shaped strings
+                  stripped out before sending.</td>
+              </tr>
+              <tr>
+                <td>Share performance metrics</td>
+                <td><strong>Off</strong></td>
+                <td>Response time and status code of a request. No URL.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>What is never sent</h3>
+          <ul>
+            <li>Request URLs &mdash; not the full URL, not the path, not even the hostname. An internal
+              host like <code>api.staging.acme.local</code> identifies your employer, so it is dropped too.</li>
+            <li>Headers, request bodies and response bodies.</li>
+            <li>API keys, tokens, cookies or any credential.</li>
+            <li>Collection names, environment names and variable values.</li>
+            <li>Your name, e-mail or the path to your home directory.</li>
+          </ul>
+
+          <h3>How you are counted</h3>
+          <p>When usage analytics is on, Flux sends a random identifier generated on your machine the first
+            time it runs. It identifies a copy of Flux, not a person: it is not derived from your hardware,
+            your account or anything else, and it is not linked to your Flux account even when you are
+            signed in. Clearing the app's local data resets it. Without it there is no way to tell whether
+            a hundred events came from a hundred people or from one, which is the only reason it exists.</p>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Update checks are not covered by these toggles</div>
+              <div class="callout-text">On start-up Flux asks a server whether a newer version exists, and
+                that request carries your IP address like any HTTP request &mdash; it did when the check
+                pointed at GitHub too. The server counts it to estimate how many installs are still active.
+                It stores a salted hash of your IP and user agent, never the address itself; the salt is
+                regenerated daily and discarded after two days, so the hash cannot be reversed or matched
+                across days. Nothing else about you is recorded. To stop the check entirely, block
+                <code>fluxapi.dev</code> and <code>github.com</code> in your firewall &mdash; Flux will keep
+                working and simply stop offering updates.</div>
+            </div>
+          </div>
+
+          <p>Flux is open source, so none of this has to be taken on trust. The client side is
+            <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/src/lib/analytics.ts" target="_blank"
+              rel="noopener"><code>src/lib/analytics.ts</code></a> &mdash; roughly a hundred lines, with the
+            redaction rules covered by
+            <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/src/lib/__tests__/analytics.test.ts"
+              target="_blank" rel="noopener">tests</a> &mdash; and the server side is
+            <a href="https://github.com/angeldevmobile/Flux-Post/tree/main/supabase/functions" target="_blank"
+              rel="noopener"><code>supabase/functions/</code></a>.</p>
 
           <div class="callout success">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3925,6 +4002,59 @@ flux run ./my-api --bail</code></pre>
           });
         }
       });
+
+      /* ── Engagement depth ──
+         GA4 daba 13 s de interacción media y 62,5 % de rebote sin ninguna forma
+         de saber si eso era "la landing no convence" o "GA4 no sabe medir una
+         página de scroll largo". Sin ningún evento después de la carga, GA4
+         cuenta la sesión como rebote aunque alguien lea la página entera.
+
+         Estos dos eventos separan las dos cosas: quien llega al 50 % leyó de
+         verdad. `scroll_depth` lleva el porcentaje como parámetro para no
+         gastar cuatro nombres de evento distintos. */
+      (function () {
+        if (typeof gtag !== 'function') return;
+
+        const marks = [25, 50, 75, 90];
+        const fired = new Set();
+
+        function check() {
+          const doc = document.documentElement;
+          const scrollable = doc.scrollHeight - window.innerHeight;
+          if (scrollable <= 0) return;
+          const pct = (window.scrollY / scrollable) * 100;
+          for (const m of marks) {
+            if (pct >= m && !fired.has(m)) {
+              fired.add(m);
+              gtag('event', 'scroll_depth', { percent: m });
+            }
+          }
+          if (fired.size === marks.length) window.removeEventListener('scroll', onScroll);
+        }
+
+        /* rAF en vez de llamar a check() en cada evento: el scroll dispara
+           decenas de veces por gesto y esto corre en el hilo principal. */
+        let ticking = false;
+        function onScroll() {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(function () { check(); ticking = false; });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        /* Marca de lectura real. Es el evento que hay que leer junto al rebote:
+           una visita de 30 s con scroll no es un rebote por mucho que GA4 la
+           cuente así. No corre mientras la pestaña está en segundo plano. */
+        let engaged = 0;
+        const timer = setInterval(function () {
+          if (document.visibilityState !== 'visible') return;
+          engaged += 5;
+          if (engaged >= 30) {
+            gtag('event', 'engaged_30s');
+            clearInterval(timer);
+          }
+        }, 5000);
+      })();
 
 
     </script>

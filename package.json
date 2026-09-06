@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "release": "node scripts/bump-version.cjs",
-    "stats": "node scripts/stats.cjs"
+    "stats": "node scripts/stats.cjs",
+    "stats:app": "node scripts/telemetry.cjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

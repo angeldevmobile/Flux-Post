@@ -7,7 +7,7 @@ import type { AuthType, ApiKeyTarget, OAuthGrantType } from "@/stores/request";
 import { sendRequest, saveCollection, editContent } from "@/lib/tauri";
 import { recordHistory } from "@/lib/history";
 import { networkOptions } from "@/lib/networkOptions";
-import { trackEvent, trackCrash, trackPerf } from "@/lib/analytics";
+import { trackEvent, trackCrash, trackPerf, urlShape } from "@/lib/analytics";
 import { pushCollection } from "@/lib/sync";
 import { useUserStore } from "@/stores/user";
 import { methodColor, methodBg, HTTP_METHODS } from "@/lib/methods";
@@ -730,7 +730,14 @@ export function RequestPanel() {
         );
         Object.assign(resolved.headers, awsHeaders);
       }
-      trackEvent("request_send", { method: resolved.method, url: resolved.url });
+      // Sin URL: `resolved.url` ya trae las variables interpoladas, así que
+      // aquí una `?api_key={{KEY}}` es el secreto en claro. Solo la forma.
+      const shape = urlShape(resolved.url);
+      trackEvent("request_send", {
+        method: resolved.method,
+        scheme: shape.scheme,
+        local: shape.local,
+      });
 
       const resp = await sendRequest({ ...resolved, ...networkOptions() });
       setResponse(resp);

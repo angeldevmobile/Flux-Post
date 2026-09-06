@@ -27,6 +27,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
+        "https://zmzfupygrhseljaxzyeb.supabase.co/functions/v1/app-update?v={{current_version}}&target={{target}}&arch={{arch}}",
         "https://github.com/angeldevmobile/Flux-Post/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY0MTA4MjdCRDU4REFFNTEKUldSUnJvM1ZlNElRWkt3VjJuNmZWaFFUK3JjUVFyS0hhMkViV0VuaHFFV0pVQmcxalNzS1dEb1kK",
