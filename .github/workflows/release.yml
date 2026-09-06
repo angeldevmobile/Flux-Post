@@ -24,6 +24,15 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
 
+    # El bundle de Monaco deja el chunk principal en ~4,6 MB y `vite build` se
+    # come mas de 2 GB al minificarlo. El runner de macOS ARM arranca V8 con un
+    # techo de heap de ~2 GB, asi que el build moria ahi con
+    # "Ineffective mark-compacts near heap limit" mientras Ubuntu pasaba sin
+    # despeinarse. No es un limite del que se pueda depender por defecto: varia
+    # con el runner y con la version de Node.
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+
     steps:
       - uses: actions/checkout@v4
 
@@ -37,9 +46,12 @@ jobs:
             librsvg2-dev \
             patchelf
 
+      # Pineado a proposito. Con `lts/*` la version de Node cambia sola cuando
+      # GitHub mueve el alias -- paso de 22 a 24 entre v0.2.0 y v0.2.1 -- y la
+      # cadena que construye las releases no deberia cambiar sin un commit.
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '22'
           cache: npm
 
       # Same version as ci.yml so what is checked is what is shipped.

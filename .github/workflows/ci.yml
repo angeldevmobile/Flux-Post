@@ -15,12 +15,19 @@ jobs:
   frontend:
     name: Frontend (typecheck + tests)
     runs-on: ubuntu-22.04
+
+    # Mismos valores que release.yml: si CI compila en condiciones distintas a
+    # las de la release, deja de ser una comprobacion previa. Aqui `npm run
+    # build` pasaba en Ubuntu mientras moria por falta de heap en macOS ARM.
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '22'
           cache: npm
 
       - run: npm ci
