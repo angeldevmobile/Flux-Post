@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CollectionRequest, GrpcRequestFields } from "@/lib/tauri";
+import type { CollectionRequest, GrpcRequestFields, CollectionAuth, CollectionScripts } from "@/lib/tauri";
 
 export type { CollectionRequest, GrpcRequestFields };
 
@@ -7,6 +7,10 @@ export interface CollectionFolder {
   id: string;
   name: string;
   expanded: boolean;
+  /** Heredables por las requests de dentro. Ver `resolveInherited`. */
+  auth?: CollectionAuth;
+  headers?: Record<string, string>;
+  scripts?: CollectionScripts;
   requests: CollectionRequest[];
   folders?: CollectionFolder[];
 }
@@ -16,6 +20,10 @@ export interface Collection {
   name: string;
   description?: string;
   baseUrl?: string;
+  /** Heredables por todo lo que cuelga de la coleccion. Ver `resolveInherited`. */
+  auth?: CollectionAuth;
+  headers?: Record<string, string>;
+  scripts?: CollectionScripts;
   requests: CollectionRequest[];
   folders: CollectionFolder[];
   expanded: boolean;

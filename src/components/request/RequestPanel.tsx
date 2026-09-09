@@ -13,6 +13,9 @@ import { useUserStore } from "@/stores/user";
 import { methodColor, methodBg, HTTP_METHODS } from "@/lib/methods";
 import { useEnvironmentStore } from "@/stores/environment";
 import { useCollectionsStore } from "@/stores/collections";
+import { resolveAncestorsAcross } from "@/lib/inheritance";
+import { authToRequest } from "@/lib/authHeaders";
+import { appendQuery } from "@/lib/requestUrl";
 import { runPreRequestScript, runPostResponseScript } from "@/lib/preRequest";
 import { useTestResultsStore } from "@/stores/testResults";
 import { useSettingsStore } from "@/stores/settings";
@@ -691,6 +694,16 @@ export function RequestPanel() {
     try {
       const req = getRequest();
 
+      // Fondo heredado de la carpeta y de la coleccion. Va debajo de lo que
+      // tenga la request: lo propio siempre pisa a lo heredado, y el script de
+      // pre-request pisa a los dos porque corre despues.
+      const { collections: cols, activeRequestId } = useCollectionsStore.getState();
+      const inherited = activeRequestId ? resolveAncestorsAcross(cols, activeRequestId) : null;
+      const inheritedAuth = authType === "none" ? authToRequest(inherited?.auth) : { headers: {}, query: {} };
+      if (inherited) {
+        req.headers = { ...inherited.headers, ...inheritedAuth.headers, ...req.headers };
+      }
+
       if (preRequestScript.trim()) {
         const { environments, activeId, updateEnvironment } = useEnvironmentStore.getState();
         const activeEnv = environments.find(e => e.id === activeId);
@@ -703,6 +716,16 @@ export function RequestPanel() {
       }
 
       req.url = resolveVariable(req.url);
+      // La query heredada se añade despues de interpolar: `encodeURIComponent`
+      // sobre un `{{VAR}}` sin resolver lo dejaria como `%7B%7BVAR%7D%7D`.
+      if (Object.keys(inheritedAuth.query).length > 0) {
+        req.url = appendQuery(
+          req.url,
+          Object.fromEntries(
+            Object.entries(inheritedAuth.query).map(([k, v]) => [k, resolveVariable(v)])
+          ),
+        );
+      }
       const resolved: typeof req = {
         ...req,
         headers: Object.fromEntries(

@@ -45,8 +45,9 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Import from Postman v2.1, OpenAPI 3.x, cURL, keeping auth, query params, scripts, body types and nested folders
 - Export as Postman v2.1 or OpenAPI 3.0
 - Folder structure with nested requests
+- Inherited auth, headers and scripts: click the shield on any collection or folder in the sidebar to set them once, and every request inside uses them. The nearest level wins, a folder set to `None` sends no auth even if the collection defines one, and scripts concatenate from the outside in. See [Inherited Settings](#inherited-settings)
 - Per-request test assertions
-- Collection runner with assertion reporting
+- Collection runner with assertion reporting, including requests nested in folders
 - Cloud sync per user via Supabase
 
 ### Environments
@@ -58,9 +59,10 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 
 ### Tests
 - Assertion syntax: `status == 200`, `body.token != null`, `duration < 500`
+- `{{VAR}}` works inside an assertion: `json.token == "{{EXPECTED_TOKEN}}"`. Interpolation happens after the operator is read, so a value containing `==` cannot change how the line is parsed, and reports show the assertion as written so a secret's value never reaches a CI log
 - AI-generated assertions from Claude, one click after any response
 - AI fix suggestion on failing assertions — Apply button applies the fix directly to the request (header or body)
-- Batch test runner across collection requests with pass/fail report
+- Batch test runner across every request in a collection, folders included, with a pass/fail report
 - Post-response scripts with `pm.test()` and `pm.expect()` Chai-style API
 
 ### Real-time Protocols
@@ -194,7 +196,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - HTTP requests with all methods, auth types, and body types
 - Pre/post request scripts with `pm` API
 - Collections: import from Postman, OpenAPI, cURL; export to Postman v2.1 and OpenAPI 3.0
-- Collection runner with assertion reporting
+- Collection runner with assertion reporting, including requests nested in folders
 - Environment variables, secrets, and global vars
 - Variable extractor (JSONPath): `$.data.token -> {{token}}` rules, auto-applied after every response
 - Code snippet export: copy any request as `curl`, `fetch`, `axios`, `Python requests`, `Go http`
@@ -212,7 +214,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - Local mock server with AI-generated bodies, hot-reload endpoints, and wildcard paths
 - Load test with concurrent runner, live progress, P50/P95/P99/throughput, latency histogram
 - Request timeline (waterfall): TTFB and download breakdown on every response
-- CLI runner: `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines, with an embedded JavaScript engine so pre/post scripts and `pm.test()` run in CI exactly as they do in the app
+- CLI runner: `flux run collection.yaml --env BASE_URL=https://...` for CI/CD pipelines, with an embedded JavaScript engine so pre/post scripts and `pm.test()` run in CI exactly as they do in the app. Also `--env-file .env`, `--folder Admin/Users` to run one subtree, and `--reporter junit --output report.xml` for GitLab CI, Jenkins and GitHub Actions test summaries
 - OpenAPI 3.0 export from any collection
 - gRPC: `.proto` import, server reflection, persistent proto library, unary calls, and server / client / bidirectional streaming
 - GitHub integration: browse repos and sync collections as YAML
@@ -248,6 +250,106 @@ pm.environment.set("ACCESS_TOKEN", body.token);
 pm.test("returns 200", () => {
   pm.expect(pm.response.status).to.equal(200);
 });
+```
+
+---
+
+## Inherited Settings
+
+Auth, headers and scripts can live on the collection or on a folder instead of being repeated on every request. Click the shield next to any collection or folder in the sidebar.
+
+```yaml
+name: Acme API
+baseUrl: https://api.acme.com
+
+# Applies to every request below.
+auth:
+  type: bearer
+  token: "{{TOKEN}}"
+headers:
+  X-Tenant: acme
+
+folders:
+  - name: Admin
+    # Overrides the collection auth for this folder and everything under it.
+    auth:
+      type: apikey
+      key: X-Admin-Key
+      value: "{{ADMIN_KEY}}"
+    headers:
+      X-Scope: admin
+    requests:
+      - name: List users
+        method: GET
+        path: /admin/users
+        # Sends X-Admin-Key, X-Tenant and X-Scope. No Authorization header:
+        # the folder auth replaced the collection one entirely.
+
+  - name: Public
+    # Stops inheriting the auth on purpose — these endpoints take no
+    # credentials. The X-Tenant header from the collection still applies.
+    auth:
+      type: none
+    requests:
+      - name: Health
+        method: GET
+        path: /health
+```
+
+The rules:
+
+- **The nearest level wins.** Request over folder, closest folder over outer folder, folder over collection.
+- **Auth is all or nothing.** The nearest definition is used whole, never merged field by field with an outer one — a half-built credential is worse than none.
+- **Headers merge**, matched case-insensitively, with the closest level overriding.
+- **Scripts concatenate** from the outside in rather than overriding, so a collection-level script can fetch a token and a folder-level one can use it.
+- **`type: none` cuts the auth inheritance** for that subtree. Headers and scripts from outer levels still apply — in the example above, `Health` sends no credentials but still sends `X-Tenant: acme`.
+
+The same cascade runs in the app and in `flux run`, with the contract covered by tests on both sides so a suite cannot pass locally and fail in CI.
+
+---
+
+## CLI Runner
+
+`flux` runs collections headlessly for CI/CD. It embeds the same JavaScript engine as the app, so pre/post scripts and `pm.test()` behave identically.
+
+```bash
+flux run collection.yaml
+flux run ./collections --env BASE_URL=https://staging.acme.com
+flux run collection.yaml --env-file .env --reporter junit --output report.xml
+```
+
+| Flag | What it does |
+|---|---|
+| `--env KEY=VALUE` | Set a variable. Repeatable. |
+| `--env-file PATH` | Read variables from a `.env` style file. Repeatable; later files win, and `--env` overrides them all so a pipeline can override one value inline. |
+| `--folder NAME` | Run only one subtree, by folder name or path (`Admin/Users`). |
+| `--reporter` | `console` (default), `json`, or `junit`. |
+| `--output PATH` | Write the report to a file instead of stdout. |
+| `--bail` | Stop at the first failure. |
+
+The path can be a single YAML file or a directory, in which case every collection in it runs. The exit code is non-zero if any assertion fails or any request errors.
+
+`--reporter junit` writes the format GitLab CI, Jenkins and the GitHub Actions test reporters read. Each assertion is its own `<testcase>`, so a failure points at the assertion rather than at the whole collection, and a request that never answered is reported as an `<error>` instead of a failure:
+
+```xml
+<testsuites name="flux" tests="10" failures="1" errors="0" time="1.500">
+  <testsuite name="Acme API" tests="10" failures="1" errors="0" time="1.412">
+    <testcase classname="Acme API / Login" name="status == 200" time="0.113"/>
+    <testcase classname="Acme API / Login" name="json.token != null" time="0.113">
+      <failure message="expected json.token != null, got absent"/>
+    </testcase>
+  </testsuite>
+</testsuites>
+```
+
+A GitHub Actions step:
+
+```yaml
+- run: flux run ./collections --env-file .env --reporter junit --output report.xml
+- uses: mikepenz/action-junit-report@v4
+  if: always()
+  with:
+    report_paths: report.xml
 ```
 
 ---

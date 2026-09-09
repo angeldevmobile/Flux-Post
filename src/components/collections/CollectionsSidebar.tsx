@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch, Trash2, X, FileText } from "lucide-react";
+import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch, Trash2, X, FileText, Shield } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
 import { fromCollectionRequest } from "@/lib/requestFidelity";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { ImportModal } from "./ImportModal";
 import { CollectionRunner } from "./CollectionRunner";
 import { GitHubSyncModal } from "./GitHubSyncModal";
+import { InheritanceModal } from "./InheritanceModal";
 import type { CollectionRequest, CollectionFolder, Collection } from "@/stores/collections";
 
 const DIR_KEY = "flux_collections_dir";
@@ -108,6 +109,11 @@ function RequestRow({
   );
 }
 
+/** True si el nodo define algo que se herede, para poder marcarlo en la UI. */
+function hasInherited(node: { auth?: unknown; headers?: Record<string, string>; scripts?: unknown }): boolean {
+  return !!node.auth || Object.keys(node.headers ?? {}).length > 0 || !!node.scripts;
+}
+
 /** Counts requests in a folder and everything nested under it. */
 function folderCount(folder: CollectionFolder): number {
   return folder.requests.length + (folder.folders ?? []).reduce((n, f) => n + folderCount(f), 0);
@@ -134,7 +140,7 @@ function filterFolders(folders: CollectionFolder[], q: string): CollectionFolder
 
 /** Renders a folder and its subfolders, which nest to any depth. */
 function FolderRow({
-  folder, collectionId, depth, activeRequestId, onToggle, onSelect,
+  folder, collectionId, depth, activeRequestId, onToggle, onSelect, onSettings,
 }: {
   folder: CollectionFolder;
   collectionId: string;
@@ -142,21 +148,36 @@ function FolderRow({
   activeRequestId: string | null;
   onToggle: (collectionId: string, folderId: string) => void;
   onSelect: (req: CollectionRequest) => void;
+  onSettings: (collectionId: string, folderId: string) => void;
 }) {
   const indent = 20 + depth * 12;
   return (
     <div>
-      <button onClick={() => onToggle(collectionId, folder.id)}
-        className="flex items-center gap-1.5 w-full transition-colors"
+      <div className="group/folder flex items-center w-full transition-colors"
         style={{ height: 28, paddingLeft: indent, paddingRight: 12 }}
         onMouseEnter={e => (e.currentTarget.style.background = "var(--color-card)")}
         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-        <ChevronRight size={11} className="shrink-0 transition-transform"
-          style={{ color: "var(--color-fg-4)", transform: folder.expanded ? "rotate(90deg)" : "rotate(0deg)" }} />
-        <Folder size={12} style={{ color: "var(--color-fg-3)", flexShrink: 0 }} />
-        <span className="text-[11px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg-2)" }}>{folder.name}</span>
-        <span className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>{folderCount(folder)}</span>
-      </button>
+        <button onClick={() => onToggle(collectionId, folder.id)}
+          className="flex items-center gap-1.5 flex-1 min-w-0">
+          <ChevronRight size={11} className="shrink-0 transition-transform"
+            style={{ color: "var(--color-fg-4)", transform: folder.expanded ? "rotate(90deg)" : "rotate(0deg)" }} />
+          <Folder size={12} style={{ color: "var(--color-fg-3)", flexShrink: 0 }} />
+          <span className="text-[11px] font-medium flex-1 text-left truncate" style={{ color: "var(--color-fg-2)" }}>{folder.name}</span>
+        </button>
+        {/* Si la carpeta ya hereda algo se ve siempre, para que se note sin pasar por encima. */}
+        <button onClick={e => { e.stopPropagation(); onSettings(collectionId, folder.id); }}
+          title="Auth, headers and scripts inherited by this folder"
+          className={`flex items-center justify-center rounded transition-opacity ${
+            hasInherited(folder) ? "" : "opacity-0 group-hover/folder:opacity-100"
+          }`}
+          style={{
+            width: 18, height: 18, flexShrink: 0,
+            color: hasInherited(folder) ? "var(--color-accent)" : "var(--color-fg-3)",
+          }}>
+          <Shield size={10} />
+        </button>
+        <span className="text-[10px] ml-1" style={{ color: "var(--color-fg-4)" }}>{folderCount(folder)}</span>
+      </div>
       {folder.expanded && (
         <>
           {folder.requests.map(req => (
@@ -165,7 +186,8 @@ function FolderRow({
           ))}
           {(folder.folders ?? []).map(sub => (
             <FolderRow key={sub.id} folder={sub} collectionId={collectionId} depth={depth + 1}
-              activeRequestId={activeRequestId} onToggle={onToggle} onSelect={onSelect} />
+              activeRequestId={activeRequestId} onToggle={onToggle} onSelect={onSelect}
+              onSettings={onSettings} />
           ))}
         </>
       )}
@@ -191,6 +213,8 @@ export function CollectionsSidebar() {
   const [editingDescId, setEditingDescId] = useState<string | null>(null);
   const [descDraft, setDescDraft] = useState("");
   const [savingDesc, setSavingDesc] = useState(false);
+  const [inheritTarget, setInheritTarget] = useState<{ colId: string; folderId: string | null } | null>(null);
+  const [savingInherit, setSavingInherit] = useState(false);
 
   const reload = useCallback(async (d: string) => {
     setLoading(true);
@@ -237,6 +261,40 @@ export function CollectionsSidebar() {
     await reload(dir);
   }
 
+  /**
+   * La coleccion tal como esta en el store, no la que se esta pintando.
+   *
+   * `renderCollection` recibe una copia filtrada por el buscador: guardar esa
+   * copia escribia el YAML sin las requests que no casaban con la busqueda.
+   */
+  function authoritative(colId: string): Collection | undefined {
+    return useCollectionsStore.getState().collections.find(c => c.id === colId);
+  }
+
+  /** Escribe la coleccion en disco, en el store y en la nube. */
+  async function persist(updated: Collection) {
+    const d = localStorage.getItem(DIR_KEY);
+    if (!d) throw new Error("No collections folder set");
+    await saveCollection(d, updated);
+    useCollectionsStore.setState({
+      collections: useCollectionsStore.getState().collections.map(c => c.id === updated.id ? updated : c),
+    });
+    if (useUserStore.getState().user?.id) void pushCollection(updated);
+  }
+
+  async function saveInheritance(updated: Collection) {
+    setSavingInherit(true);
+    try {
+      await persist(updated);
+      setInheritTarget(null);
+      toast.success("Inherited settings saved");
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setSavingInherit(false);
+    }
+  }
+
   function startEditingDescription(col: Collection) {
     setEditingDescId(col.id);
     setDescDraft(col.description ?? "");
@@ -244,19 +302,14 @@ export function CollectionsSidebar() {
   }
 
   async function saveDescription(col: Collection) {
-    const dir = localStorage.getItem(DIR_KEY);
-    if (!dir) return;
-    const description = descDraft.trim() || undefined;
-    const updated = { ...col, description };
+    // Sobre la del store: `col` viene filtrada por el buscador.
+    const real = authoritative(col.id);
+    if (!real) return;
+    const updated = { ...real, description: descDraft.trim() || undefined };
 
     setSavingDesc(true);
     try {
-      await saveCollection(dir, updated);
-      useCollectionsStore.setState({
-        collections: useCollectionsStore.getState().collections.map(c => c.id === col.id ? updated : c),
-      });
-      const userId = useUserStore.getState().user?.id;
-      if (userId) void pushCollection(updated);
+      await persist(updated);
       setEditingDescId(null);
     } catch (e) {
       setLoadError(String(e));
@@ -341,6 +394,12 @@ export function CollectionsSidebar() {
               style={{ width: 18, height: 18, color: confirmDeleteId === col.id ? "#EF4444" : "var(--color-fg-3)", flexShrink: 0 }}>
               <Trash2 size={11} />
             </button>
+            <button onClick={e => { e.stopPropagation(); setInheritTarget({ colId: col.id, folderId: null }); setExportMenuId(null); }}
+              title="Auth, headers and scripts inherited by every request"
+              className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
+              style={{ width: 18, height: 18, color: hasInherited(col) ? "var(--color-accent)" : "var(--color-fg-3)", flexShrink: 0 }}>
+              <Shield size={11} />
+            </button>
             <button onClick={e => { e.stopPropagation(); startEditingDescription(col); }}
               title={col.description ? "Edit description" : "Add a description"}
               className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
@@ -418,7 +477,8 @@ export function CollectionsSidebar() {
             ))}
             {col.folders.map(folder => (
               <FolderRow key={folder.id} folder={folder} collectionId={col.id} depth={0}
-                activeRequestId={activeRequestId} onToggle={toggleFolder} onSelect={r => handleSelect(r, col.baseUrl)} />
+                activeRequestId={activeRequestId} onToggle={toggleFolder} onSelect={r => handleSelect(r, col.baseUrl)}
+                onSettings={(colId, folderId) => setInheritTarget({ colId, folderId })} />
             ))}
           </>
         )}
@@ -495,6 +555,22 @@ export function CollectionsSidebar() {
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
       <CollectionRunner open={runnerOpen} onClose={() => setRunnerOpen(false)} />
       <GitHubSyncModal open={githubOpen} onClose={() => setGithubOpen(false)} collectionsDir={dir} onReload={() => dir && reload(dir)} />
+      {inheritTarget && (() => {
+        // Siempre sobre la del store: la que se pinta viene filtrada por el
+        // buscador y guardarla dejaria el YAML sin las requests ocultas.
+        const real = authoritative(inheritTarget.colId);
+        if (!real) return null;
+        return (
+          <InheritanceModal
+            key={`${inheritTarget.colId}:${inheritTarget.folderId ?? "root"}`}
+            collection={real}
+            folderId={inheritTarget.folderId}
+            saving={savingInherit}
+            onClose={() => setInheritTarget(null)}
+            onSave={saveInheritance}
+          />
+        );
+      })()}
 
       {!dir ? (
         <FolderSetup onSet={handleSetDir} />

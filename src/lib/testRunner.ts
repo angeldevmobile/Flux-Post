@@ -27,6 +27,7 @@ export function buildContext(
   bodyRaw: string,
   headers: Record<string, string>,
   durationMs: number,
+  resolveVars?: (value: string) => string,
 ): TestContext {
-  return buildAssertionContext(status, bodyRaw, headers, durationMs);
+  return buildAssertionContext(status, bodyRaw, headers, durationMs, resolveVars);
 }

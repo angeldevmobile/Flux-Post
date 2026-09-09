@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
+## [Unreleased]
+
+### Added
+- Auth, headers and scripts can now be set once on a collection or a folder and every request inside inherits them. The shield button in the sidebar opens the editor; a folder shows what it would inherit before you change anything. The nearest level wins, a folder set to `None` stops inheriting even if the collection defines auth, and scripts concatenate from the outside in rather than overriding. The same cascade runs in the app and in `flux run`, covered by tests on both sides so a suite cannot pass locally and fail in CI.
+- `flux run --reporter junit --output report.xml` writes JUnit XML, which is what GitLab CI, Jenkins and the GitHub Actions reporters read. One `<testcase>` per assertion, so a failure points at the assertion instead of at the whole collection; a request that never answered is reported as an `<error>` rather than a failure.
+- `flux run --env-file .env` reads variables from a file, repeatable, with `--env` still winning so a pipeline can override one value inline.
+- `flux run --folder Admin/Users` runs only one subtree of a collection.
+
+### Fixed
+- `{{VAR}}` was not interpolated inside an assertion. `json.token == "{{TOKEN}}"` compared the response against the literal eight characters `{{TOKEN}}` and failed every time, while the header on the same request went out correctly resolved — so the assertion looked wrong when the request was right. Variables now resolve on both sides of the operator, and inside a `contains` needle. The substitution happens after the operator has been read, so a variable whose value contains `==` cannot change how the line is parsed. The reported assertion keeps the `{{VAR}}` as written: substituting it would put the value of a secret variable into CI logs and request history.
+- The collection runner did not interpolate variables at all. A collection with `baseUrl: {{BASE_URL}}` was sent with the braces still in it, so every request in a batch run went to a nonsense URL. The runner now resolves variables in the URL, headers, query parameters and body, like the rest of the app.
+- The Tests screen joined an absolute request URL onto the collection's `baseUrl`, producing `https://base/https://other/x`. It carried its own copy of the URL builder that, unlike the shared one, did not treat an absolute URL as absolute.
+- The collection runner sent every request unauthenticated. Turning the configured auth into a header only happened inside the request panel's own store, which the runner does not use, so a batch run of a collection with auth silently exercised the unauthenticated paths and reported whatever came back. The conversion now lives in one place shared by the panel, the runner and the tests screen. The runner was also dropping the request's saved query parameters.
+- The Tests screen never ran tests inside folders. It iterated only the collection's top-level requests, so a suite whose tests all live in folders showed as having no tests, and one with tests at both levels reported a pass having run only part of them.
+- Editing a collection's description while the sidebar search box had text saved a truncated collection, dropping every request that did not match the search from the YAML file. Saving now always writes the collection as it is in the store, not the filtered copy being rendered.
+- `flux run` built a nonsense URL when a request with an absolute URL lived in a collection with a `baseUrl`: it joined them into `http://base//http://other/x`, while the app correctly treats an absolute URL as absolute. The CLI now uses the same rule as the app.
+- `flux run` appended a second value instead of replacing when the same header was set at more than one level, so a request could not override a header coming from its folder.
+
+### Changed
+- Building the outgoing request from a saved one — inheritance, auth, variable interpolation and query parameters — now happens in a single tested function shared by the collection runner and the Tests screen. Each had its own partial copy, and neither did the whole job.
+
+---
+
 ## [0.2.1] — 2026-09-05
 
 ### Security

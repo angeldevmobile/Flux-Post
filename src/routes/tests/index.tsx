@@ -9,13 +9,8 @@ import { networkOptions } from "@/lib/networkOptions";
 import { useSettingsStore } from "@/stores/settings";
 import { evaluateAssertion, buildContext, type AssertionResult, type TestResult } from "@/lib/testRunner";
 import type { HttpMethod } from "@/lib/tauri";
-
-function buildUrl(baseUrl: string | undefined, path: string, resolveVariable: (v: string) => string): string {
-  const base = resolveVariable(baseUrl ?? "");
-  const p = resolveVariable(path);
-  if (!base) return p;
-  return base.replace(/\/$/, "") + (p.startsWith("/") ? p : `/${p}`);
-}
+import { prepareRequest } from "@/lib/prepareRequest";
+import { requestsWithTests } from "@/lib/collectionTree";
 
 function SuiteItem({ name, results, active, onClick }: {
   name: string;
@@ -110,8 +105,11 @@ export function TestsRoute() {
   const { claudeApiKey, claudeModel } = useSettingsStore();
   const aiAvailable = useAiAvailable();
 
+  // Antes solo miraba `c.requests`, asi que una coleccion cuyos tests vivian
+  // todos dentro de carpetas no aparecia aqui, y las que si aparecian corrian
+  // solo los de la raiz.
   const suites = useMemo(() =>
-    collections.filter(c => c.requests.some(r => r.tests && r.tests.length > 0)),
+    collections.filter(c => requestsWithTests(c).length > 0),
     [collections]
   );
 
@@ -134,25 +132,20 @@ export function TestsRoute() {
     setRunning(r => ({ ...r, [collectionId]: true }));
     const suiteResults: TestResult[] = [];
 
-    for (const req of col.requests) {
-      if (!req.tests || req.tests.length === 0) continue;
+    for (const req of requestsWithTests(col)) {
 
-      const url = buildUrl(col.baseUrl, req.path, resolveVariable);
-      const headers: Record<string, string> = {};
-      for (const [k, v] of Object.entries(req.headers ?? {})) {
-        headers[k] = resolveVariable(v);
-      }
+      // Herencia, auth, variables y query en un solo sitio, compartido con el
+      // collection runner.
+      const prepared = prepareRequest(col, req, resolveVariable);
 
       let result: TestResult;
       try {
         const resp = await sendRequest({
           method: req.method as HttpMethod,
-          url,
-          headers,
-          body: req.body ? resolveVariable(req.body) : undefined,
+          ...prepared,
           ...networkOptions(),
         });
-        const ctx = buildContext(resp.status, resp.body, resp.headers, resp.durationMs);
+        const ctx = buildContext(resp.status, resp.body, resp.headers, resp.durationMs, resolveVariable);
         result = {
           requestId: req.id,
           requestName: req.name,
@@ -256,7 +249,7 @@ export function TestsRoute() {
                   {activeCollection.name}
                 </h2>
                 <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>
-                  {activeCollection.requests.filter(r => r.tests?.length).length} requests with tests
+                  {requestsWithTests(activeCollection).length} requests with tests
                   {activeResults && ` · ${totalTests} assertions`}
                 </span>
               </div>

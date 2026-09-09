@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { Play, Square, X, CheckCircle, XCircle, Loader, ChevronDown, ChevronRight, Network } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
+import { useEnvironmentStore } from "@/stores/environment";
 import { sendRequest, grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
 import { networkOptions } from "@/lib/networkOptions";
-import { resolveRequestUrl } from "@/lib/requestUrl";
+import { prepareRequest } from "@/lib/prepareRequest";
+import { allRequests } from "@/lib/collectionTree";
 import { evaluateAssertions, type AssertionResult } from "@/lib/assertionEvaluator";
 import { methodColor, methodBg } from "@/lib/methods";
-import type { CollectionRequest, CollectionFolder } from "@/stores/collections";
+import type { CollectionRequest } from "@/stores/collections";
 
 interface RunResult {
   req: CollectionRequest;
@@ -51,6 +53,7 @@ function StatusBadge({ code }: { code: number }) {
 
 export function CollectionRunner({ open, onClose }: Props) {
   const { collections } = useCollectionsStore();
+  const { resolveVariable } = useEnvironmentStore();
   const [selectedColId, setSelectedColId] = useState<string>(() => collections[0]?.id ?? "");
   const [results, setResults] = useState<RunResult[]>([]);
   const [running, setRunning] = useState(false);
@@ -65,11 +68,7 @@ export function CollectionRunner({ open, onClose }: Props) {
   const col = collections.find(c => c.id === effectiveColId);
 
   function flatRequests(): CollectionRequest[] {
-    if (!col) return [];
-    // Folders nest to any depth; missing one would silently skip its requests.
-    const walk = (folders: CollectionFolder[]): CollectionRequest[] =>
-      folders.flatMap(f => [...f.requests, ...walk(f.folders ?? [])]);
-    return [...col.requests, ...walk(col.folders)];
+    return col ? allRequests(col) : [];
   }
 
   function toggleExpanded(idx: number) {
@@ -109,16 +108,20 @@ export function CollectionRunner({ open, onClose }: Props) {
             idx === i ? { ...r, status: "done", durationMs: resp.durationMs, body: resp.body, assertions: [] } : r
           ));
         } else {
-          const url = resolveRequestUrl(col.baseUrl, req.path);
+          // Herencia, auth, variables y query en un solo sitio, compartido con
+          // la pantalla de Tests.
+          const prepared = prepareRequest(col, req, resolveVariable);
           const resp = await sendRequest({
             method: req.method,
-            url,
-            headers: req.headers ?? {},
-            body: req.body,
+            ...prepared,
             ...networkOptions(),
           });
           const assertions = req.tests?.length
-            ? evaluateAssertions(req.tests.map(t => t.assert), resp.status, resp.body, resp.headers, resp.durationMs)
+            ? evaluateAssertions(
+                req.tests.map(t => t.assert),
+                resp.status, resp.body, resp.headers, resp.durationMs,
+                resolveVariable,
+              )
             : [];
           setResults(prev => prev.map((r, idx) =>
             idx === i ? { ...r, status: "done", statusCode: resp.status, durationMs: resp.durationMs, body: resp.body, assertions } : r

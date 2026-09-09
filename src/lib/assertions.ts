@@ -13,6 +13,15 @@ export interface AssertionContext {
   /** Header names lowercased. */
   headers: Record<string, string>;
   durationMs: number;
+  /**
+   * Interpolador de `{{VAR}}`. Sin el, una assertion como
+   * `json.token == "{{TOKEN}}"` comparaba contra el texto literal `{{TOKEN}}` y
+   * fallaba siempre, aunque la cabecera si se enviara con el valor resuelto.
+   *
+   * Se aplica despues de partir el operador, para que un valor que contenga
+   * `==` o ` contains ` no pueda cambiar como se lee la expresion.
+   */
+  resolveVars?: (value: string) => string;
 }
 
 export interface AssertionOutcome {
@@ -118,15 +127,18 @@ const show = (v: unknown) => (v === undefined ? "absent" : JSON.stringify(v));
 export function evaluate(assertion: string, ctx: AssertionContext): AssertionOutcome {
   const expr = assertion.trim();
   const fail = (detail: string): AssertionOutcome => ({ assertion: expr, passed: false, detail });
+  // `assertion` en el resultado se queda como se escribio: resolverlo ahi
+  // meteria el valor de una variable secreta en el historial y en los reportes.
+  const resolve = (part: string) => ctx.resolveVars?.(part) ?? part;
 
   if (!expr) return fail("empty assertion");
 
   // `<path> contains "text"`: checked first, it has no operator to split on.
   const contains = expr.match(/^(.+?)\s+contains\s+(.+)$/i);
   if (contains) {
-    const target = resolvePath(contains[1], ctx);
+    const target = resolvePath(resolve(contains[1]), ctx);
     if (!target.ok) return fail(target.reason);
-    const needle = String(parseLiteral(contains[2]));
+    const needle = String(parseLiteral(resolve(contains[2])));
     if (!target.present) return fail(`${contains[1].trim()} is absent`);
     const haystack = typeof target.value === "string" ? target.value : JSON.stringify(target.value);
     return haystack.includes(needle)
@@ -138,10 +150,10 @@ export function evaluate(assertion: string, ctx: AssertionContext): AssertionOut
   if (!split) return fail("could not parse assertion: expected an operator or 'contains'");
 
   const { lhs, op, rhs } = split;
-  const left = resolvePath(lhs, ctx);
+  const left = resolvePath(resolve(lhs), ctx);
   if (!left.ok) return fail(left.reason);
 
-  const expected = parseLiteral(rhs);
+  const expected = parseLiteral(resolve(rhs));
   const actual = left.present ? left.value : undefined;
 
   if (op === "==" || op === "===" || op === "!=" || op === "!==") {
@@ -173,10 +185,11 @@ export function buildAssertionContext(
   bodyRaw: string,
   headers: Record<string, string>,
   durationMs: number,
+  resolveVars?: (value: string) => string,
 ): AssertionContext {
   let json: unknown;
   try { json = JSON.parse(bodyRaw); } catch { json = undefined; }
   const lowered: Record<string, string> = {};
   for (const [k, v] of Object.entries(headers)) lowered[k.toLowerCase()] = v;
-  return { status, body: bodyRaw, json, headers: lowered, durationMs };
+  return { status, body: bodyRaw, json, headers: lowered, durationMs, resolveVars };
 }

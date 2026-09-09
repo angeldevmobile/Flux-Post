@@ -23,7 +23,8 @@ export function evaluateAssertions(
   body: string,
   headers: Record<string, string>,
   durationMs = 0,
+  resolveVars?: (value: string) => string,
 ): AssertionResult[] {
-  const ctx = buildAssertionContext(status, body, headers, durationMs);
+  const ctx = buildAssertionContext(status, body, headers, durationMs, resolveVars);
   return asserts.map(a => evaluateAssertion(a, ctx));
 }

@@ -1,4 +1,6 @@
 mod scripts;
+#[cfg(test)]
+mod cli_tests;
 use clap::{Parser, Subcommand};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -88,8 +90,11 @@ struct YamlRequest {
 
 #[derive(Debug, Deserialize)]
 struct YamlFolder {
-    #[allow(dead_code)]
     name: String,
+    auth: Option<YamlAuth>,
+    #[serde(default)]
+    headers: HashMap<String, String>,
+    scripts: Option<YamlScripts>,
     #[serde(default)]
     requests: Vec<YamlRequest>,
     #[serde(default)]
@@ -101,10 +106,113 @@ struct YamlFolder {
 struct YamlCollection {
     name: String,
     base_url: Option<String>,
+    auth: Option<YamlAuth>,
+    #[serde(default)]
+    headers: HashMap<String, String>,
+    scripts: Option<YamlScripts>,
     #[serde(default)]
     requests: Vec<YamlRequest>,
     #[serde(default)]
     folders: Vec<YamlFolder>,
+}
+
+/// Lo que una request hereda de su carpeta y de su coleccion.
+///
+/// Tiene que dar el mismo resultado que `src/lib/inheritance.ts` en la app: si
+/// divergen, un test pasa en la app y falla en CI, que es justo lo que este
+/// runner viene a evitar.
+#[derive(Default, Clone)]
+struct Inherited<'a> {
+    auth: Option<&'a YamlAuth>,
+    headers: HashMap<String, String>,
+    pre_request: Option<String>,
+    post_response: Option<String>,
+    /// Ruta de carpetas ("Admin/Users"), para poder filtrar con --folder.
+    folder_path: String,
+}
+
+fn concat_script(outer: Option<&str>, inner: Option<&str>) -> Option<String> {
+    let a = outer.map(str::trim).filter(|v| !v.is_empty());
+    let b = inner.map(str::trim).filter(|v| !v.is_empty());
+    match (a, b) {
+        (Some(a), Some(b)) => Some(format!("{a}
+{b}")),
+        (Some(a), None) => Some(a.to_string()),
+        (None, Some(b)) => Some(b.to_string()),
+        (None, None) => None,
+    }
+}
+
+/// Fusiona headers respetando que en HTTP el nombre no distingue mayusculas:
+/// el nivel mas cercano pisa al de fuera en vez de añadir un segundo valor.
+fn merge_headers(into: &mut HashMap<String, String>, from: &HashMap<String, String>) {
+    for (k, v) in from {
+        let lower = k.to_lowercase();
+        into.retain(|existing, _| existing.to_lowercase() != lower);
+        into.insert(k.clone(), v.clone());
+    }
+}
+
+/// Aplana la coleccion resolviendo la herencia de cada request por el camino.
+fn collect_requests<'a>(
+    collection: &'a YamlCollection,
+) -> Vec<(&'a YamlRequest, Inherited<'a>)> {
+    let root = Inherited {
+        auth: collection.auth.as_ref(),
+        headers: collection.headers.clone(),
+        pre_request: collection
+            .scripts
+            .as_ref()
+            .and_then(|s| s.pre_request.clone()),
+        post_response: collection
+            .scripts
+            .as_ref()
+            .and_then(|s| s.post_response.clone()),
+        folder_path: String::new(),
+    };
+
+    let mut out: Vec<(&YamlRequest, Inherited)> = collection
+        .requests
+        .iter()
+        .map(|r| (r, root.clone()))
+        .collect();
+
+    fn walk<'a>(
+        folders: &'a [YamlFolder],
+        parent: &Inherited<'a>,
+        out: &mut Vec<(&'a YamlRequest, Inherited<'a>)>,
+    ) {
+        for folder in folders {
+            let mut headers = parent.headers.clone();
+            merge_headers(&mut headers, &folder.headers);
+
+            let ctx = Inherited {
+                // El auth mas cercano gana entero: mezclar campos de dos
+                // niveles daria credenciales a medias.
+                auth: folder.auth.as_ref().or(parent.auth),
+                headers,
+                pre_request: concat_script(
+                    parent.pre_request.as_deref(),
+                    folder.scripts.as_ref().and_then(|s| s.pre_request.as_deref()),
+                ),
+                post_response: concat_script(
+                    parent.post_response.as_deref(),
+                    folder.scripts.as_ref().and_then(|s| s.post_response.as_deref()),
+                ),
+                folder_path: if parent.folder_path.is_empty() {
+                    folder.name.clone()
+                } else {
+                    format!("{}/{}", parent.folder_path, folder.name)
+                },
+            };
+
+            out.extend(folder.requests.iter().map(|r| (r, ctx.clone())));
+            walk(&folder.folders, &ctx, out);
+        }
+    }
+
+    walk(&collection.folders, &root, &mut out);
+    out
 }
 
 //   Assertion evaluator (port of src/lib/testRunner.ts)             
@@ -132,6 +240,13 @@ struct Ctx<'a> {
     raw_body: &'a str,
     headers: &'a HashMap<String, String>,
     duration_ms: u64,
+    /// Variables de entorno para interpolar `{{VAR}}` dentro de la assertion.
+    ///
+    /// Sin esto, `json.token == "{{TOKEN}}"` comparaba contra el texto literal
+    /// y fallaba siempre. Se aplica despues de partir el operador, para que un
+    /// valor que contenga `==` o ` contains ` no cambie como se lee la
+    /// expresion. Espejo de `resolveVars` en src/lib/assertions.ts.
+    env: &'a HashMap<String, String>,
 }
 
 fn walk(val: &Value, parts: &[&str]) -> Resolved {
@@ -280,8 +395,8 @@ fn evaluate_assertion(assertion: &str, ctx: &Ctx) -> AssertionResult {
 
     // `<path> contains "text"` has no operator to split on.
     if let Some(idx) = expr.to_lowercase().find(" contains ") {
-        let lhs = &expr[..idx];
-        let rhs = &expr[idx + " contains ".len()..];
+        let lhs = &resolve_vars(&expr[..idx], ctx.env);
+        let rhs = &resolve_vars(&expr[idx + " contains ".len()..], ctx.env);
         let resolved = match resolve_path(lhs, ctx) {
             Ok(r) => r,
             Err(e) => return fail(e),
@@ -309,6 +424,9 @@ fn evaluate_assertion(assertion: &str, ctx: &Ctx) -> AssertionResult {
     let Some((lhs, op, rhs)) = split_operator(expr) else {
         return fail("could not parse assertion: expected an operator or 'contains'".to_string());
     };
+    // El operador ya esta elegido sobre la plantilla; solo se interpolan los lados.
+    let lhs = &resolve_vars(lhs, ctx.env);
+    let rhs = &resolve_vars(rhs, ctx.env);
 
     let resolved = match resolve_path(lhs, ctx) {
         Ok(r) => r,
@@ -360,13 +478,6 @@ fn evaluate_assertion(assertion: &str, ctx: &Ctx) -> AssertionResult {
     }
 }
 
-fn collect_folder_requests<'a>(folder: &'a YamlFolder, out: &mut Vec<&'a YamlRequest>) {
-    out.extend(folder.requests.iter());
-    for sub in &folder.folders {
-        collect_folder_requests(sub, out);
-    }
-}
-
 #[cfg(test)]
 mod assertion_tests {
     use super::*;
@@ -379,12 +490,14 @@ mod assertion_tests {
         let mut headers = HashMap::new();
         headers.insert("content-type".to_string(), "application/json".to_string());
         headers.insert("x-rate-limit".to_string(), "60".to_string());
+        let env = HashMap::new();
         let ctx = Ctx {
             status: 200,
             json: Some(&json),
             raw_body: BODY,
             headers: &headers,
             duration_ms: 120,
+            env: &env,
         };
         evaluate_assertion(assertion, &ctx)
     }
@@ -453,12 +566,14 @@ mod assertion_tests {
     #[test]
     fn a_non_json_body_is_reported() {
         let headers = HashMap::new();
+        let env = HashMap::new();
         let ctx = Ctx {
             status: 200,
             json: None,
             raw_body: "<html>nope</html>",
             headers: &headers,
             duration_ms: 10,
+            env: &env,
         };
         let r = evaluate_assertion("json.token == null", &ctx);
         assert!(!r.passed);
@@ -482,12 +597,14 @@ mod assertion_tests {
     fn a_numeric_string_matches_a_number() {
         let json: Value = serde_json::from_str(r#"{"id":"5"}"#).unwrap();
         let headers = HashMap::new();
+        let env = HashMap::new();
         let ctx = Ctx {
             status: 200,
             json: Some(&json),
             raw_body: r#"{"id":"5"}"#,
             headers: &headers,
             duration_ms: 0,
+            env: &env,
         };
         assert!(evaluate_assertion("json.id == 5", &ctx).passed);
     }
@@ -637,6 +754,7 @@ struct RequestResult {
 async fn run_request(
     client: &Client,
     req: &YamlRequest,
+    inh: &Inherited<'_>,
     base_url: Option<&str>,
     env: &HashMap<String, String>,
 ) -> RequestResult {
@@ -647,7 +765,11 @@ async fn run_request(
     let mut script_error: Option<String> = None;
     let mut logs: Vec<String> = Vec::new();
 
-    if let Some(pre) = req.scripts.as_ref().and_then(|s| s.pre_request.as_deref()) {
+    let pre_script = concat_script(
+        inh.pre_request.as_deref(),
+        req.scripts.as_ref().and_then(|s| s.pre_request.as_deref()),
+    );
+    if let Some(pre) = pre_script.as_deref() {
         if !pre.trim().is_empty() {
             let out = scripts::run_pre_request(pre, &env);
             env.extend(out.env);
@@ -660,20 +782,16 @@ async fn run_request(
     }
     let env = &env;
 
-    let url = match base_url {
-        Some(base) => resolve_vars(
-            &format!("{}/{}", base.trim_end_matches('/'), req.path.trim_start_matches('/')),
-            env,
-        ),
-        None => resolve_vars(&req.path, env),
-    };
+    let url = resolve_vars(&join_url(base_url, &req.path), env);
 
     let method = reqwest::Method::from_bytes(req.method.to_uppercase().as_bytes())
         .unwrap_or(reqwest::Method::GET);
 
     // Auth may need a network round trip of its own (oauth2), and it can fail in
     // ways worth reporting rather than sending an unauthenticated request.
-    let applied = match &req.auth {
+    // El auth propio gana; si no hay, se hereda de la carpeta o la coleccion.
+    let effective_auth = req.auth.as_ref().or(inh.auth);
+    let applied = match effective_auth {
         Some(auth) => match apply_auth(client, auth, env).await {
             Ok(a) => a,
             Err(e) => {
@@ -703,14 +821,21 @@ async fn run_request(
         builder = builder.query(&query);
     }
 
-    for (k, v) in &req.headers {
+    // Se fusionan antes de mandarlos: `builder.header()` dos veces con el mismo
+    // nombre añade un segundo valor en vez de reemplazarlo, asi que un header
+    // de la request no llegaba a pisar al de su carpeta.
+    let mut headers: HashMap<String, String> = HashMap::new();
+    merge_headers(&mut headers, &inh.headers);
+    let own: HashMap<String, String> = req
+        .headers
+        .iter()
+        .map(|(k, v)| (k.clone(), resolve_vars(v, env)))
+        .collect();
+    merge_headers(&mut headers, &own);
+    merge_headers(&mut headers, &applied.headers.iter().cloned().collect());
+    merge_headers(&mut headers, &script_headers);
+    for (k, v) in &headers {
         builder = builder.header(k, resolve_vars(v, env));
-    }
-    for (k, v) in &applied.headers {
-        builder = builder.header(k, v);
-    }
-    for (k, v) in &script_headers {
-        builder = builder.header(k, v);
     }
 
     match req.body_type.as_deref() {
@@ -772,6 +897,9 @@ async fn run_request(
                 raw_body: &body_raw,
                 headers: &headers,
                 duration_ms,
+                // El mismo `env` que se uso para enviar, incluido lo que haya
+                // escrito el script de pre-request.
+                env,
             };
             let mut assertions: Vec<AssertionResult> = req
                 .tests
@@ -783,7 +911,11 @@ async fn run_request(
             // una coleccion importada de Postman falle la build igual que una
             // escrita en Flux.
             let mut post_error = None;
-            if let Some(post) = req.scripts.as_ref().and_then(|s| s.post_response.as_deref()) {
+            let post_script = concat_script(
+                inh.post_response.as_deref(),
+                req.scripts.as_ref().and_then(|s| s.post_response.as_deref()),
+            );
+            if let Some(post) = post_script.as_deref() {
                 if !post.trim().is_empty() {
                     let out = scripts::run_post_response(
                         post,
@@ -835,6 +967,160 @@ struct JsonSuiteReport {
     collections: Vec<JsonReport>,
 }
 
+/// Une el baseUrl de la coleccion con la ruta de la request.
+///
+/// Port de `resolveRequestUrl` en src/lib/requestUrl.ts. Aqui faltaba el caso
+/// de la ruta absoluta, asi que una request con url completa dentro de una
+/// coleccion con baseUrl salia como "http://base//http://otra/x" en CI y bien
+/// en la app.
+fn join_url(base_url: Option<&str>, path: &str) -> String {
+    let base = base_url.unwrap_or("").trim();
+    if base.is_empty() {
+        return path.to_string();
+    }
+    // Una ruta absoluta manda sobre el baseUrl de la coleccion.
+    let is_absolute = path
+        .split_once("://")
+        .is_some_and(|(scheme, _)| {
+            !scheme.is_empty()
+                && scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+                && scheme
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '.' | '-'))
+        });
+    if is_absolute {
+        return path.to_string();
+    }
+    if path.is_empty() {
+        return base.to_string();
+    }
+    format!("{}/{}", base.trim_end_matches('/'), path.trim_start_matches('/'))
+}
+
+/// Lee un archivo estilo `.env`: `KEY=VALUE` por linea, `#` para comentarios,
+/// comillas opcionales alrededor del valor y un `export` inicial que se ignora.
+fn parse_env_file(content: &str) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for raw in content.lines() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let line = line.strip_prefix("export ").unwrap_or(line).trim_start();
+        let Some((k, v)) = line.split_once('=') else { continue };
+        let key = k.trim();
+        if key.is_empty() {
+            continue;
+        }
+        let v = v.trim();
+        // Solo se quitan las comillas si abren y cierran; si no, son parte del valor.
+        let value = if v.len() >= 2
+            && ((v.starts_with('"') && v.ends_with('"'))
+                || (v.starts_with("'") && v.ends_with("'")))
+        {
+            &v[1..v.len() - 1]
+        } else {
+            v
+        };
+        out.insert(key.to_string(), value.to_string());
+    }
+    out
+}
+
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+}
+
+/// JUnit XML, que es el formato que GitLab CI, Jenkins y las GitHub Actions de
+/// reporte saben leer. Una <testsuite> por coleccion y un <testcase> por
+/// assertion, para que el fallo se vea en la linea exacta y no como "la
+/// coleccion fallo".
+fn junit_report(collections: &[JsonReport], total_ms: u64) -> String {
+    let total_tests: usize = collections.iter().map(|c| c.passed + c.failed).sum();
+    let total_failures: usize = collections.iter().map(|c| c.failed).sum();
+    let total_errors: usize = collections
+        .iter()
+        .flat_map(|c| c.requests.iter())
+        .filter(|r| r.error.is_some())
+        .count();
+
+    let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+");
+    xml.push_str(&format!(
+        "<testsuites name=\"flux\" tests=\"{}\" failures=\"{}\" errors=\"{}\" time=\"{:.3}\">
+",
+        total_tests,
+        total_failures,
+        total_errors,
+        total_ms as f64 / 1000.0
+    ));
+
+    for c in collections {
+        let errors = c.requests.iter().filter(|r| r.error.is_some()).count();
+        xml.push_str(&format!(
+            "  <testsuite name=\"{}\" tests=\"{}\" failures=\"{}\" errors=\"{}\" time=\"{:.3}\">
+",
+            xml_escape(&c.collection),
+            c.passed + c.failed,
+            c.failed,
+            errors,
+            c.duration_ms as f64 / 1000.0
+        ));
+
+        for r in &c.requests {
+            if let Some(ref err) = r.error {
+                // Una request que ni llego a responder no tiene assertions que
+                // reportar: se emite como <error> para distinguirla de un fallo.
+                xml.push_str(&format!(
+                    "    <testcase classname=\"{}\" name=\"{}\" time=\"{:.3}\">
+",
+                    xml_escape(&c.collection),
+                    xml_escape(&r.name),
+                    r.duration_ms as f64 / 1000.0
+                ));
+                xml.push_str(&format!(
+                    "      <error message=\"{}\"/>
+",
+                    xml_escape(err)
+                ));
+                xml.push_str("    </testcase>
+");
+                continue;
+            }
+
+            for a in &r.assertions {
+                xml.push_str(&format!(
+                    "    <testcase classname=\"{}\" name=\"{}\" time=\"{:.3}\">
+",
+                    xml_escape(&format!("{} / {}", c.collection, r.name)),
+                    xml_escape(&a.assertion),
+                    r.duration_ms as f64 / 1000.0
+                ));
+                if !a.passed {
+                    xml.push_str(&format!(
+                        "      <failure message=\"{}\"/>
+",
+                        xml_escape(a.detail.as_deref().unwrap_or("assertion failed"))
+                    ));
+                }
+                xml.push_str("    </testcase>
+");
+            }
+        }
+
+        xml.push_str("  </testsuite>
+");
+    }
+
+    xml.push_str("</testsuites>
+");
+    xml
+}
+
 #[derive(Serialize)]
 struct JsonReport {
     collection: String,
@@ -881,10 +1167,16 @@ enum Commands {
         /// Environment variable as KEY=VALUE (repeatable)
         #[arg(long = "env", value_name = "KEY=VALUE")]
         env: Vec<String>,
-        /// Output format: console (default) or json
+        /// Read variables from a .env style file (repeatable, later files win)
+        #[arg(long = "env-file", value_name = "PATH")]
+        env_file: Vec<String>,
+        /// Only run requests inside this folder, by name or path ("Admin/Users")
+        #[arg(long, value_name = "NAME")]
+        folder: Option<String>,
+        /// Output format: console (default), json or junit
         #[arg(long, default_value = "console")]
         reporter: String,
-        /// Write JSON report to file instead of stdout
+        /// Write the report to a file instead of stdout
         #[arg(long)]
         output: Option<String>,
         /// Stop on first failure
@@ -898,9 +1190,24 @@ async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Run { path, env: env_args, reporter, output, bail } => {
-            // Parse --env KEY=VALUE args
+        Commands::Run { path, env: env_args, env_file, folder: folder_filter, reporter, output, bail } => {
+            if !matches!(reporter.as_str(), "console" | "json" | "junit") {
+                eprintln!("{}Unknown reporter \"{}\": use console, json or junit{}", RED, reporter, RESET);
+                process::exit(2);
+            }
+
+            // Los --env-file van primero para que un --env suelto pueda pisarlos
+            // desde la linea de comandos del pipeline.
             let mut env: HashMap<String, String> = HashMap::new();
+            for f in &env_file {
+                match std::fs::read_to_string(f) {
+                    Ok(content) => env.extend(parse_env_file(&content)),
+                    Err(e) => {
+                        eprintln!("{}Cannot read env file {}: {}{}", RED, f, e, RESET);
+                        process::exit(1);
+                    }
+                }
+            }
             for e in env_args {
                 if let Some((k, v)) = e.split_once('=') {
                     env.insert(k.to_string(), v.to_string());
@@ -965,31 +1272,43 @@ async fn main() {
                     .as_deref()
                     .map(|u| resolve_vars(u, &env));
 
-                // Flatten all requests (top-level + folders, at any depth)
-                let mut all_requests: Vec<&YamlRequest> =
-                    collection.requests.iter().collect();
-                for folder in &collection.folders {
-                    collect_folder_requests(folder, &mut all_requests);
+                // Aplanado con la herencia ya resuelta por el camino.
+                let mut all_requests = collect_requests(&collection);
+
+                // --folder: por nombre de carpeta o por ruta ("Admin/Users").
+                if let Some(ref want) = folder_filter {
+                    let want_lower = want.trim_matches('/').to_lowercase();
+                    all_requests.retain(|(_, inh)| {
+                        let path = inh.folder_path.to_lowercase();
+                        path == want_lower || path.starts_with(&format!("{want_lower}/"))
+                    });
+                    if all_requests.is_empty() {
+                        eprintln!(
+                            "{}No folder matching \"{}\" in {}{}",
+                            RED, want, collection.name, RESET
+                        );
+                    }
                 }
 
                 // gRPC requests cannot be driven from here; running them as HTTP
                 // would fire a bogus request at the base url.
                 let skipped_grpc = all_requests
                     .iter()
-                    .filter(|r| r.kind == "grpc" && !r.tests.is_empty())
+                    .filter(|(r, _)| r.kind == "grpc" && !r.tests.is_empty())
                     .count();
-                all_requests.retain(|r| r.kind != "grpc");
+                all_requests.retain(|(r, _)| r.kind != "grpc");
 
-                let with_tests: Vec<&&YamlRequest> =
-                    all_requests.iter().filter(|r| !r.tests.is_empty()).collect();
+                let with_tests: Vec<_> =
+                    all_requests.iter().filter(|(r, _)| !r.tests.is_empty()).collect();
 
                 let with_scripts = with_tests
                     .iter()
-                    .filter(|r| {
-                        r.scripts.as_ref().is_some_and(|s| {
+                    .filter(|(r, inh)| {
+                        let own = r.scripts.as_ref().is_some_and(|s| {
                             s.pre_request.as_deref().is_some_and(|v| !v.trim().is_empty())
                                 || s.post_response.as_deref().is_some_and(|v| !v.trim().is_empty())
-                        })
+                        });
+                        own || inh.pre_request.is_some() || inh.post_response.is_some()
                     })
                     .count();
 
@@ -1018,12 +1337,12 @@ async fn main() {
                 let mut suite_passed = 0usize;
                 let mut suite_failed = 0usize;
 
-                for req in &all_requests {
+                for (req, inh) in &all_requests {
                     if req.tests.is_empty() {
                         continue;
                     }
 
-                    let result = run_request(&client, req, base.as_deref(), &env).await;
+                    let result = run_request(&client, req, inh, base.as_deref(), &env).await;
 
                     if reporter == "console" {
                         println!();
@@ -1068,7 +1387,7 @@ async fn main() {
                     }
                 }
 
-                if reporter == "json" {
+                if reporter == "json" || reporter == "junit" {
                     json_collections.push(JsonReport {
                         collection: collection.name,
                         passed: suite_passed,
@@ -1094,6 +1413,20 @@ async fn main() {
                             })
                             .collect(),
                     });
+                }
+            }
+
+            if reporter == "junit" {
+                let xml = junit_report(&json_collections, start_all.elapsed().as_millis() as u64);
+                match &output {
+                    Some(out_path) => {
+                        if let Err(e) = std::fs::write(out_path, &xml) {
+                            eprintln!("{}Cannot write {}: {}{}", RED, out_path, e, RESET);
+                            process::exit(1);
+                        }
+                        eprintln!("{}JUnit report written to {}{}", DIM, out_path, RESET);
+                    }
+                    None => println!("{}", xml),
                 }
             }
 

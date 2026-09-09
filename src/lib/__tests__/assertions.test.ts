@@ -141,3 +141,77 @@ describe("value coercion", () => {
     expect(passes("  status  ==  200  ")).toBe(true);
   });
 });
+
+/**
+ * Interpolacion de `{{VAR}}`. El espejo en Rust es
+ * `assertion_tests::variable_interpolation` en flux-cli.
+ */
+describe("variable interpolation", () => {
+  const vars: Record<string, string> = {
+    TOKEN: "abc",
+    COUNT: "5",
+    PART: "ab",
+    FIELD: "token",
+    EMPTY: "",
+    WEIRD: "a == b",
+  };
+  const resolve = (v: string) => v.replace(/\{\{([^}]+)\}\}/g, (o, k) => (k in vars ? vars[k] : o));
+  const c = buildAssertionContext(200, BODY, HEADERS, 120, resolve);
+  const ok = (a: string) => evaluate(a, c).passed;
+
+  it("resolves a variable on the value side", () => {
+    expect(ok('json.token == "{{TOKEN}}"')).toBe(true);
+    expect(ok('json.token != "{{TOKEN}}"')).toBe(false);
+  });
+
+  it("resolves an unquoted variable into a number", () => {
+    expect(ok("json.count == {{COUNT}}")).toBe(true);
+    expect(ok("json.count > {{COUNT}}")).toBe(false);
+    expect(ok("json.count >= {{COUNT}}")).toBe(true);
+  });
+
+  it("resolves inside a `contains` needle", () => {
+    expect(ok('json.token contains "{{PART}}"')).toBe(true);
+    expect(ok('json.token contains "{{TOKEN}}"')).toBe(true);
+  });
+
+  it("resolves on the path side too", () => {
+    expect(ok('json.{{FIELD}} == "abc"')).toBe(true);
+  });
+
+  it("leaves an unknown variable as written, so it fails loudly", () => {
+    expect(ok('json.token == "{{NOPE}}"')).toBe(false);
+    expect(evaluate('json.token == "{{NOPE}}"', c).detail).toContain("{{NOPE}}");
+  });
+
+  it("reports the assertion as written, not with the value substituted", () => {
+    // Sustituirlo dejaria el valor de una variable secreta en el reporte.
+    expect(evaluate('json.token == "{{TOKEN}}"', c).assertion).toBe('json.token == "{{TOKEN}}"');
+  });
+
+  it("does not let a variable's value change which operator is parsed", () => {
+    // WEIRD vale "a == b": si se interpolara antes de partir, el operador
+    // saldria del valor y la expresion se leeria mal.
+    const out = evaluate('json.token == "{{WEIRD}}"', c);
+    expect(out.passed).toBe(false);
+    expect(out.detail).toContain("a == b");
+  });
+
+  it("resolves an empty variable to an empty string", () => {
+    const empty = buildAssertionContext(200, '{"s":""}', {}, 0, resolve);
+    expect(evaluate('json.s == "{{EMPTY}}"', empty).passed).toBe(true);
+  });
+
+  it("behaves exactly as before when no resolver is given", () => {
+    expect(evaluate('json.token == "{{TOKEN}}"', ctx).passed).toBe(false);
+  });
+
+  it("reaches the collection runner and the tests screen adapters", () => {
+    expect(
+      evaluateAssertions(['json.token == "{{TOKEN}}"'], 200, BODY, HEADERS, 0, resolve)[0].pass,
+    ).toBe(true);
+    expect(
+      testsEval('json.token == "{{TOKEN}}"', buildContext(200, BODY, HEADERS, 0, resolve)).passed,
+    ).toBe(true);
+  });
+});

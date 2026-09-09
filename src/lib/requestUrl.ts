@@ -13,3 +13,24 @@ export function resolveRequestUrl(baseUrl: string | undefined, path: string): st
   if (!path) return base;
   return base.replace(/\/+$/, "") + "/" + path.replace(/^\/+/, "");
 }
+
+/**
+ * Añade parametros de query a una url que puede traer los suyos.
+ *
+ * El collection runner mandaba solo `path`, asi que los `params` guardados en
+ * la request se perdian; y una api key configurada como `in: query` tiene que
+ * acabar aqui, no en las cabeceras.
+ */
+export function appendQuery(url: string, params: Record<string, string>): string {
+  const entries = Object.entries(params).filter(([k]) => k);
+  if (entries.length === 0) return url;
+
+  const [head, ...fragmentParts] = url.split("#");
+  const fragment = fragmentParts.length ? "#" + fragmentParts.join("#") : "";
+  const encoded = entries
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+  const sep = head.includes("?") ? (head.endsWith("?") || head.endsWith("&") ? "" : "&") : "?";
+
+  return `${head}${sep}${encoded}${fragment}`;
+}

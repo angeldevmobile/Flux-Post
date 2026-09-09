@@ -152,6 +152,16 @@ struct YamlFolder {
     #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<String>,
     name: String,
+    // Heredables: una request sin `auth` propio usa el de su carpeta, y si la
+    // carpeta tampoco lo define sube hasta la coleccion. Aqui solo se
+    // persisten; la cascada se resuelve al enviar (src/lib/inheritance.ts en la
+    // app, `resolve_chain` en flux-cli), nunca aplastandola sobre la request.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    auth: Option<YamlAuth>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    headers: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scripts: Option<YamlScripts>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     requests: Vec<YamlRequest>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -166,6 +176,12 @@ struct YamlCollection {
     description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     base_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    auth: Option<YamlAuth>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    headers: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scripts: Option<YamlScripts>,
     #[serde(default)]
     requests: Vec<YamlRequest>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -232,6 +248,12 @@ pub struct FolderOut {
     pub id: String,
     pub name: String,
     pub expanded: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<YamlAuth>,
+    #[serde(default)]
+    pub headers: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scripts: Option<YamlScripts>,
     pub requests: Vec<RequestOut>,
     #[serde(default)]
     pub folders: Vec<FolderOut>,
@@ -245,6 +267,12 @@ pub struct CollectionOut {
     #[serde(default)]
     pub description: Option<String>,
     pub base_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<YamlAuth>,
+    #[serde(default)]
+    pub headers: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scripts: Option<YamlScripts>,
     pub requests: Vec<RequestOut>,
     pub folders: Vec<FolderOut>,
     pub expanded: bool,
@@ -469,6 +497,9 @@ folders:
             name: parsed.name,
             description: parsed.description,
             base_url: parsed.base_url,
+            auth: parsed.auth,
+            headers: parsed.headers,
+            scripts: parsed.scripts,
             requests: load_requests(parsed.requests, "col"),
             folders: load_folders(parsed.folders, "col"),
             expanded: true,
@@ -478,6 +509,9 @@ folders:
             name: out.name,
             description: out.description,
             base_url: out.base_url,
+            auth: out.auth,
+            headers: out.headers,
+            scripts: out.scripts,
             requests: out.requests.into_iter().map(out_to_yaml_req).collect(),
             folders: save_folders(out.folders),
         };
@@ -704,6 +738,64 @@ requests:
         assert_eq!(reqs[1].id, "col-1");
     }
 
+    /// El auth y los headers de coleccion y de carpeta tienen que sobrevivir al
+    /// save. Si se pierden, la cascada al enviar se queda sin nada que heredar y
+    /// volvemos a tener que repetir el token en cada request.
+    #[test]
+    fn inheritable_fields_survive_a_save() {
+        let col = round_trip(
+            r#"
+name: API
+auth:
+  type: bearer
+  token: "{{TOKEN}}"
+headers:
+  X-Tenant: acme
+scripts:
+  preRequest: 'pm.environment.set("a", 1);'
+folders:
+  - name: Admin
+    auth:
+      type: apikey
+      key: X-Admin-Key
+      value: "{{ADMIN}}"
+    headers:
+      X-Scope: admin
+    scripts:
+      postResponse: 'pm.test("ok", () => {});'
+    requests:
+      - name: List
+        method: GET
+        path: /admin/users
+"#,
+        );
+
+        let auth = col.auth.expect("collection auth");
+        assert_eq!(auth.auth_type, "bearer");
+        assert_eq!(auth.token.as_deref(), Some("{{TOKEN}}"));
+        assert_eq!(col.headers.get("X-Tenant").map(String::as_str), Some("acme"));
+
+        let admin = &col.folders[0];
+        let fauth = admin.auth.as_ref().expect("folder auth");
+        assert_eq!(fauth.auth_type, "apikey");
+        assert_eq!(fauth.value.as_deref(), Some("{{ADMIN}}"));
+        assert_eq!(admin.headers.get("X-Scope").map(String::as_str), Some("admin"));
+
+        // Los scripts se escriben en camelCase, que es como los lee flux-cli.
+        assert_eq!(
+            col.scripts.as_ref().and_then(|s| s.pre_request.as_deref()),
+            Some("pm.environment.set(\"a\", 1);")
+        );
+        assert_eq!(
+            admin.scripts.as_ref().and_then(|s| s.post_response.as_deref()),
+            Some("pm.test(\"ok\", () => {});")
+        );
+
+        // La request no debe quedar aplastada con lo heredado.
+        assert!(admin.requests[0].auth.is_none());
+        assert!(admin.requests[0].headers.is_empty());
+    }
+
     #[test]
     fn folders_nest() {
         let col = round_trip(
@@ -794,6 +886,9 @@ fn load_folders(folders: Vec<YamlFolder>, prefix: &str) -> Vec<FolderOut> {
                 id: fid,
                 name: f.name,
                 expanded: true,
+                auth: f.auth,
+                headers: f.headers,
+                scripts: f.scripts,
             }
         })
         .collect()
@@ -805,6 +900,9 @@ fn save_folders(folders: Vec<FolderOut>) -> Vec<YamlFolder> {
         .map(|f| YamlFolder {
             id: Some(f.id),
             name: f.name,
+            auth: f.auth,
+            headers: f.headers,
+            scripts: f.scripts,
             requests: f.requests.into_iter().map(out_to_yaml_req).collect(),
             folders: save_folders(f.folders),
         })
@@ -831,6 +929,9 @@ fn load_yaml_files_from(scan_path: &Path, group: Option<String>) -> Vec<Collecti
                 name: yaml.name,
                 description: yaml.description,
                 base_url: yaml.base_url,
+                auth: yaml.auth,
+                headers: yaml.headers,
+                scripts: yaml.scripts,
                 requests,
                 folders,
                 expanded: true,
@@ -886,6 +987,9 @@ pub fn save_collection(dir: String, collection: CollectionOut) -> Result<(), Str
         name: collection.name,
         description: collection.description,
         base_url: collection.base_url,
+        auth: collection.auth,
+        headers: collection.headers,
+        scripts: collection.scripts,
         requests: collection.requests.into_iter().map(out_to_yaml_req).collect(),
         folders: save_folders(collection.folders),
     };

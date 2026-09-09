@@ -2236,6 +2236,18 @@ body contains <span class="token-str">"success"</span></code></pre>
             numeric string in the response matches a number in the assertion, so <code>json.id == 5</code> passes when
             the body has <code>"id": "5"</code>.</p>
 
+          <h2>Variables</h2>
+          <p><code>{{VAR}}</code> is interpolated in an assertion from the active environment and the global
+            variables, the same as anywhere else:</p>
+          <pre><code>json.token == <span class="token-str">"{{EXPECTED_TOKEN}}"</span>
+json.count == {{EXPECTED_COUNT}}
+body contains <span class="token-str">"{{TENANT}}"</span></code></pre>
+          <p>Interpolation happens after the operator has been read, so a variable whose value contains
+            <code>==</code> cannot change how the line is parsed. A variable that is not defined is left as written, so
+            the assertion fails and the message shows <code>{{VAR}}</code> rather than passing silently.</p>
+          <p>Reports and history show the assertion as you wrote it, with the <code>{{VAR}}</code> in place, so the
+            value of a secret variable does not end up in a CI log or in the request history.</p>
+
           <h2>Absent fields</h2>
           <p>A field that is not in the response counts as <code>null</code>, so both of these hold when
             <code>token</code> is missing:</p>

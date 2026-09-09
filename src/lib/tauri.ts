@@ -217,6 +217,10 @@ export interface CollectionFolder {
   id: string;
   name: string;
   expanded: boolean;
+  /** Heredables por las requests de dentro. Ver `resolveInherited`. */
+  auth?: CollectionAuth;
+  headers?: Record<string, string>;
+  scripts?: CollectionScripts;
   requests: CollectionRequest[];
   folders?: CollectionFolder[];
 }
@@ -226,6 +230,10 @@ export interface Collection {
   name: string;
   description?: string;
   baseUrl?: string;
+  /** Heredables por todo lo que cuelga de la coleccion. Ver `resolveInherited`. */
+  auth?: CollectionAuth;
+  headers?: Record<string, string>;
+  scripts?: CollectionScripts;
   requests: CollectionRequest[];
   folders: CollectionFolder[];
   expanded: boolean;
