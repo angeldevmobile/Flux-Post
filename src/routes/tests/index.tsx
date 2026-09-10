@@ -3,13 +3,11 @@ import { useAiAvailable } from "@/lib/aiAvailable";
 import { Play, ChevronDown, Loader2, Sparkles, X, FlaskConical } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
-import { sendRequest, analyzeTestFailures } from "@/lib/tauri";
+import { analyzeTestFailures } from "@/lib/tauri";
 import { handleQuotaError } from "@/lib/aiError";
-import { networkOptions } from "@/lib/networkOptions";
 import { useSettingsStore } from "@/stores/settings";
 import { evaluateAssertion, buildContext, type AssertionResult, type TestResult } from "@/lib/testRunner";
-import type { HttpMethod } from "@/lib/tauri";
-import { prepareRequest } from "@/lib/prepareRequest";
+import { runCollectionRequest } from "@/lib/runCollectionRequest";
 import { requestsWithTests } from "@/lib/collectionTree";
 
 function SuiteItem({ name, results, active, onClick }: {
@@ -134,23 +132,26 @@ export function TestsRoute() {
 
     for (const req of requestsWithTests(col)) {
 
-      // Herencia, auth, variables y query en un solo sitio, compartido con el
-      // collection runner.
-      const prepared = prepareRequest(col, req, resolveVariable);
-
       let result: TestResult;
       try {
-        const resp = await sendRequest({
-          method: req.method as HttpMethod,
-          ...prepared,
-          ...networkOptions(),
-        });
+        // Scripts, herencia, auth, variables y extractores, compartido con el
+        // collection runner.
+        const { response: resp, scriptTests } = await runCollectionRequest(col, req);
+
         const ctx = buildContext(resp.status, resp.body, resp.headers, resp.durationMs, resolveVariable);
         result = {
           requestId: req.id,
           requestName: req.name,
           durationMs: resp.durationMs,
-          assertions: req.tests.map(t => evaluateAssertion(t.assert, ctx)),
+          assertions: [
+            ...req.tests.map(t => evaluateAssertion(t.assert, ctx)),
+            // Un `pm.test()` que falla cuenta como assertion fallada.
+            ...scriptTests.map(t => ({
+              assertion: t.name,
+              passed: t.pass,
+              ...(t.error ? { detail: t.error } : {}),
+            })),
+          ],
         };
       } catch (e) {
         result = {

@@ -2,9 +2,8 @@ import { useState, useRef } from "react";
 import { Play, Square, X, CheckCircle, XCircle, Loader, ChevronDown, ChevronRight, Network } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useEnvironmentStore } from "@/stores/environment";
-import { sendRequest, grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
-import { networkOptions } from "@/lib/networkOptions";
-import { prepareRequest } from "@/lib/prepareRequest";
+import { grpcLoadProtoById, grpcInvoke } from "@/lib/tauri";
+import { runCollectionRequest } from "@/lib/runCollectionRequest";
 import { allRequests } from "@/lib/collectionTree";
 import { evaluateAssertions, type AssertionResult } from "@/lib/assertionEvaluator";
 import { methodColor, methodBg } from "@/lib/methods";
@@ -108,14 +107,11 @@ export function CollectionRunner({ open, onClose }: Props) {
             idx === i ? { ...r, status: "done", durationMs: resp.durationMs, body: resp.body, assertions: [] } : r
           ));
         } else {
-          // Herencia, auth, variables y query en un solo sitio, compartido con
-          // la pantalla de Tests.
-          const prepared = prepareRequest(col, req, resolveVariable);
-          const resp = await sendRequest({
-            method: req.method,
-            ...prepared,
-            ...networkOptions(),
-          });
+          // Scripts, herencia, auth, variables y extractores, compartido con la
+          // pantalla de Tests. Lo que un extractor capture queda en el entorno,
+          // asi que la siguiente request de la tanda ya lo ve.
+          const { response: resp, scriptTests } = await runCollectionRequest(col, req);
+
           const assertions = req.tests?.length
             ? evaluateAssertions(
                 req.tests.map(t => t.assert),
@@ -123,6 +119,14 @@ export function CollectionRunner({ open, onClose }: Props) {
                 resolveVariable,
               )
             : [];
+          // Un `pm.test()` que falla tiene que verse igual que una assertion.
+          for (const t of scriptTests) {
+            assertions.push({
+              expr: t.name,
+              pass: t.pass,
+              message: t.error ?? t.name,
+            });
+          }
           setResults(prev => prev.map((r, idx) =>
             idx === i ? { ...r, status: "done", statusCode: resp.status, durationMs: resp.durationMs, body: resp.body, assertions } : r
           ));

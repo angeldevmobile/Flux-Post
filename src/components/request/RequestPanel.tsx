@@ -704,11 +704,18 @@ export function RequestPanel() {
         req.headers = { ...inherited.headers, ...inheritedAuth.headers, ...req.headers };
       }
 
-      if (preRequestScript.trim()) {
+      // El script de la coleccion y el de la carpeta corren antes que el de la
+      // request, igual que en el collection runner y en `flux run`.
+      const joinScripts = (outer: string | undefined, own: string) =>
+        [outer, own].map(v => v?.trim()).filter(Boolean).join("\n");
+      const effectivePre = joinScripts(inherited?.scripts?.preRequest, preRequestScript);
+      const effectivePost = joinScripts(inherited?.scripts?.postResponse, postResponseScript);
+
+      if (effectivePre.trim()) {
         const { environments, activeId, updateEnvironment } = useEnvironmentStore.getState();
         const activeEnv = environments.find(e => e.id === activeId);
         const envVars = activeEnv?.variables ?? {};
-        const mutations = runPreRequestScript(preRequestScript, envVars);
+        const mutations = runPreRequestScript(effectivePre, envVars);
         Object.assign(req.headers, mutations.headers);
         if (activeId && Object.keys(mutations.envVars).length > 0) {
           updateEnvironment(activeId, { variables: { ...envVars, ...mutations.envVars } });
@@ -766,11 +773,11 @@ export function RequestPanel() {
       setResponse(resp);
       trackPerf(resolved.url, resolved.method, resp.durationMs, resp.status);
 
-      if (postResponseScript.trim()) {
+      if (effectivePost.trim()) {
         const { environments, activeId, updateEnvironment } = useEnvironmentStore.getState();
         const activeEnv = environments.find(e => e.id === activeId);
         const envVars = activeEnv?.variables ?? {};
-        const postMutations = runPostResponseScript(postResponseScript, {
+        const postMutations = runPostResponseScript(effectivePost, {
           status: resp.status,
           body: resp.body,
           headers: resp.headers,

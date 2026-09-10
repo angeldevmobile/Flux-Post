@@ -27,11 +27,18 @@ export function runPreRequestScript(
   envVars: Record<string, string>
 ): PreRequestMutations {
   const mutations: PreRequestMutations = { headers: {}, envVars: {} };
+  // Copia viva: un `set` tiene que verlo un `get` posterior del mismo script,
+  // que es lo que hace el shim del CLI (flux-cli/src/js_shim.js) y lo que hace
+  // Postman. Leyendo solo de `envVars` se perdia dentro de la misma ejecucion.
+  const live: Record<string, string> = { ...envVars };
 
   const pm = {
     environment: {
-      get: (key: string): string => envVars[key] ?? "",
-      set: (key: string, value: unknown) => { mutations.envVars[key] = String(value); },
+      get: (key: string): string => live[key] ?? "",
+      set: (key: string, value: unknown) => {
+        mutations.envVars[key] = String(value);
+        live[key] = String(value);
+      },
     },
     request: {
       headers: {
@@ -113,6 +120,7 @@ export function runPostResponseScript(
 ): PostResponseMutations {
   const testResults: TestResult[] = [];
   const mutations: PostResponseMutations = { envVars: {}, testResults };
+  const live: Record<string, string> = { ...envVars };
 
   let json: unknown = null;
   try { json = JSON.parse(response.body); } catch { /* non-JSON */ }
@@ -139,12 +147,18 @@ export function runPostResponseScript(
       responseTime: response.durationMs,
     },
     environment: {
-      get: (key: string): string => envVars[key] ?? "",
-      set: (key: string, value: unknown) => { mutations.envVars[key] = String(value); },
+      get: (key: string): string => live[key] ?? "",
+      set: (key: string, value: unknown) => {
+        mutations.envVars[key] = String(value);
+        live[key] = String(value);
+      },
     },
     variables: {
-      get: (key: string): string => envVars[key] ?? "",
-      set: (key: string, value: unknown) => { mutations.envVars[key] = String(value); },
+      get: (key: string): string => live[key] ?? "",
+      set: (key: string, value: unknown) => {
+        mutations.envVars[key] = String(value);
+        live[key] = String(value);
+      },
     },
   };
 
