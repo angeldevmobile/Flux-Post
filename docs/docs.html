@@ -2610,10 +2610,25 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <tr>
                 <td>Script (runtime)</td>
                 <td>Set via <code>pm.environment.set()</code> during pre/post scripts, not persisted</td>
-                <td>Highest</td>
+                <td>Above both</td>
+              </tr>
+              <tr>
+                <td>Dynamic built-in</td>
+                <td><code>&#123;&#123;$guid&#125;&#125;</code>, <code>&#123;&#123;$timestamp&#125;&#125;</code>,
+                  <code>&#123;&#123;$isoTimestamp&#125;&#125;</code>, <code>&#123;&#123;$randomInt&#125;&#125;</code>
+                </td>
+                <td>Highest &mdash; a variable of the same name never shadows one</td>
               </tr>
             </tbody>
           </table>
+
+          <p>A global is a default and the environment specialises it: a global
+            <code>BASE_URL</code> pointing at production is overridden the moment a <strong>Local</strong> environment
+            defines its own. A script writes into the active environment, so a token refreshed by a pre-request script
+            overrides a stale global of the same name.</p>
+          <p>Substitution is a single pass over the text. A value that itself contains
+            <code>&#123;&#123;VAR&#125;&#125;</code> is not expanded a second time, and a variable that nothing defines
+            is left as written, braces included, so the mistake is visible instead of turning into an empty string.</p>
 
           <h2>Creating an environment</h2>
           <div class="steps">
@@ -3303,12 +3318,21 @@ flux run ./my-api --bail</code></pre>
                   Repeat it for each variable.</td>
               </tr>
               <tr>
-                <td><code>--reporter console|json</code></td>
+                <td><code>--env-file PATH</code></td>
+                <td>Reads variables from a <code>.env</code> style file: <code>KEY=VALUE</code> per line,
+                  <code>#</code> for comments, optional quotes, a leading <code>export</code> ignored. Repeatable.</td>
+              </tr>
+              <tr>
+                <td><code>--folder NAME</code></td>
+                <td>Runs only the requests inside that folder, by name or path (<code>Admin/Users</code>)</td>
+              </tr>
+              <tr>
+                <td><code>--reporter console|json|junit</code></td>
                 <td>Output format. Defaults to <code>console</code>.</td>
               </tr>
               <tr>
                 <td><code>--output FILE</code></td>
-                <td>Writes the JSON report to a file instead of stdout</td>
+                <td>Writes the report to a file instead of stdout</td>
               </tr>
               <tr>
                 <td><code>--bail</code></td>
@@ -3331,6 +3355,49 @@ flux run ./my-api --bail</code></pre>
                 <code>--env API_TOKEN=$API_TOKEN</code>. Nothing sensitive needs to live in the repository.</div>
             </div>
           </div>
+
+          <h2>Where variables come from</h2>
+          <p>The CLI has no named environments and no global variables &mdash; those live in the app, on your machine.
+            In CI every value comes from the command line:</p>
+          <pre><code>flux run ./my-api --env-file ci.env --env API_TOKEN=$API_TOKEN</code></pre>
+          <p>Later sources win, so <code>--env</code> on the command line overrides a file, and a second
+            <code>--env-file</code> overrides the first. That ordering is what lets a pipeline keep the shared values in
+            a committed file and override just one of them for a particular job.</p>
+          <p>A variable that no source defines is left in the request exactly as written, braces and all, rather than
+            becoming an empty string. A request that goes out to <code>&#123;&#123;BASE_URL&#125;&#125;/users</code>
+            fails loudly instead of quietly hitting the wrong host.</p>
+
+          <h3>Dynamic values</h3>
+          <p>The same built-ins as the app, resolved fresh at each occurrence, so two
+            <code>&#123;&#123;$guid&#125;&#125;</code> in one request are two different ids:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>&#123;&#123;$guid&#125;&#125;</code></td>
+                <td>A v4 UUID. Useful for an idempotency key or a request id.</td>
+              </tr>
+              <tr>
+                <td><code>&#123;&#123;$timestamp&#125;&#125;</code></td>
+                <td>Milliseconds since the epoch</td>
+              </tr>
+              <tr>
+                <td><code>&#123;&#123;$isoTimestamp&#125;&#125;</code></td>
+                <td>The current time as ISO&#8209;8601, e.g. <code>2026-09-09T12:34:56.789Z</code></td>
+              </tr>
+              <tr>
+                <td><code>&#123;&#123;$randomInt&#125;&#125;</code></td>
+                <td>An integer from 0 to 999</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>A built-in wins over a variable of the same name, and substitution runs in a single pass: a value that
+            itself contains <code>&#123;&#123;VAR&#125;&#125;</code> is not expanded again.</p>
 
           <h2>Exit codes</h2>
           <table>

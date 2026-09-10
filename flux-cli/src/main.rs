@@ -618,12 +618,71 @@ mod assertion_tests {
 
 //   Variable interpolation
 
-fn resolve_vars(s: &str, env: &HashMap<String, String>) -> String {
-    let mut result = s.to_string();
-    for (k, v) in env {
-        result = result.replace(&format!("{{{{{}}}}}", k), v);
+/// Built-ins dinamicos, iguales a los de `resolveVariable` en
+/// src/stores/environment.ts. Cada aparicion se resuelve por separado: dos
+/// `{{$guid}}` en la misma cadena dan dos uuid distintos.
+fn builtin(key: &str) -> Option<String> {
+    match key {
+        "$guid" => Some(uuid::Uuid::new_v4().to_string()),
+        "$timestamp" => Some(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis().to_string())
+                .unwrap_or_default(),
+        ),
+        "$isoTimestamp" => Some(
+            chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        ),
+        // 0..999, como `Math.floor(Math.random() * 1000)`. El azar sale del
+        // mismo CSPRNG que el uuid, para no arrastrar otra dependencia.
+        "$randomInt" => {
+            let b = uuid::Uuid::new_v4();
+            let b = b.as_bytes();
+            Some((((b[0] as u32) << 8 | b[1] as u32) % 1000).to_string())
+        }
+        _ => None,
     }
-    result
+}
+
+/// Sustituye `{{VAR}}` en una sola pasada.
+///
+/// Antes recorria el mapa de entorno reemplazando cada clave, lo que tenia dos
+/// diferencias con la app: los built-ins dinamicos no existian (una cabecera
+/// `{{$guid}}` salia con las llaves puestas hacia el servidor), y un valor que
+/// contuviera `{{OTRA}}` podia volver a expandirse segun el orden del mapa. La
+/// app hace una pasada con un regex; esto hace lo mismo a mano.
+fn resolve_vars(s: &str, env: &HashMap<String, String>) -> String {
+    let bytes = s.as_bytes();
+    let mut out = String::with_capacity(s.len());
+    let mut i = 0;
+
+    while i < s.len() {
+        if bytes[i] == b'{' && i + 1 < s.len() && bytes[i + 1] == b'{' {
+            // La clave no puede contener '}', igual que /\{\{([^}]+)\}\}/.
+            if let Some(rel) = s[i + 2..].find('}') {
+                let key_end = i + 2 + rel;
+                let key = &s[i + 2..key_end];
+                if !key.is_empty() && s[key_end..].starts_with("}}") {
+                    let replacement = builtin(key)
+                        .or_else(|| env.get(key).cloned());
+                    match replacement {
+                        Some(v) => out.push_str(&v),
+                        // Una variable desconocida se deja tal cual, para que
+                        // el fallo se vea en vez de colarse como cadena vacia.
+                        None => out.push_str(&s[i..key_end + 2]),
+                    }
+                    i = key_end + 2;
+                    continue;
+                }
+            }
+        }
+        // Avanza un caracter completo: `s.len()` es en bytes y el texto es UTF-8.
+        let ch = s[i..].chars().next().unwrap();
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+
+    out
 }
 
 //   Auth

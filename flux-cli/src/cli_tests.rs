@@ -464,3 +464,122 @@ mod variable_interpolation {
         assert!(!check_with(r#"json.token == "{{TOKEN}}""#, &empty).passed);
     }
 }
+
+/// Espejo de src/lib/__tests__/resolveVariable.test.ts. Mismos casos.
+///
+/// El CLI no tiene entornos con nombre ni variables globales: todo llega por
+/// `--env` y `--env-file`, asi que aqui hay un solo mapa. Lo que si tiene que
+/// coincidir es la forma de sustituir y los built-ins dinamicos.
+mod variable_resolution {
+    use super::*;
+
+    fn env() -> HashMap<String, String> {
+        [("TOKEN", "abc"), ("EMPTY", ""), ("NESTED", "{{TOKEN}}")]
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    fn r(s: &str) -> String {
+        resolve_vars(s, &env())
+    }
+
+    #[test]
+    fn replaces_a_variable() {
+        assert_eq!(r("Bearer {{TOKEN}}"), "Bearer abc");
+    }
+
+    #[test]
+    fn replaces_every_occurrence() {
+        assert_eq!(r("{{TOKEN}}-{{TOKEN}}"), "abc-abc");
+    }
+
+    #[test]
+    fn leaves_an_unknown_variable_exactly_as_written() {
+        assert_eq!(r("{{NOPE}}"), "{{NOPE}}");
+        assert_eq!(r("a {{NOPE}} b"), "a {{NOPE}} b");
+    }
+
+    #[test]
+    fn resolves_an_empty_variable_to_an_empty_string() {
+        assert_eq!(r("[{{EMPTY}}]"), "[]");
+    }
+
+    #[test]
+    fn does_not_re_resolve_what_it_just_substituted() {
+        assert_eq!(r("{{NESTED}}"), "{{TOKEN}}");
+    }
+
+    #[test]
+    fn leaves_text_with_no_variables_untouched() {
+        assert_eq!(r("plain text"), "plain text");
+        assert_eq!(r(""), "");
+    }
+
+    #[test]
+    fn ignores_braces_that_do_not_close() {
+        assert_eq!(r("{{TOKEN"), "{{TOKEN");
+        assert_eq!(r("{{}}"), "{{}}");
+    }
+
+    #[test]
+    fn handles_non_ascii_around_a_variable() {
+        // El escaneo va por bytes; un corte a mitad de caracter entraria en panico.
+        assert_eq!(r("año {{TOKEN}} ñ"), "año abc ñ");
+    }
+
+    #[test]
+    fn guid_is_a_v4_uuid() {
+        let v = r("{{$guid}}");
+        assert_eq!(v.len(), 36, "{v}");
+        let parts: Vec<&str> = v.split('-').collect();
+        assert_eq!(parts.iter().map(|p| p.len()).collect::<Vec<_>>(), vec![8, 4, 4, 4, 12]);
+        assert!(parts[2].starts_with('4'), "version nibble: {v}");
+        assert!(matches!(parts[3].as_bytes()[0], b'8' | b'9' | b'a' | b'b'), "variant: {v}");
+        assert!(v.chars().all(|c| c.is_ascii_hexdigit() || c == '-'));
+    }
+
+    #[test]
+    fn each_guid_in_the_same_string_is_different() {
+        let v = r("{{$guid}} {{$guid}}");
+        let (a, b) = v.split_once(' ').unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn timestamp_is_epoch_milliseconds() {
+        let v: u128 = r("{{$timestamp}}").parse().expect("number");
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        assert!(now.abs_diff(v) < 5000);
+    }
+
+    #[test]
+    fn iso_timestamp_has_the_same_shape_as_the_apps() {
+        // `new Date().toISOString()`: 2026-09-09T12:34:56.789Z
+        let v = r("{{$isoTimestamp}}");
+        assert_eq!(v.len(), 24, "{v}");
+        assert!(v.ends_with('Z'));
+        assert_eq!(&v[4..5], "-");
+        assert_eq!(&v[10..11], "T");
+        assert_eq!(&v[19..20], ".");
+        assert!(chrono::DateTime::parse_from_rfc3339(&v).is_ok(), "{v}");
+    }
+
+    #[test]
+    fn random_int_is_between_0_and_999() {
+        for _ in 0..200 {
+            let v: u32 = r("{{$randomInt}}").parse().expect("number");
+            assert!(v <= 999);
+        }
+    }
+
+    #[test]
+    fn a_builtin_wins_over_an_env_variable_of_the_same_name() {
+        let mut e = env();
+        e.insert("$timestamp".to_string(), "nope".to_string());
+        assert_ne!(resolve_vars("{{$timestamp}}", &e), "nope");
+    }
+}

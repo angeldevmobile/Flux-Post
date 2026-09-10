@@ -47,15 +47,15 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Folder structure with nested requests
 - Inherited auth, headers and scripts: click the shield on any collection or folder in the sidebar to set them once, and every request inside uses them. The nearest level wins, a folder set to `None` sends no auth even if the collection defines one, and scripts concatenate from the outside in. See [Inherited Settings](#inherited-settings)
 - Per-request test assertions
-- Collection runner with assertion reporting, including requests nested in folders
+- Collection runner with assertion reporting, including requests nested in folders. Runs pre/post scripts and variable extractors, so a chained suite (login, capture the token, use it) behaves like sending the requests one by one
 - Cloud sync per user via Supabase
 
 ### Environments
 - Multiple named environments with key/value variables
-- Global variables shared across all environments
+- Global variables shared across all environments, acting as defaults: a variable defined in the active environment overrides the global of the same name, and so does one written by a script with `pm.environment.set()`
 - Secret keys, masked in UI and never logged
 - Environment variable resolution at send time
-- Variable extractor (JSONPath): define `$.data.token -> {{token}}` rules, values captured automatically after every request
+- Variable extractor (JSONPath): define `$.data.token -> {{token}}` rules, values captured automatically after every request — when you press Send, in the Collection Runner and on the Tests screen, so a login can feed the requests that follow it. Not yet applied by `flux run`
 
 ### Tests
 - Assertion syntax: `status == 200`, `body.token != null`, `duration < 500`
@@ -196,9 +196,9 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - HTTP requests with all methods, auth types, and body types
 - Pre/post request scripts with `pm` API
 - Collections: import from Postman, OpenAPI, cURL; export to Postman v2.1 and OpenAPI 3.0
-- Collection runner with assertion reporting, including requests nested in folders
+- Collection runner with assertion reporting, including requests nested in folders. Runs pre/post scripts and variable extractors, so a chained suite (login, capture the token, use it) behaves like sending the requests one by one
 - Environment variables, secrets, and global vars
-- Variable extractor (JSONPath): `$.data.token -> {{token}}` rules, auto-applied after every response
+- Variable extractor (JSONPath): `$.data.token -> {{token}}` rules, auto-applied after every response in the app (Send, Collection Runner, Tests). Not yet in `flux run`
 - Code snippet export: copy any request as `curl`, `fetch`, `axios`, `Python requests`, `Go http`
 - Cloud sync for settings, collections, environments, and history
 - WebSocket viewer with full duplex log and timestamps
@@ -328,6 +328,29 @@ flux run collection.yaml --env-file .env --reporter junit --output report.xml
 | `--bail` | Stop at the first failure. |
 
 The path can be a single YAML file or a directory, in which case every collection in it runs. The exit code is non-zero if any assertion fails or any request errors.
+
+### Where variables come from
+
+The CLI has no named environments and no global variables — those live in the app, on your machine. In CI every value arrives on the command line:
+
+```bash
+flux run ./collections --env-file ci.env --env API_TOKEN=$API_TOKEN
+```
+
+Later sources win: `--env` overrides an `--env-file`, and a second `--env-file` overrides the first. That is what lets a pipeline keep the shared values in a committed file and override one of them for a particular job.
+
+A variable that no source defines is left in the request as written, braces and all, rather than becoming an empty string — so a request to `{{BASE_URL}}/users` fails loudly instead of quietly hitting the wrong host.
+
+The dynamic built-ins work the same as in the app, resolved fresh at each occurrence, so two `{{$guid}}` in one request are two different ids:
+
+| Variable | Value |
+|---|---|
+| `{{$guid}}` | A v4 UUID — an idempotency key or a request id |
+| `{{$timestamp}}` | Milliseconds since the epoch |
+| `{{$isoTimestamp}}` | ISO-8601, e.g. `2026-09-09T12:34:56.789Z` |
+| `{{$randomInt}}` | An integer from 0 to 999 |
+
+A built-in wins over a variable of the same name, and substitution runs in a single pass: a value that itself contains `{{VAR}}` is not expanded again.
 
 `--reporter junit` writes the format GitLab CI, Jenkins and the GitHub Actions test reporters read. Each assertion is its own `<testcase>`, so a failure points at the assertion rather than at the whole collection, and a request that never answered is reported as an `<error>` instead of a failure:
 

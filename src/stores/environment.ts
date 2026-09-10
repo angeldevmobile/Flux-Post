@@ -108,11 +108,16 @@ export const useEnvironmentStore = create<EnvironmentStore>()(
           if (key === "$isoTimestamp") return new Date().toISOString();
           if (key === "$randomInt") return String(Math.floor(Math.random() * 1000));
 
+          // Precedencia: entorno antes que global. Los globales son valores
+          // por defecto y el entorno los especializa; al reves un entorno
+          // "Local" no podia sobreescribir un BASE_URL global y las peticiones
+          // seguian yendo a produccion. `pm.environment.set()` escribe en las
+          // variables del entorno, asi que refrescar un token desde un script
+          // tambien depende de este orden.
+          if (env && key in env.variables) return env.variables[key];
+
           // Global variables
           if (key in globalVariables) return globalVariables[key];
-
-          // Environment variables
-          if (env && key in env.variables) return env.variables[key];
 
           return original;
         });
