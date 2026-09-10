@@ -112,3 +112,29 @@ describe("runPostResponseScript", () => {
     expect(out.envVars.B).toBe("1");
   });
 });
+
+describe("script errors are reported, not just logged", () => {
+  it("returns the error from a broken pre-request script", () => {
+    const out = runPreRequestScript("this is not javascript(", {});
+    expect(out.error).toBeTruthy();
+  });
+
+  it("returns the error from a broken post-response script", () => {
+    const out = runPostResponseScript("nope(((", response, {});
+    expect(out.error).toBeTruthy();
+  });
+
+  it("leaves error undefined when the script runs fine", () => {
+    expect(runPreRequestScript('pm.environment.set("A", "1");', {}).error).toBeUndefined();
+    expect(runPostResponseScript('pm.environment.set("A", "1");', response, {}).error).toBeUndefined();
+  });
+
+  it("keeps whatever the script managed to do before throwing", () => {
+    const out = runPreRequestScript(
+      'pm.environment.set("A", "1"); throw new Error("boom");',
+      {},
+    );
+    expect(out.envVars).toEqual({ A: "1" });
+    expect(out.error).toContain("boom");
+  });
+});

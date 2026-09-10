@@ -1,3 +1,4 @@
+mod jsonpath;
 mod scripts;
 #[cfg(test)]
 mod cli_tests;
@@ -63,6 +64,13 @@ fn default_kind() -> String {
     "http".to_string()
 }
 
+/// Regla del extractor de variables: `$.data.token -> {{token}}`.
+#[derive(Debug, Deserialize)]
+struct YamlExtractor {
+    path: String,
+    variable: String,
+}
+
 #[derive(Debug, Deserialize)]
 struct YamlRequest {
     name: String,
@@ -84,6 +92,8 @@ struct YamlRequest {
     graphql: Option<YamlGraphql>,
     auth: Option<YamlAuth>,
     scripts: Option<YamlScripts>,
+    #[serde(default)]
+    extractors: Vec<YamlExtractor>,
     #[serde(default)]
     tests: Vec<YamlTest>,
 }
@@ -796,6 +806,29 @@ async fn apply_auth(
     Ok(out)
 }
 
+/// Aplica las reglas del extractor sobre el cuerpo de la respuesta.
+///
+/// Espejo de `extractVariables` en src/lib/runCollectionRequest.ts.
+fn extract_variables(rules: &[YamlExtractor], body: &str) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    if rules.is_empty() {
+        return out;
+    }
+    // Una respuesta que no es JSON no tiene nada que extraer.
+    let Ok(parsed) = serde_json::from_str::<Value>(body) else { return out };
+
+    for rule in rules {
+        if rule.path.is_empty() || rule.variable.is_empty() {
+            continue;
+        }
+        // `None` es "no estaba": no se pisa la variable con una cadena vacia.
+        if let Some(v) = jsonpath::evaluate_path(&rule.path, &parsed) {
+            out.insert(rule.variable.clone(), v);
+        }
+    }
+    out
+}
+
 //   HTTP runner
 
 struct RequestResult {
@@ -808,6 +841,11 @@ struct RequestResult {
     /// Salida de `console.log` de los scripts: sin esto, depurar un script que
     /// falla solo en CI seria a ciegas.
     logs: Vec<String>,
+    /// Variables que esta peticion deja para las siguientes: lo que escriba un
+    /// script de post-response y lo que capturen los extractores.
+    ///
+    /// No se serializa al reporte a proposito: aqui es donde viven los tokens.
+    env_updates: HashMap<String, String>,
 }
 
 async fn run_request(
@@ -862,6 +900,7 @@ async fn run_request(
                     assertions: vec![],
                     error: Some(e),
                     logs: vec![],
+                    env_updates: HashMap::new(),
                 }
             }
         },
@@ -934,6 +973,7 @@ async fn run_request(
             failed: req.tests.len(),
             duration_ms: start.elapsed().as_millis() as u64,
             assertions: vec![],
+            env_updates: HashMap::new(),
             error: Some(e.to_string()),
             logs: vec![],
         },
@@ -970,6 +1010,7 @@ async fn run_request(
             // una coleccion importada de Postman falle la build igual que una
             // escrita en Flux.
             let mut post_error = None;
+            let mut env_updates: HashMap<String, String> = HashMap::new();
             let post_script = concat_script(
                 inh.post_response.as_deref(),
                 req.scripts.as_ref().and_then(|s| s.post_response.as_deref()),
@@ -994,11 +1035,19 @@ async fn run_request(
                             detail: t.error,
                         });
                     }
+                    // Lo que el script escriba tiene que llegar a las
+                    // peticiones siguientes: antes se descartaba, asi que una
+                    // cadena login -> token -> resto no encadenaba en CI.
+                    env_updates.extend(out.env);
                     if let Some(e) = out.error {
                         post_error = Some(format!("post-response script: {e}"));
                     }
                 }
             }
+
+            // Van despues del script, que puede haber dejado algo preparado, y
+            // pisan a lo que el script escribiera con el mismo nombre.
+            env_updates.extend(extract_variables(&req.extractors, &body_raw));
 
             let passed = assertions.iter().filter(|a| a.passed).count();
             let failed = assertions.iter().filter(|a| !a.passed).count();
@@ -1011,6 +1060,7 @@ async fn run_request(
                 assertions,
                 error: script_error.or(post_error),
                 logs,
+                env_updates,
             }
         }
     }
@@ -1360,6 +1410,20 @@ async fn main() {
                 let with_tests: Vec<_> =
                     all_requests.iter().filter(|(r, _)| !r.tests.is_empty()).collect();
 
+                // Una peticion sin assertions pero con extractores o scripts si
+                // se ejecuta: es el paso de login de una cadena, y saltarselo
+                // dejaba al resto de la tanda sin token.
+                let chain_only = all_requests
+                    .iter()
+                    .filter(|(r, inh)| {
+                        r.tests.is_empty()
+                            && (!r.extractors.is_empty()
+                                || r.scripts.is_some()
+                                || inh.pre_request.is_some()
+                                || inh.post_response.is_some())
+                    })
+                    .count();
+
                 let with_scripts = with_tests
                     .iter()
                     .filter(|(r, inh)| {
@@ -1378,6 +1442,12 @@ async fn main() {
                         BOLD, CYAN, collection.name, RESET,
                         DIM, with_tests.len(), RESET
                     );
+                    if chain_only > 0 {
+                        println!(
+                            "  {}plus {} request(s) with no assertions, run for their extractors or scripts{}",
+                            DIM, chain_only, RESET
+                        );
+                    }
                     if skipped_grpc > 0 {
                         println!(
                             "  {}skipped {} gRPC request(s), not supported by the CLI runner{}",
@@ -1397,11 +1467,19 @@ async fn main() {
                 let mut suite_failed = 0usize;
 
                 for (req, inh) in &all_requests {
-                    if req.tests.is_empty() {
+                    let contributes = !req.extractors.is_empty()
+                        || req.scripts.is_some()
+                        || inh.pre_request.is_some()
+                        || inh.post_response.is_some();
+                    if req.tests.is_empty() && !contributes {
                         continue;
                     }
 
                     let result = run_request(&client, req, inh, base.as_deref(), &env).await;
+
+                    // Lo que esta peticion haya dejado (extractores y scripts de
+                    // post-response) pasa a estar disponible para las siguientes.
+                    env.extend(result.env_updates.clone());
 
                     if reporter == "console" {
                         println!();

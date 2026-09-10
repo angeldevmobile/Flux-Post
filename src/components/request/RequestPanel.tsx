@@ -716,6 +716,11 @@ export function RequestPanel() {
         const activeEnv = environments.find(e => e.id === activeId);
         const envVars = activeEnv?.variables ?? {};
         const mutations = runPreRequestScript(effectivePre, envVars);
+        // La peticion sale igual, pero sin lo que el script iba a ponerle. Un
+        // aviso en el panel de consola solo es demasiado facil de no ver.
+        if (mutations.error) {
+          toast.error("Pre-request script failed — " + mutations.error, { duration: 6000 });
+        }
         Object.assign(req.headers, mutations.headers);
         if (activeId && Object.keys(mutations.envVars).length > 0) {
           updateEnvironment(activeId, { variables: { ...envVars, ...mutations.envVars } });
@@ -785,6 +790,9 @@ export function RequestPanel() {
         }, envVars);
         if (activeId && Object.keys(postMutations.envVars).length > 0) {
           updateEnvironment(activeId, { variables: { ...envVars, ...postMutations.envVars } });
+        }
+        if (postMutations.error) {
+          toast.error("Post-response script failed — " + postMutations.error, { duration: 6000 });
         }
         useTestResultsStore.getState().setResults(postMutations.testResults);
       }

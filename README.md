@@ -55,7 +55,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Global variables shared across all environments, acting as defaults: a variable defined in the active environment overrides the global of the same name, and so does one written by a script with `pm.environment.set()`
 - Secret keys, masked in UI and never logged
 - Environment variable resolution at send time
-- Variable extractor (JSONPath): define `$.data.token -> {{token}}` rules, values captured automatically after every request — when you press Send, in the Collection Runner and on the Tests screen, so a login can feed the requests that follow it. Not yet applied by `flux run`
+- Variable extractor (JSONPath): define `$.data.token -> {{token}}` rules, values captured automatically after every request — when you press Send, in the Collection Runner, on the Tests screen and in `flux run`, so a login can feed the requests that follow it
 
 ### Tests
 - Assertion syntax: `status == 200`, `body.token != null`, `duration < 500`
@@ -198,7 +198,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - Collections: import from Postman, OpenAPI, cURL; export to Postman v2.1 and OpenAPI 3.0
 - Collection runner with assertion reporting, including requests nested in folders. Runs pre/post scripts and variable extractors, so a chained suite (login, capture the token, use it) behaves like sending the requests one by one
 - Environment variables, secrets, and global vars
-- Variable extractor (JSONPath): `$.data.token -> {{token}}` rules, auto-applied after every response in the app (Send, Collection Runner, Tests). Not yet in `flux run`
+- Variable extractor (JSONPath): `$.data.token -> {{token}}` rules, auto-applied after every response everywhere: Send, the Collection Runner, the Tests screen and `flux run`
 - Code snippet export: copy any request as `curl`, `fetch`, `axios`, `Python requests`, `Go http`
 - Cloud sync for settings, collections, environments, and history
 - WebSocket viewer with full duplex log and timestamps
@@ -328,6 +328,31 @@ flux run collection.yaml --env-file .env --reporter junit --output report.xml
 | `--bail` | Stop at the first failure. |
 
 The path can be a single YAML file or a directory, in which case every collection in it runs. The exit code is non-zero if any assertion fails or any request errors.
+
+Requests with assertions always run. One without any also runs when it has extractors or scripts — that is the login step of a chain, and skipping it would leave the rest of the batch without a token. A request with nothing of the three is skipped.
+
+### Chaining requests
+
+What a request captures is available to the ones after it, both through a variable extractor and through `pm.environment.set()` in a post-response script:
+
+```yaml
+requests:
+  - name: Login
+    method: POST
+    path: /login
+    body: '{"user":"{{USER}}","pass":"{{PASS}}"}'
+    extractors:
+      - path: $.data.token
+        variable: TOKEN
+
+  - name: Me
+    method: GET
+    path: /me
+    headers:
+      Authorization: "Bearer {{TOKEN}}"
+```
+
+The same chain behaves identically when you press Send, in the Collection Runner and on the Tests screen.
 
 ### Where variables come from
 

@@ -232,3 +232,30 @@ describe("runCollectionRequest", () => {
     expect(vars()).toEqual(before);
   });
 });
+
+describe("a broken script fails the run instead of passing quietly", () => {
+  it("reports a broken pre-request script as a failed assertion", async () => {
+    const c = col({ requests: [req({ scripts: { preRequest: "this is not javascript(" } })] });
+    const out = await runCollectionRequest(c, c.requests[0]);
+    expect(out.scriptTests[0].name).toBe("pre-request script");
+    expect(out.scriptTests[0].pass).toBe(false);
+  });
+
+  it("still sends the request, so you can see what came back", async () => {
+    const c = col({ requests: [req({ scripts: { preRequest: "nope(((" } })] });
+    await runCollectionRequest(c, c.requests[0]);
+    expect(sent.length).toBe(1);
+  });
+
+  it("reports a broken post-response script too", async () => {
+    const c = col({ requests: [req({ scripts: { postResponse: "nope(((" } })] });
+    const out = await runCollectionRequest(c, c.requests[0]);
+    expect(out.scriptTests.map((t) => t.name)).toContain("post-response script");
+  });
+
+  it("reports nothing extra when the scripts are fine", async () => {
+    const c = col({ requests: [req({ scripts: { preRequest: 'pm.environment.set("A","1");' } })] });
+    const out = await runCollectionRequest(c, c.requests[0]);
+    expect(out.scriptTests).toEqual([]);
+  });
+});

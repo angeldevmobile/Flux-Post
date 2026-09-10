@@ -583,3 +583,90 @@ mod variable_resolution {
         assert_ne!(resolve_vars("{{$timestamp}}", &e), "nope");
     }
 }
+
+/// Espejo de `describe("extractVariables")` en
+/// src/lib/__tests__/runCollectionRequest.test.ts. Mismos casos.
+mod extractors {
+    use super::*;
+
+    fn rules(pairs: &[(&str, &str)]) -> Vec<YamlExtractor> {
+        pairs
+            .iter()
+            .map(|(path, variable)| YamlExtractor {
+                path: path.to_string(),
+                variable: variable.to_string(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn captures_a_value_by_jsonpath() {
+        let out = extract_variables(&rules(&[("$.data.token", "TOKEN")]), r#"{"data":{"token":"abc"}}"#);
+        assert_eq!(out.get("TOKEN").map(String::as_str), Some("abc"));
+        assert_eq!(out.len(), 1);
+    }
+
+    #[test]
+    fn captures_several_rules_at_once() {
+        let out = extract_variables(
+            &rules(&[("$.id", "ID"), ("$.nested.name", "NAME")]),
+            r#"{"id":7,"nested":{"name":"ana"}}"#,
+        );
+        assert_eq!(out.get("ID").map(String::as_str), Some("7"));
+        assert_eq!(out.get("NAME").map(String::as_str), Some("ana"));
+    }
+
+    #[test]
+    fn skips_a_path_that_is_not_in_the_response() {
+        let out = extract_variables(&rules(&[("$.missing", "TOKEN")]), r#"{"other":1}"#);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn returns_nothing_for_a_non_json_body() {
+        let out = extract_variables(&rules(&[("$.token", "TOKEN")]), "<html>nope</html>");
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn returns_nothing_without_rules() {
+        assert!(extract_variables(&[], r#"{"token":"abc"}"#).is_empty());
+    }
+
+    #[test]
+    fn ignores_a_half_written_rule() {
+        let out = extract_variables(&rules(&[("", "TOKEN"), ("$.a", "")]), r#"{"a":1}"#);
+        assert!(out.is_empty());
+    }
+
+    /// El YAML que escribe la app tiene que cargar aqui tal cual.
+    #[test]
+    fn the_apps_yaml_shape_parses() {
+        let col: YamlCollection = serde_yaml::from_str(
+            r#"
+name: API
+requests:
+  - name: login
+    method: POST
+    path: /login
+    extractors:
+      - path: $.data.token
+        variable: TOKEN
+"#,
+        )
+        .expect("yaml");
+        let r = &col.requests[0];
+        assert_eq!(r.extractors.len(), 1);
+        assert_eq!(r.extractors[0].path, "$.data.token");
+        assert_eq!(r.extractors[0].variable, "TOKEN");
+    }
+
+    /// Una coleccion sin extractores sigue cargando.
+    #[test]
+    fn a_request_without_extractors_still_parses() {
+        let col: YamlCollection =
+            serde_yaml::from_str("name: API\nrequests:\n  - name: r\n    method: GET\n    path: /x\n")
+                .expect("yaml");
+        assert!(col.requests[0].extractors.is_empty());
+    }
+}

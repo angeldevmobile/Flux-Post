@@ -5,11 +5,19 @@ import type { TestResult } from "@/stores/testResults";
 export interface PreRequestMutations {
   headers: Record<string, string>;
   envVars: Record<string, string>;
+  /**
+   * El script reventó. Se sigue enviando la peticion —en la UI quieres ver que
+   * ha llegado— pero quien llame tiene que poder decirlo en voz alta: un aviso
+   * en el panel de consola es demasiado facil de no ver, y la peticion sale sin
+   * la cabecera o el token que el script iba a poner.
+   */
+  error?: string;
 }
 
 export interface PostResponseMutations {
   envVars: Record<string, string>;
   testResults: TestResult[];
+  error?: string;
 }
 
 function makeConsole(source: LogSource) {
@@ -58,6 +66,7 @@ export function runPreRequestScript(
     fn(pm, makeConsole("pre-request"));
   } catch (e) {
     useConsoleStore.getState().push("error", String(e), "pre-request");
+    mutations.error = String(e instanceof Error ? e.message : e);
   }
 
   return mutations;
@@ -168,6 +177,7 @@ export function runPostResponseScript(
     fn(pm, makeConsole("post-response"));
   } catch (e) {
     useConsoleStore.getState().push("error", String(e), "post-response");
+    mutations.error = String(e instanceof Error ? e.message : e);
   }
 
   return mutations;

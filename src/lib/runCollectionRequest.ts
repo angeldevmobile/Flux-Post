@@ -92,10 +92,17 @@ export async function runCollectionRequest(
   //    lo use esta misma peticion.
   const pre = inherited?.scripts?.preRequest ?? request.scripts?.preRequest;
   let scriptHeaders: Record<string, string> = {};
+  const scriptFailures: TestResult[] = [];
   if (pre?.trim()) {
     const mutations = runPreRequestScript(pre, currentVars());
     scriptHeaders = mutations.headers;
     writeEnv(mutations.envVars);
+    // Un script roto sale como assertion fallada, no como una linea de consola
+    // que nadie mira: la peticion se envia igual, pero la tanda se da por
+    // fallada, que es el mismo veredicto que da `flux run`.
+    if (mutations.error) {
+      scriptFailures.push({ name: "pre-request script", pass: false, error: mutations.error });
+    }
   }
 
   // 2. Herencia, auth, variables y query.
@@ -129,11 +136,14 @@ export async function runCollectionRequest(
     );
     scriptTests = mutations.testResults;
     writeEnv(mutations.envVars);
+    if (mutations.error) {
+      scriptFailures.push({ name: "post-response script", pass: false, error: mutations.error });
+    }
   }
 
   // 5. Extractores.
   const extracted = extractVariables(request, response.body);
   writeEnv(extracted);
 
-  return { response, scriptTests, extracted };
+  return { response, scriptTests: [...scriptFailures, ...scriptTests], extracted };
 }
