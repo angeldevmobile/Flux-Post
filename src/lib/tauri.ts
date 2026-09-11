@@ -237,6 +237,13 @@ export interface Collection {
   requests: CollectionRequest[];
   folders: CollectionFolder[];
   expanded: boolean;
+  /** Subcarpeta de la raiz, si la coleccion vive en una. La decide el guardado. */
+  group?: string;
+  /**
+   * Carpeta raiz de la que se cargo. Solo en memoria: guardar escribe en ella,
+   * y el lado de Rust ignora el campo porque no esta en `CollectionOut`.
+   */
+  rootDir?: string;
 }
 
 export async function loadCollections(dir: string): Promise<Collection[]> {

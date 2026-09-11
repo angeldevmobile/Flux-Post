@@ -3908,7 +3908,7 @@ flux run ./my-api --bail</code></pre>
 
       let tocHeadings = [];
 
-      function show(id) {
+      function show(id, fromHash) {
         sections.forEach(s => s.classList.toggle('visible', s.id === 'sec-' + id));
         sidebarItems.forEach(btn => {
           const onclick = btn.getAttribute('onclick') || '';
@@ -3916,7 +3916,21 @@ flux run ./my-api --bail</code></pre>
         });
         buildToc(id);
         window.scrollTo({ top: 0 });
+        // La seccion va en el hash para poder enlazarla desde fuera: la app
+        // manda aqui desde "Privacy Policy", y sin esto se abria la portada.
+        if (!fromHash && location.hash.slice(1) !== id) {
+          history.replaceState(null, '', '#' + id);
+        }
       }
+
+      /** Abre la seccion que pida la url, si existe. */
+      function showFromHash() {
+        const id = location.hash.slice(1);
+        if (id && document.getElementById('sec-' + id)) show(id, true);
+      }
+
+      window.addEventListener('hashchange', showFromHash);
+      showFromHash();
 
       function buildToc(id) {
         const toc = document.getElementById('toc');

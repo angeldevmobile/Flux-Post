@@ -16,6 +16,7 @@ import { useCollectionsStore } from "@/stores/collections";
 import { resolveAncestorsAcross } from "@/lib/inheritance";
 import { authToRequest } from "@/lib/authHeaders";
 import { appendQuery } from "@/lib/requestUrl";
+import { rootFor } from "@/lib/collectionRoots";
 import { runPreRequestScript, runPostResponseScript } from "@/lib/preRequest";
 import { useTestResultsStore } from "@/stores/testResults";
 import { useSettingsStore } from "@/stores/settings";
@@ -26,8 +27,6 @@ import { evaluatePath } from "@/lib/jsonpath";
 import { toCollectionRequest, findLiteralSecrets, type LiteralSecret, type RequestSnapshot } from "@/lib/requestFidelity";
 import type { Extractor } from "@/stores/request";
 import type { CollectionFolder } from "@/stores/collections";
-
-const DIR_KEY = "flux_collections_dir";
 
 /** Older collections may lack `headers` or `tests`; fill them in at any depth. */
 function normalizeFolders(folders: CollectionFolder[]): CollectionFolder[] {
@@ -79,10 +78,12 @@ function SavePopover({ onClose }: { onClose: () => void }) {
   }
 
   async function handleSave(force = false) {
-    const dir = localStorage.getItem(DIR_KEY);
-    if (!dir || !collectionId) return;
+    if (!collectionId) return;
     const col = collections.find(c => c.id === collectionId);
     if (!col) return;
+    // Se escribe en la carpeta de la que salio esa coleccion, no en "la" carpeta.
+    const dir = rootFor(col, collections);
+    if (!dir) return;
 
     const snapshot = useRequestStore.getState() as unknown as RequestSnapshot;
 

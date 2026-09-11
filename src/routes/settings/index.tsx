@@ -676,6 +676,8 @@ const RETENTION_OPTIONS = [
 ];
 
 function PrivacySection() {
+  // Sin cuenta no hay sesiones que cerrar: en su lugar se ofrece iniciar una.
+  const signedIn = useUserStore(s => !!s.session);
   const s = useSettingsStore();
   const [clearing, setClearing]       = useState(false);
   const [historyCount, setHistoryCount] = useState<number | null>(null);
@@ -796,22 +798,41 @@ function PrivacySection() {
           <TriangleAlert size={14} className="text-red" />
           <span className="text-[12px] font-semibold text-red">Danger Zone</span>
         </div>
-        <div className="flex items-center gap-4 px-4" style={{ height: 56, borderBottom: "1px solid #EF444420" }}>
-          <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Sign out of all devices</span>
-            <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Ends every active session. Your API key and settings stay on this device.</span>
+        {signedIn ? (
+          <div className="flex items-center gap-4 px-4" style={{ height: 56, borderBottom: "1px solid #EF444420" }}>
+            <div className="flex flex-col gap-0.5 flex-1">
+              <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Sign out of all devices</span>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Ends every active session. Your API key and settings stay on this device.</span>
+            </div>
+            <button
+              onClick={async () => {
+                const { supabase } = await import("@/lib/supabase");
+                await supabase.auth.signOut({ scope: "global" });
+                window.location.reload();
+              }}
+              className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 shrink-0"
+              style={{ height: 32, background: "var(--color-card)", border: "1px solid #EF444440", color: "#EF4444" }}>
+              <LogOut size={13} /> Sign out
+            </button>
           </div>
-          <button
-            onClick={async () => {
-              const { supabase } = await import("@/lib/supabase");
-              await supabase.auth.signOut({ scope: "global" });
-              window.location.reload();
-            }}
-            className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 shrink-0"
-            style={{ height: 32, background: "var(--color-card)", border: "1px solid #EF444440", color: "#EF4444" }}>
-            <LogOut size={13} /> Sign out
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center gap-4 px-4" style={{ height: 56, borderBottom: "1px solid #EF444420" }}>
+            <div className="flex flex-col gap-0.5 flex-1">
+              <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>Using Flux without an account</span>
+              <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>Cloud sync and the free AI tier are off. Everything on this device keeps working.</span>
+            </div>
+            <button
+              onClick={async () => {
+                const { setLocalMode } = await import("@/lib/localMode");
+                setLocalMode(false);
+                window.location.reload();
+              }}
+              className="flex items-center gap-1.5 px-3.5 rounded-md text-[12px] transition-opacity hover:opacity-80 shrink-0"
+              style={{ height: 32, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
+              Sign in
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-4 px-4" style={{ height: 56 }}>
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[13px] font-medium text-red">Reset all settings</span>
@@ -1005,7 +1026,7 @@ function AboutSection() {
             Getting started, features, installation guide and keyboard shortcuts.
           </span>
         </div>
-        <button onClick={() => openUrl("https://angeldevmobile.github.io/Flux-Post")}
+        <button onClick={() => openUrl("https://fluxapi.dev/docs.html")}
           className="flex items-center gap-1.5 px-4 rounded-md text-[12px] font-medium transition-opacity hover:opacity-80 shrink-0"
           style={{ height: 34, background: "var(--color-accent)", color: "#fff" }}>
           <ExternalLink size={12} />
@@ -1016,7 +1037,11 @@ function AboutSection() {
       {/* Links */}
       <Card title="Resources">
         {[
-          { label: "Documentation",  desc: "Full user guide, features and installation", url: "https://angeldevmobile.github.io/Flux-Post" },
+          // fluxapi.dev es el dominio del sitio (docs/CNAME); el de github.io
+          // llega por redireccion. Y estos dos apuntaban a la portada, no a la
+          // documentacion, que es lo que dicen sus etiquetas.
+          { label: "Documentation",  desc: "Full user guide, features and installation", url: "https://fluxapi.dev/docs.html" },
+          { label: "Website",        desc: "Downloads, features and what is new",        url: "https://fluxapi.dev" },
           { label: "GitHub",         desc: "Source code, issues and contributions",      url: "https://github.com/angeldevmobile/Flux-Post" },
           { label: "Releases",       desc: "Download installers for all platforms",       url: "https://github.com/angeldevmobile/Flux-Post/releases" },
           { label: "Report an issue",desc: "Found a bug? Open an issue on GitHub",       url: "https://github.com/angeldevmobile/Flux-Post/issues" },

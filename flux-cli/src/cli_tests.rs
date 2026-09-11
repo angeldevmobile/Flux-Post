@@ -670,3 +670,4 @@ requests:
         assert!(col.requests[0].extractors.is_empty());
     }
 }
+

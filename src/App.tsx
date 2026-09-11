@@ -29,6 +29,7 @@ import { initCrashReporting, trackEvent, flushEvents } from "@/lib/analytics";
 import { checkForUpdates, installAndRestart } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
 import { useNavStore } from "@/stores/nav";
+import { isLocalMode, setLocalMode } from "@/lib/localMode";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
 
@@ -142,6 +143,13 @@ export default function App() {
     async function restoreSession() {
       const { rememberMe } = useSettingsStore.getState();
 
+      // Quien eligio usar Flux sin cuenta entra directo. Se comprueba antes que
+      // nada: no hay sesion que restaurar ni servidor al que preguntar.
+      if (isLocalMode()) {
+        setScreen("app");
+        return;
+      }
+
       // If "remember me" is off, always start at login — no session restore
       if (!rememberMe) {
         await clearSessionDb().catch(() => {});
@@ -202,7 +210,9 @@ export default function App() {
       } else if (hiddenAt !== null) {
         const awayMs = Date.now() - hiddenAt;
         hiddenAt = null;
-        if (useSettingsStore.getState().lockOnSleep && awayMs > 120_000) {
+        // En modo local no hay sesion que cerrar, y cerrarla mandaria al muro
+        // de login a alguien que eligio no tener cuenta.
+        if (!isLocalMode() && useSettingsStore.getState().lockOnSleep && awayMs > 120_000) {
           supabase.auth.signOut();
         }
       }
@@ -219,7 +229,11 @@ export default function App() {
         setScreen("login");
       } else if (session && (event === "TOKEN_REFRESHED" || event === "SIGNED_IN")) {
         setSession(session);
-        if (event === "SIGNED_IN") syncOnLogin(session.user.id).catch(() => {});
+        if (event === "SIGNED_IN") {
+          // Ya hay cuenta: la proxima vez se restaura la sesion, no el modo local.
+          setLocalMode(false);
+          syncOnLogin(session.user.id).catch(() => {});
+        }
         if (useSettingsStore.getState().rememberMe) {
           await saveSession({
             accessToken: session.access_token,
@@ -251,7 +265,11 @@ export default function App() {
   if (screen === "login") {
     return (
       <div className="h-full w-full">
-        <Login onLogin={() => setScreen("app")} onGoSignUp={() => setScreen("signup")} />
+        <Login
+          onLogin={() => setScreen("app")}
+          onGoSignUp={() => setScreen("signup")}
+          onUseLocally={() => { setLocalMode(true); setScreen("app"); }}
+        />
       </div>
     );
   }

@@ -18,8 +18,8 @@ import { CodeEditor } from "@/components/CodeEditor";
 import { useEnvironmentStore } from "@/stores/environment";
 import { useUserStore } from "@/stores/user";
 import { toast } from "sonner";
+import { rootFor } from "@/lib/collectionRoots";
 
-const DIR_KEY = "flux_collections_dir";
 
 /** Older collections may lack `headers` or `tests`; fill them in at any depth. */
 function normalizeFolders(folders: CollectionFolder[]): CollectionFolder[] {
@@ -263,10 +263,11 @@ function GrpcSavePopover({
   }, [onClose]);
 
   async function handleSave() {
-    const dir = localStorage.getItem(DIR_KEY);
-    if (!dir || !collectionId) return;
+    if (!collectionId) return;
     const col = collections.find(c => c.id === collectionId);
     if (!col) return;
+    const dir = rootFor(col, collections);
+    if (!dir) return;
     setSaving(true);
     try {
       const metaMap: Record<string, string> = {};

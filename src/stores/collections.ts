@@ -28,6 +28,8 @@ export interface Collection {
   folders: CollectionFolder[];
   expanded: boolean;
   group?: string;
+  /** Carpeta raiz de la que se cargo. Ver `rootFor` en collectionRoots.ts. */
+  rootDir?: string;
 }
 
 interface CollectionsStore {

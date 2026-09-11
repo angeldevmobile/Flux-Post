@@ -12,7 +12,7 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 |---|---|---|
 | RAM usage | 200–400 MB | < 30 MB |
 | Installer size | ~150 MB | 11–15 MB |
-| Requires account | Yes | Yes, free — email or GitHub |
+| Requires account | Yes | No — everything local works without one |
 | AI test generation | Paid plan | Free tier included, or your own key |
 | AI debug on errors | No | 4xx/5xx analysis + one-click Apply fixes |
 | AI script editing | No | Natural language edits |
@@ -44,7 +44,8 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 ### Collections
 - Import from Postman v2.1, OpenAPI 3.x, cURL, keeping auth, query params, scripts, body types and nested folders
 - Export as Postman v2.1 or OpenAPI 3.0
-- Folder structure with nested requests
+- Several collections folders open at once, one per repository if you keep collections next to the code they test. Each collection remembers where it came from, so saving writes back to its own folder
+- Folder structure with nested requests, organised from the sidebar: right-click any collection, folder or request to rename, create, duplicate, delete, or move a request to any folder of any open collection. `Ctrl+Shift+N` creates a collection
 - Inherited auth, headers and scripts: click the shield on any collection or folder in the sidebar to set them once, and every request inside uses them. The nearest level wins, a folder set to `None` sends no auth even if the collection defines one, and scripts concatenate from the outside in. See [Inherited Settings](#inherited-settings)
 - Per-request test assertions
 - Collection runner with assertion reporting, including requests nested in folders. Runs pre/post scripts and variable extractors, so a chained suite (login, capture the token, use it) behaves like sending the requests one by one
@@ -92,6 +93,8 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Proportional bar chart with exact millisecond values
 
 ### AI (free tier included, or bring your own key)
+Flux opens and works without an account: requests, collections, environments, scripts, tests, the mock server, load tests, gRPC, WebSocket and SSE are all local. An account adds cloud sync and the free AI tier, and you can sign in later from Settings. With your own Claude key the AI works without an account too.
+
 During the beta every signed-in account gets 100 AI actions a month, up to 20 a day, with nothing to configure. On the free tier prompts are relayed through a Flux proxy, which is how the quota is applied. Add your own Claude API key for unlimited use: it never leaves your device and calls go straight to Anthropic.
 
 - Generate test assertions from any response

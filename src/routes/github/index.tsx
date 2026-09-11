@@ -4,10 +4,9 @@ import { flushSync } from "react-dom";
 import { Search, Lock, Globe, ArrowDown, ArrowUp, Check, Loader2, AlertCircle, LogOut, RefreshCw, X, ExternalLink, Folder, FileText, ChevronRight, Home } from "lucide-react";
 import { GitHubIcon } from "@/components/GitHubIcon";
 import { githubListYamlFiles, githubWriteYamlFileSubdir } from "@/lib/tauri";
-import { loadCollections } from "@/lib/tauri";
 import { useCollectionsStore } from "@/stores/collections";
+import { getRoots, loadAllRoots } from "@/lib/collectionRoots";
 
-const COLLECTIONS_DIR_KEY = "flux_collections_dir";
 
 interface GitHubRepo {
   id: number;
@@ -161,7 +160,8 @@ function SyncPanel({
   repo: GitHubRepo;
   onClose: () => void;
 }) {
-  const collectionsDir = localStorage.getItem(COLLECTIONS_DIR_KEY);
+  // Con varias carpetas abiertas, GitHub trabaja contra la primera.
+  const collectionsDir = getRoots()[0] ?? null;
   const [pathStack, setPathStack] = useState<string[]>([]);
   const [items, setItems] = useState<GitHubContentItem[]>([]);
   const [browsing, setBrowsing] = useState(false);
@@ -258,8 +258,10 @@ function SyncPanel({
         setProgress({ done: idx + 1, total: toDownload.length });
       }
       addLog(`    Reloading collections…`, "info");
-      const loaded = await loadCollections(collectionsDir);
-      useCollectionsStore.setState({ collections: loaded });
+      // Todas las raices, no solo esta: recargar una sola borraria del store
+      // las colecciones de las demas carpetas abiertas.
+      const { collections } = await loadAllRoots();
+      useCollectionsStore.setState({ collections });
       addLog(`✓ Collections updated`, "ok");
       setStatus({ kind: "ok", msg: `${toDownload.length} file${toDownload.length !== 1 ? "s" : ""} pulled` });
       setProgress(null);

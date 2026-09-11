@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Search, Bell, Settings, Check, Plus, LogOut } from "lucide-react";
+import { ChevronDown, Search, Bell, Settings, Check, Plus, LogOut, LogIn, UserRound } from "lucide-react";
 import { GitHubIcon } from "@/components/GitHubIcon";
 import { FluxLogoMark } from "@/components/FluxLogo";
 import { useEnvironmentStore } from "@/stores/environment";
@@ -285,9 +285,14 @@ function UserAvatar({ user, onNavigate }: { user: import("@supabase/supabase-js"
   }, []);
 
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-  const name: string = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "User";
+  // Sin cuenta no se inventa un nombre: decirlo claro evita que parezca que hay
+  // una sesion abierta con un usuario llamado "User".
+  const signedIn = !!user;
+  const name: string = signedIn
+    ? (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Account")
+    : "Local — no account";
   const email: string = user?.email ?? "";
-  const initial = name.charAt(0).toUpperCase();
+  const initial = signedIn ? name.charAt(0).toUpperCase() : "";
 
   async function handleSignOut() {
     const { supabase } = await import("@/lib/supabase");
@@ -295,15 +300,31 @@ function UserAvatar({ user, onNavigate }: { user: import("@supabase/supabase-js"
     setOpen(false);
   }
 
+  /**
+   * Vuelve a la pantalla de login sin perder nada: lo local sigue en disco.
+   * Recargar es lo mas simple y lo que menos estado deja a medias.
+   */
+  async function handleSignIn() {
+    const { setLocalMode } = await import("@/lib/localMode");
+    setLocalMode(false);
+    window.location.reload();
+  }
+
   return (
     <div ref={ref} className="relative ml-1">
       <button
         onClick={() => setOpen(v => !v)}
         className="flex items-center justify-center rounded-full font-semibold text-white hover:opacity-80 transition-opacity overflow-hidden"
-        style={{ width: 28, height: 28, background: "var(--color-accent)", fontSize: 11, fontFamily: "Inter, sans-serif", flexShrink: 0 }}>
+        style={{
+          width: 28, height: 28, fontSize: 11, fontFamily: "Inter, sans-serif", flexShrink: 0,
+          background: signedIn ? "var(--color-accent)" : "var(--color-card)",
+          border: signedIn ? undefined : "1px solid var(--color-border)",
+          color: signedIn ? "#fff" : "var(--color-fg-3)",
+        }}
+        title={signedIn ? name : "Using Flux without an account"}>
         {avatarUrl
           ? <img src={avatarUrl} alt={initial} style={{ width: 28, height: 28, objectFit: "cover" }} />
-          : initial}
+          : signedIn ? initial : <UserRound size={14} />}
       </button>
 
       {open && (
@@ -312,15 +333,22 @@ function UserAvatar({ user, onNavigate }: { user: import("@supabase/supabase-js"
 
           {/* User info */}
           <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
-            <div className="flex items-center justify-center rounded-full font-semibold text-white shrink-0 overflow-hidden"
-              style={{ width: 34, height: 34, background: "var(--color-accent)", fontSize: 13 }}>
+            <div className="flex items-center justify-center rounded-full font-semibold shrink-0 overflow-hidden"
+              style={{
+                width: 34, height: 34, fontSize: 13,
+                background: signedIn ? "var(--color-accent)" : "var(--color-input)",
+                color: signedIn ? "#fff" : "var(--color-fg-3)",
+              }}>
               {avatarUrl
                 ? <img src={avatarUrl} alt={initial} style={{ width: 34, height: 34, objectFit: "cover" }} />
-                : initial}
+                : signedIn ? initial : <UserRound size={16} />}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[13px] font-semibold truncate" style={{ color: "var(--color-fg)" }}>{name}</span>
               {email && <span className="text-[11px] truncate" style={{ color: "var(--color-fg-3)" }}>{email}</span>}
+              {!signedIn && (
+                <span className="text-[11px]" style={{ color: "var(--color-fg-4)" }}>Sync and free AI are off</span>
+              )}
             </div>
           </div>
 
@@ -328,7 +356,9 @@ function UserAvatar({ user, onNavigate }: { user: import("@supabase/supabase-js"
           <div className="py-1">
             <MenuItem icon={<Settings size={13} />} label="Settings" onClick={() => { onNavigate("settings"); setOpen(false); }} />
             <div style={{ height: 1, background: "var(--color-border)", margin: "4px 8px" }} />
-            <MenuItem icon={<LogOut size={13} />} label="Sign out" onClick={handleSignOut} danger />
+            {signedIn
+              ? <MenuItem icon={<LogOut size={13} />} label="Sign out" onClick={handleSignOut} danger />
+              : <MenuItem icon={<LogIn size={13} />} label="Sign in" onClick={handleSignIn} />}
           </div>
         </div>
       )}

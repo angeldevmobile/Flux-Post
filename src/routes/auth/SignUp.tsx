@@ -238,9 +238,18 @@ export function SignUp({ onSignUp, onGoLogin }: SignUpProps) {
           <button onClick={onGoLogin} className="text-[#A855F7] hover:opacity-80">Sign in</button>
         </p>
 
+        {/* Solo lo que existe de verdad. Habia tambien un "Terms of Service"
+            que no llevaba a ninguna parte porque no hay terminos escritos: un
+            enlace legal muerto es peor que no ponerlo. */}
         <div className="mt-6 flex gap-4">
-          <button className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">Terms of Service</button>
-          <button className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">Privacy Policy</button>
+          <button
+            onClick={async () => {
+              const { openUrl } = await import("@tauri-apps/plugin-opener");
+              await openUrl("https://fluxapi.dev/docs.html#settings-privacy");
+            }}
+            className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">
+            Privacy Policy
+          </button>
         </div>
       </div>
     </div>

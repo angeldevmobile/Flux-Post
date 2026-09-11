@@ -18,9 +18,11 @@ function GithubIcon() {
 interface LoginProps {
   onLogin: () => void;
   onGoSignUp: () => void;
+  /** Entrar sin cuenta. Ver src/lib/localMode.ts. */
+  onUseLocally: () => void;
 }
 
-export function Login({ onLogin, onGoSignUp }: LoginProps) {
+export function Login({ onLogin, onGoSignUp, onUseLocally }: LoginProps) {
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -175,9 +177,36 @@ export function Login({ onLogin, onGoSignUp }: LoginProps) {
           <button onClick={onGoSignUp} className="text-[#A855F7] hover:opacity-80">Sign up Free</button>
         </p>
 
+        {/* Sin cuenta funciona todo lo local. Queda fuera lo que necesita
+            servidor: la sincronizacion y el tramo gratuito de IA. */}
+        <div className="w-full mt-5 pt-5" style={{ borderTop: "1px solid #27272A" }}>
+          <button
+            onClick={onUseLocally}
+            className="w-full h-9 rounded-lg text-[13px] transition-colors"
+            style={{ border: "1px solid #3F3F46", color: "#A1A1AA", background: "transparent" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#52525B"; e.currentTarget.style.color = "#E4E4E7"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#3F3F46"; e.currentTarget.style.color = "#A1A1AA"; }}>
+            Use Flux without an account
+          </button>
+          <p className="mt-2 text-[11px] leading-relaxed text-[#52525B]">
+            Everything local works: requests, collections, environments, scripts, tests,
+            the mock server, load tests and gRPC. Cloud sync and the free AI tier need an
+            account — you can sign in later from Settings.
+          </p>
+        </div>
+
+        {/* Solo lo que existe de verdad. Habia tambien un "Terms of Service"
+            que no llevaba a ninguna parte porque no hay terminos escritos: un
+            enlace legal muerto es peor que no ponerlo. */}
         <div className="mt-6 flex gap-4">
-          <button className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">Terms of Service</button>
-          <button className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">Privacy Policy</button>
+          <button
+            onClick={async () => {
+              const { openUrl } = await import("@tauri-apps/plugin-opener");
+              await openUrl("https://fluxapi.dev/docs.html#settings-privacy");
+            }}
+            className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">
+            Privacy Policy
+          </button>
         </div>
       </div>
     </div>

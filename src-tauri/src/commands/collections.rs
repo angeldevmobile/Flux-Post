@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+// BTreeMap y no HashMap: estos mapas se serializan al YAML y `HashMap` itera en
+// un orden distinto en cada proceso, asi que cada guardado reescribia headers,
+// params y metadatos en otro orden. Con la coleccion dentro del repo eso es un
+// diff en cada guardado sin haber cambiado nada, y conflictos de merge en
+// lineas que nadie toco. `BTreeMap` ordena por clave: el fichero sale igual
+// siempre.
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -21,8 +27,8 @@ struct YamlGrpc {
     method: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     payload: Option<String>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    metadata: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    metadata: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     proto_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -112,8 +118,8 @@ struct YamlRequest {
     method: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     path: String,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    headers: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    headers: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     body: Option<String>,
     // Written as camelCase like the rest of the schema; the alias keeps reading
@@ -124,10 +130,10 @@ struct YamlRequest {
         skip_serializing_if = "Option::is_none"
     )]
     body_type: Option<String>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    params: HashMap<String, String>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    form: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    params: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    form: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     graphql: Option<YamlGraphql>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -158,8 +164,8 @@ struct YamlFolder {
     // app, `resolve_chain` en flux-cli), nunca aplastandola sobre la request.
     #[serde(skip_serializing_if = "Option::is_none")]
     auth: Option<YamlAuth>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    headers: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    headers: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     scripts: Option<YamlScripts>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -178,8 +184,8 @@ struct YamlCollection {
     base_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     auth: Option<YamlAuth>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    headers: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    headers: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     scripts: Option<YamlScripts>,
     #[serde(default)]
@@ -202,7 +208,7 @@ pub struct GrpcRequestFields {
     pub service: Option<String>,
     pub method: Option<String>,
     pub payload: Option<String>,
-    pub metadata: HashMap<String, String>,
+    pub metadata: BTreeMap<String, String>,
     pub proto_id: Option<String>,
     pub proto_name: Option<String>,
 }
@@ -220,13 +226,13 @@ pub struct RequestOut {
     #[serde(default)]
     pub path: String,
     #[serde(default)]
-    pub headers: HashMap<String, String>,
+    pub headers: BTreeMap<String, String>,
     pub body: Option<String>,
     pub body_type: Option<String>,
     #[serde(default)]
-    pub params: HashMap<String, String>,
+    pub params: BTreeMap<String, String>,
     #[serde(default)]
-    pub form: HashMap<String, String>,
+    pub form: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub graphql: Option<YamlGraphql>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -251,7 +257,7 @@ pub struct FolderOut {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth: Option<YamlAuth>,
     #[serde(default)]
-    pub headers: HashMap<String, String>,
+    pub headers: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scripts: Option<YamlScripts>,
     pub requests: Vec<RequestOut>,
@@ -270,7 +276,7 @@ pub struct CollectionOut {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth: Option<YamlAuth>,
     #[serde(default)]
-    pub headers: HashMap<String, String>,
+    pub headers: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scripts: Option<YamlScripts>,
     pub requests: Vec<RequestOut>,
@@ -796,6 +802,54 @@ folders:
         assert!(admin.requests[0].headers.is_empty());
     }
 
+    /// Guardar dos veces lo mismo tiene que dar el mismo fichero, byte a byte.
+    ///
+    /// Con `HashMap` no era asi: el orden de iteracion cambia en cada proceso,
+    /// asi que cada guardado reordenaba headers, params y metadatos y ensuciaba
+    /// el diff de git aunque no se hubiera tocado nada.
+    #[test]
+    fn saving_the_same_collection_twice_gives_the_same_bytes() {
+        let yaml = r#"
+name: API
+headers:
+  Zulu: "1"
+  Alpha: "2"
+  Mike: "3"
+requests:
+  - name: r
+    method: POST
+    path: /x
+    headers:
+      X-Zulu: "1"
+      X-Alpha: "2"
+      X-Mike: "3"
+    params:
+      zebra: "1"
+      apple: "2"
+    form:
+      zzz: "1"
+      aaa: "2"
+"#;
+        let first = serde_yaml::to_string(&round_trip(yaml)).unwrap();
+        let second = serde_yaml::to_string(&round_trip(yaml)).unwrap();
+        assert_eq!(first, second);
+
+        // Y el orden es el alfabetico de `BTreeMap`, no uno cualquiera.
+        let alpha = first.find("Alpha:").expect("Alpha");
+        let mike = first.find("Mike:").expect("Mike");
+        let zulu = first.find("Zulu:").expect("Zulu");
+        assert!(alpha < mike && mike < zulu, "collection headers sorted:
+{first}");
+
+        let x_alpha = first.find("X-Alpha:").expect("X-Alpha");
+        let x_mike = first.find("X-Mike:").expect("X-Mike");
+        let x_zulu = first.find("X-Zulu:").expect("X-Zulu");
+        assert!(x_alpha < x_mike && x_mike < x_zulu, "request headers sorted");
+
+        assert!(first.find("apple:") < first.find("zebra:"), "params sorted");
+        assert!(first.find("aaa:") < first.find("zzz:"), "form sorted");
+    }
+
     #[test]
     fn folders_nest() {
         let col = round_trip(
@@ -998,3 +1052,4 @@ pub fn save_collection(dir: String, collection: CollectionOut) -> Result<(), Str
     fs::write(path, content).map_err(|e| e.to_string())?;
     Ok(())
 }
+

@@ -116,13 +116,17 @@ export async function pruneRemoteHistory(userId: string, days: number): Promise<
  * `loadCollections` resucitara la version vieja.
  */
 export async function adoptRemoteCollection(remote: Collection, version: number): Promise<void> {
-  const dir = localStorage.getItem("flux_collections_dir");
-  if (!dir) return;   // sin carpeta configurada no hay ficheros que actualizar
+  // La que baja de la nube no trae carpeta: se escribe donde esta la local con
+  // ese id, y si no hay ninguna, en la primera carpeta abierta.
+  const { rootFor } = await import("@/lib/collectionRoots");
+  const loaded = useCollectionsStore.getState().collections;
+  const dir = rootFor(remote, loaded);
+  if (!dir) return;   // sin carpeta abierta no hay ficheros que actualizar
 
   try {
     const { saveCollection } = await import("@/lib/tauri");
     await saveCollection(dir, remote);
-    useCollectionsStore.getState().replaceCollection(remote);
+    useCollectionsStore.getState().replaceCollection({ ...remote, rootDir: dir });
     markSynced(remote.id, version);
   } catch {
     // El fichero manda. Si no se pudo escribir, no se toca el store ni se
