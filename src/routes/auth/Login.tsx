@@ -112,7 +112,7 @@ export function Login({ onLogin, onGoSignUp, onUseLocally }: LoginProps) {
         <div className="w-full rounded-xl p-6 flex flex-col gap-4"
           style={{ background: "#111111", border: "1px solid #27272A" }}>
           <h2 className="text-[15px] font-semibold text-white text-center">Sign in to your account</h2>
-          <p className="text-[11px] text-center" style={{ color: "#52525B", marginTop: -8 }}>Use GitHub or email — no GitHub account required</p>
+          <p className="text-[11px] text-center" style={{ color: "#52525B", marginTop: -8 }}>Use GitHub or email. No GitHub account required</p>
 
           {error && (
             <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: "#EF444415", border: "1px solid #EF444430", color: "#FCA5A5" }}>
@@ -191,7 +191,7 @@ export function Login({ onLogin, onGoSignUp, onUseLocally }: LoginProps) {
           <p className="mt-2 text-[11px] leading-relaxed text-[#52525B]">
             Everything local works: requests, collections, environments, scripts, tests,
             the mock server, load tests and gRPC. Cloud sync and the free AI tier need an
-            account — you can sign in later from Settings.
+            account. You can sign in later from Settings.
           </p>
         </div>
 

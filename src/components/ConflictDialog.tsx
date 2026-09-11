@@ -92,7 +92,7 @@ function ConflictBody({ conflict, onDone }: { conflict: Conflict; onDone: () => 
             {conflict.name} changed in two places
           </span>
           <span className="text-[12px]" style={{ color: "var(--color-fg-3)" }}>
-            Nothing has been overwritten. Pick which version to keep — the other one is lost.
+            Nothing has been overwritten. Pick which version to keep. The other one is lost.
           </span>
         </div>
         <button onClick={onDone} className="shrink-0 hover:opacity-70 transition-opacity" title="Decide later">

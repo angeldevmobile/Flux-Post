@@ -76,7 +76,7 @@ function ConnectPanel({ onConnected }: { onConnected: (token: string, user: GitH
     setStatus({ kind: "loading", msg: "Verifying token…" });
     try {
       const res = await ghFetch(token.trim(), "/user");
-      if (!res.ok) throw new Error("Invalid token — make sure it has `repo` scope");
+      if (!res.ok) throw new Error("Invalid token: make sure it has `repo` scope");
       const user: GitHubUser = await res.json();
       localStorage.setItem(GH_TOKEN_KEY, token.trim());
       localStorage.setItem(GH_USER_KEY, JSON.stringify(user));
@@ -94,7 +94,7 @@ function ConnectPanel({ onConnected }: { onConnected: (token: string, user: GitH
         </div>
         <h2 className="text-[18px] font-semibold" style={{ color: "var(--color-fg)" }}>Connect to GitHub</h2>
         <p className="text-[13px]" style={{ color: "var(--color-fg-3)", lineHeight: 1.6 }}>
-          Sync your collections directly from GitHub repos. Pull to import, push to save changes — no commands needed.
+          Sync your collections directly from GitHub repos. Pull to import, push to save changes, no commands needed.
         </p>
       </div>
 
@@ -254,7 +254,7 @@ function SyncPanel({
         addLog(`↓ ${file.name}`, "info");
         const content = await fetch(file.download_url).then(r => r.text());
         await githubWriteYamlFileSubdir(collectionsDir, repo.name, file.name, content);
-        addLog(`✓ ${file.name} — saved`, "ok");
+        addLog(`✓ ${file.name} saved`, "ok");
         setProgress({ done: idx + 1, total: toDownload.length });
       }
       addLog(`    Reloading collections…`, "info");
@@ -309,7 +309,7 @@ function SyncPanel({
           body: JSON.stringify(body),
         });
         if (!putRes.ok) throw new Error(`Failed to push ${file.name}: ${putRes.status}`);
-        addLog(`✓ ${file.name} — pushed`, "ok");
+        addLog(`✓ ${file.name} pushed`, "ok");
         setProgress({ done: idx + 1, total: files.length });
       }
       setStatus({ kind: "ok", msg: `${files.length} file${files.length !== 1 ? "s" : ""} pushed to ${currentPath || "root"}` });

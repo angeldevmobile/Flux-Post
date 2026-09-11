@@ -315,7 +315,7 @@ function GrpcSavePopover({
           {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       ) : (
-        <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>No collections loaded — set a folder first.</p>
+        <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>No collections loaded. Set a folder first.</p>
       )}
       <button onClick={handleSave} disabled={saving || !collectionId || !name}
         className="flex items-center justify-center gap-1.5 w-full rounded-md font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"

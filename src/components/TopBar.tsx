@@ -290,7 +290,7 @@ function UserAvatar({ user, onNavigate }: { user: import("@supabase/supabase-js"
   const signedIn = !!user;
   const name: string = signedIn
     ? (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Account")
-    : "Local — no account";
+    : "Local (no account)";
   const email: string = user?.email ?? "";
   const initial = signedIn ? name.charAt(0).toUpperCase() : "";
 

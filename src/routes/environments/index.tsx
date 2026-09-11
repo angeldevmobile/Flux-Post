@@ -262,7 +262,7 @@ function EnvContent() {
         {" · "}<code style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-accent)" }}>{"{{$timestamp}}"}</code>
         {" · "}<code style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-accent)" }}>{"{{$isoTimestamp}}"}</code>
         {" · "}<code style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-accent)" }}>{"{{$randomInt}}"}</code>
-        {" — evaluated at send time"}
+        {", evaluated at send time"}
       </div>
 
       {/* Table */}

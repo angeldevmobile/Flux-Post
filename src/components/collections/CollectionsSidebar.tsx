@@ -83,7 +83,7 @@ function FolderSetup({ onSet }: { onSet: (dir: string) => void }) {
       </div>
       <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
         Paste the path to a collections directory. YAML files inside will appear here, and you can
-        open more folders afterwards — one per repository, if you keep collections next to the code.
+        open more folders afterwards, one per repository if you keep collections next to the code.
       </p>
       <input
         value={value}
@@ -633,7 +633,7 @@ export function CollectionsSidebar() {
       {
         label: "Move to…",
         onClick: () => setMenu({ x, y, items: all.map(target => ({
-          label: target.id === col.id ? `${target.name} — this collection` : target.name,
+          label: target.id === col.id ? `${target.name} (this collection)` : target.name,
           onClick: () => setMenu({ x, y, items: moveTargets(col, req, target) }),
         })) }),
       },

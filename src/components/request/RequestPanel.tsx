@@ -132,7 +132,7 @@ function SavePopover({ onClose }: { onClose: () => void }) {
           {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       ) : (
-        <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>No collections loaded — set a folder first.</p>
+        <p className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>No collections loaded. Set a folder first.</p>
       )}
       {secrets.length > 0 && (
         <div className="flex flex-col gap-2 rounded p-2"
@@ -720,7 +720,7 @@ export function RequestPanel() {
         // La peticion sale igual, pero sin lo que el script iba a ponerle. Un
         // aviso en el panel de consola solo es demasiado facil de no ver.
         if (mutations.error) {
-          toast.error("Pre-request script failed — " + mutations.error, { duration: 6000 });
+          toast.error("Pre-request script failed: " + mutations.error, { duration: 6000 });
         }
         Object.assign(req.headers, mutations.headers);
         if (activeId && Object.keys(mutations.envVars).length > 0) {
@@ -793,7 +793,7 @@ export function RequestPanel() {
           updateEnvironment(activeId, { variables: { ...envVars, ...postMutations.envVars } });
         }
         if (postMutations.error) {
-          toast.error("Post-response script failed — " + postMutations.error, { duration: 6000 });
+          toast.error("Post-response script failed: " + postMutations.error, { duration: 6000 });
         }
         useTestResultsStore.getState().setResults(postMutations.testResults);
       }
@@ -828,7 +828,7 @@ export function RequestPanel() {
       const msg = String(e);
       setError(msg);
       trackCrash(msg);
-      toast.error("Request failed — " + (msg.includes("timed out") ? "timed out" : msg.includes("dns") || msg.includes("connect") ? "could not connect" : "network error"), { duration: 4000 });
+      toast.error("Request failed: " + (msg.includes("timed out") ? "timed out" : msg.includes("dns") || msg.includes("connect") ? "could not connect" : "network error"), { duration: 4000 });
     } finally {
       setLoading(false);
     }
@@ -1043,9 +1043,9 @@ export function RequestPanel() {
               onAiEdit={makeAiEdit(preRequestScript, "javascript")}
             />
             <div className="shrink-0 flex flex-col gap-0.5" style={{ fontSize: 11, color: "var(--color-fg-4)" }}>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.get(key)</span> — read variable</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.set(key, value)</span> — write variable</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.request.headers.upsert(key, value)</span> — add / override header</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.get(key)</span>: read variable</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.environment.set(key, value)</span>: write variable</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.request.headers.upsert(key, value)</span>: add / override header</span>
             </div>
           </div>
         )}
@@ -1067,10 +1067,10 @@ export function RequestPanel() {
               onAiEdit={makeAiEdit(postResponseScript, "javascript")}
             />
             <div className="shrink-0 flex flex-col gap-0.5" style={{ fontSize: 11, color: "var(--color-fg-4)" }}>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.status</span> — HTTP status code</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.json()</span> — parsed JSON body</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.text()</span> — raw body string</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.responseTime</span> — duration in ms</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.status</span>: HTTP status code</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.json()</span>: parsed JSON body</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.text()</span>: raw body string</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>pm.response.responseTime</span>: duration in ms</span>
             </div>
           </div>
         )}
@@ -1082,7 +1082,7 @@ export function RequestPanel() {
             <div className="flex flex-col gap-1 flex-1 overflow-auto">
               {extractors.length === 0 && (
                 <p className="text-[11px] py-4 text-center" style={{ color: "var(--color-fg-4)" }}>
-                  No extractors — click + to add one
+                  No extractors. Click + to add one
                 </p>
               )}
               {extractors.map((ex: Extractor) => (
@@ -1130,10 +1130,10 @@ export function RequestPanel() {
               <Plus size={12} /> Add extractor
             </button>
             <div className="shrink-0 flex flex-col gap-0.5" style={{ fontSize: 11, color: "var(--color-fg-4)" }}>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.token</span> — root field</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.data.user.id</span> — nested field</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.items[0].name</span> — array index</span>
-              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.ids[*]</span> — all array values (joined)</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.token</span>: root field</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.data.user.id</span>: nested field</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.items[0].name</span>: array index</span>
+              <span><span style={{ color: "var(--color-accent)", fontFamily: "Geist Mono, monospace" }}>$.ids[*]</span>: all array values (joined)</span>
             </div>
           </div>
         )}

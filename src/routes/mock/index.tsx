@@ -127,7 +127,7 @@ export function MockRoute() {
       <div className="flex items-center gap-3 shrink-0 px-6" style={{ height: 52, borderBottom: "1px solid var(--color-border)" }}>
         <Server size={16} style={{ color: "var(--color-accent)" }} />
         <span className="text-[14px] font-semibold" style={{ color: "var(--color-fg)" }}>Mock Server</span>
-        <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Spin up a localhost server — 100% offline, zero latency</span>
+        <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Spin up a localhost server. 100% offline, zero latency</span>
 
         {status.running && (
           <div className="ml-auto flex items-center gap-2 px-3 rounded-full"

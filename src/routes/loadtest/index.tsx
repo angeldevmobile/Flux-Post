@@ -191,7 +191,7 @@ export function LoadTestRoute() {
         {result && (
           <div className="flex flex-col gap-4">
             <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-fg-3)" }}>
-              Results — {result.completed}/{result.total} completed · {result.errorRate.toFixed(1)}% errors · {result.durationSecs.toFixed(2)}s total
+              Results: {result.completed}/{result.total} completed · {result.errorRate.toFixed(1)}% errors · {result.durationSecs.toFixed(2)}s total
             </span>
 
             {/* Stat cards */}

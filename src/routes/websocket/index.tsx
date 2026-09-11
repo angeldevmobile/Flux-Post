@@ -51,7 +51,7 @@ export function WebSocketRoute() {
       unClosed = await listen<{ connection_id: string }>("ws-closed", () => {
         setStatus("disconnected");
         setConnId(null);
-        setMessages(prev => [...prev, statusMsg("— Connection closed —")]);
+        setMessages(prev => [...prev, statusMsg("Connection closed")]);
       });
 
       unErr = await listen<{ connection_id: string; data: string }>("ws-error", e => {
@@ -72,7 +72,7 @@ export function WebSocketRoute() {
       const id = await wsConnect(url.trim());
       setConnId(id);
       setStatus("connected");
-      setMessages(prev => [...prev, statusMsg("— Connected —")]);
+      setMessages(prev => [...prev, statusMsg("Connected")]);
     } catch (e) {
       setError(String(e));
       setStatus("disconnected");
@@ -84,7 +84,7 @@ export function WebSocketRoute() {
     await wsDisconnect(connId);
     setConnId(null);
     setStatus("disconnected");
-    setMessages(prev => [...prev, statusMsg("— Disconnected —")]);
+    setMessages(prev => [...prev, statusMsg("Disconnected")]);
   }
 
   async function handleSend() {
@@ -156,7 +156,7 @@ export function WebSocketRoute() {
           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: statusColor }} />
           <span className="text-[11px]" style={{ color: statusColor }}>{statusLabel}</span>
           {error && (
-            <span className="text-[11px] text-red">— {error}</span>
+            <span className="text-[11px] text-red">{error}</span>
           )}
         </div>
         {messages.length > 0 && (

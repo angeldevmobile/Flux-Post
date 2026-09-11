@@ -1343,6 +1343,20 @@
           <h1 class="page-title">Quick Start</h1>
           <p class="page-lead">Send your first request and save it to a collection in under two minutes.</p>
 
+          <h2>An account is optional</h2>
+          <p><strong>Use Flux without an account</strong> on the sign-in screen goes straight in, and the choice is
+            remembered. Everything local works without one:</p>
+          <ul>
+            <li>Requests, collections, environments and variables</li>
+            <li>Pre/post-request scripts, assertions and the Collection Runner</li>
+            <li>The mock server, load tests, gRPC, WebSocket and SSE</li>
+            <li>The CLI runner, which never needed an account</li>
+          </ul>
+          <p>An account adds cloud sync and the free AI tier, which is metered per account and is why it needs one. The
+            AI also works without an account if you bring your own Claude API key, in
+            <strong>Settings → AI &amp; Claude</strong>. You can sign in at any time from the avatar menu or from
+            Settings, and nothing on this machine is lost when you do.</p>
+
           <div class="steps">
             <div class="step">
               <div class="step-num">1</div>
@@ -2389,14 +2403,70 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
             directly to a directory tree, commit them to Git and collaborate without any Flux-specific tooling.</p>
 
           <h2>Collection structure</h2>
-          <pre><code><span class="token-key">my-api/</span>
-  <span class="token-key">flux.yml</span>            <span class="token-cmt"># collection metadata</span>
-  <span class="token-key">auth/</span>
-    <span class="token-key">login.yml</span>
-    <span class="token-key">refresh.yml</span>
-  <span class="token-key">users/</span>
-    <span class="token-key">list-users.yml</span>
-    <span class="token-key">create-user.yml</span></code></pre>
+          <p>A collection is one YAML file. Folders live inside that file, not on disk, so moving a request between
+            folders changes one file and shows up as one diff:</p>
+          <pre><code><span class="token-key">~/api-collections/</span>   <span class="token-cmt"># a collections folder you opened</span>
+  <span class="token-key">users.yaml</span>        <span class="token-cmt"># one collection</span>
+  <span class="token-key">billing.yaml</span>      <span class="token-cmt"># another one</span>
+  <span class="token-key">internal/</span>         <span class="token-cmt"># a subfolder groups collections in the sidebar</span>
+    <span class="token-key">admin.yaml</span></code></pre>
+
+          <h2>Collections folders</h2>
+          <p>Flux can keep several collections folders open at once, so a collection can live inside the repository
+            whose API it tests and be branched, reviewed and cloned with the code:</p>
+          <pre><code><span class="token-key">~/repos/payments-api/api/</span>   <span class="token-cmt"># opened as a folder</span>
+  <span class="token-key">payments.yaml</span>
+<span class="token-key">~/repos/billing/api/</span>       <span class="token-cmt"># and this one too, at the same time</span>
+  <span class="token-key">billing.yaml</span></code></pre>
+          <p>The folder icon in the Collections header adds one; the list above the search box closes one. Closing a
+            folder only removes it from the sidebar and leaves every file where it is. Each collection remembers which
+            folder it came from, so saving always writes back to its own.</p>
+          <p>When two folders hold a file with the same name, the second collection is shown with its folder as a
+            prefix (<code>billing/api</code>). With a single folder nothing changes.</p>
+
+          <h2>Organising from the sidebar</h2>
+          <p>Right-click a collection, a folder or a request:</p>
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Collection</th>
+                <th>Folder</th>
+                <th>Request</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Rename</td><td>✓</td><td>✓</td><td>✓</td></tr>
+              <tr><td>New request / folder inside</td><td>✓</td><td>✓</td><td></td></tr>
+              <tr><td>Duplicate</td><td></td><td></td><td>✓</td></tr>
+              <tr><td>Move to…</td><td></td><td></td><td>✓</td></tr>
+              <tr><td>Inherited settings</td><td>✓</td><td>✓</td><td></td></tr>
+              <tr><td>Delete</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            </tbody>
+          </table>
+          <p>Renaming happens in place. <strong>Move to…</strong> asks which collection first and then which folder of
+            it, so a request can be moved to another collection, even one in a different collections folder. Deleting
+            asks to confirm and says what goes with it.</p>
+          <p><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> creates a collection, and the <strong>+</strong> button
+            in the Collections header does the same.</p>
+
+          <h2>Inherited settings</h2>
+          <p>Auth, headers and scripts can be set once on a collection or a folder instead of being repeated on every
+            request. Click the shield next to any collection or folder; it lights up when that level defines something.
+            A folder shows what it would inherit before you change anything.</p>
+          <ul>
+            <li><strong>The nearest level wins.</strong> Request over folder, closest folder over outer folder, folder
+              over collection.</li>
+            <li><strong>Auth is all or nothing.</strong> The nearest definition is used whole, never merged field by
+              field with an outer one, because a half-built credential is worse than none.</li>
+            <li><strong>Headers merge</strong>, matched case-insensitively, with the closest level overriding.</li>
+            <li><strong>Scripts concatenate</strong> from the outside in rather than overriding, so a collection-level
+              script can fetch a token and a folder-level one can use it.</li>
+            <li><strong>A folder set to <code>None</code> sends no auth</strong> even when the collection defines one.
+              Headers and scripts from outer levels still apply.</li>
+          </ul>
+          <p>The same cascade runs when you press Send, in the Collection Runner, on the Tests screen and in
+            <a href="#" onclick="show('cli');return false;">the CLI</a>.</p>
 
           <h2>Request YAML schema</h2>
           <p>A collection saves everything the request builder holds, so reopening a request gives back what you

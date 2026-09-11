@@ -90,7 +90,7 @@ export function AnalyticsConsent() {
 
         <div className="flex flex-col gap-3 px-5 pb-5">
           <Block title="What it sends" items={[
-            "Which sections you open, and that a request was sent — its method, and whether it was https or localhost",
+            "Which sections you open, and that a request was sent: its method, and whether it was https or localhost",
             "A random ID for this installation. Not an account, not a person, not your hardware",
           ]} />
           <Block title="What it never sends" items={[
@@ -119,7 +119,7 @@ export function AnalyticsConsent() {
         <div className="px-5 pb-4 -mt-1">
           <span className="text-[11px] leading-relaxed" style={{ color: "var(--color-fg-4)" }}>
             Change this any time in Settings &rarr; Data &amp; Privacy. Crash reports are already
-            on and get redacted before sending — same place to turn those off.
+            on and get redacted before sending. Same place to turn those off.
           </span>
         </div>
       </div>

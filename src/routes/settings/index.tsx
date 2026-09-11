@@ -353,7 +353,7 @@ function AiSection() {
           {onFreeTier && (
             <span className="text-[11px] leading-relaxed" style={{ color: "var(--color-fg-4)" }}>
               {quota
-                ? "Beta until Dec 31, 2026. Add your own Claude API key above for unlimited use — your prompts then go straight to Anthropic, never through our servers."
+                ? "Beta until Dec 31, 2026. Add your own Claude API key above for unlimited use. Your prompts then go straight to Anthropic, never through our servers."
                 : "Sign in to use the free AI tier, or add your own Claude API key above."}
             </span>
           )}
@@ -1169,7 +1169,7 @@ function CliSection() {
       setMessage({
         text: result.alreadyInPath
           ? `Installed at ${result.path} (already in PATH)`
-          : `Installed at ${result.path} — restart your terminal to use flux`,
+          : `Installed at ${result.path}. Restart your terminal to use flux`,
         ok: true,
       });
     } catch (e) {
@@ -1204,7 +1204,7 @@ function CliSection() {
               Run Flux collections from your terminal or CI/CD pipeline
             </span>
             <span className="text-[11px]" style={{ color: "var(--color-fg-3)" }}>
-              The CLI runner reads the same YAML collection files as the app and returns exit code 1 on test failures — perfect for GitHub Actions, Jenkins, and local automation.
+              The CLI runner reads the same YAML collection files as the app and returns exit code 1 on test failures, perfect for GitHub Actions, Jenkins, and local automation.
             </span>
           </div>
         </div>

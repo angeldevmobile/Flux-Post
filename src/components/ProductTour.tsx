@@ -14,7 +14,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: "Welcome to Flux",
-    body: "Your new API client — lightweight, offline-first, and AI-powered. This takes 30 seconds.",
+    body: "Your new API client: lightweight, offline-first and AI-powered. This takes 30 seconds.",
   },
   {
     title: "Everything in one sidebar",
@@ -24,13 +24,13 @@ const STEPS: Step[] = [
   },
   {
     title: "Build any request",
-    body: "Pick a method, enter a URL, and press Send — or hit Ctrl+Enter. Use the tabs below to add headers, auth, a body, or pre/post-request scripts.",
+    body: "Pick a method, enter a URL, and press Send, or hit Ctrl+Enter. Use the tabs below to add headers, auth, a body, or pre/post-request scripts.",
     target: "request-builder",
     position: "bottom",
   },
   {
     title: "Stop hardcoding values",
-    body: "Create environments (Dev, Staging, Prod) and use {{BASE_URL}} in any URL, header, or body. Switch environments in one click — no copy-pasting.",
+    body: "Create environments (Dev, Staging, Prod) and use {{BASE_URL}} in any URL, header, or body. Switch environments in one click, no copy-pasting.",
     target: "env-selector",
     position: "bottom",
   },

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAiAvailable } from "@/lib/aiAvailable";
+import { useNavStore } from "@/stores/nav";
 import { Sparkles, Copy, Check, Timer, Bug, ImageIcon, Terminal, Trash2, Wrench, Loader2, Zap } from "lucide-react";
 import { useRequestStore } from "@/stores/request";
 import { useSettingsStore, useUsingOwnKey } from "@/stores/settings";
@@ -240,7 +241,7 @@ export function ResponsePanel() {
   function handleCopy() {
     if (!response) return;
     if (isBinary) {
-      navigator.clipboard.writeText(`[Binary — ${formatBytes(response.size)}]`);
+      navigator.clipboard.writeText(`[Binary, ${formatBytes(response.size)}]`);
     } else {
       navigator.clipboard.writeText(formattedBody || response.body);
     }
@@ -372,7 +373,7 @@ export function ResponsePanel() {
               </div>
               <div className="flex flex-col items-center gap-1 text-center">
                 <span className="text-[14px] font-semibold" style={{ color: "var(--color-fg-2)" }}>No response yet</span>
-                <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Enter a URL and press Send — or try an example:</span>
+                <span className="text-[12px]" style={{ color: "var(--color-fg-4)" }}>Enter a URL and press Send, or try an example:</span>
               </div>
               <div className="flex flex-col gap-1.5 w-full max-w-70">
                 {EXAMPLE_REQUESTS.map(ex => (
@@ -721,6 +722,25 @@ export function ResponsePanel() {
               {aiResult}
             </pre>
           )}
+          {/* El tier gratuito se autentica contra el proxy con el token de
+              sesion de Supabase (ver aiAuth en lib/tauri.ts), asi que sin cuenta
+              solo queda la clave propia. Antes daba igual porque no se podia
+              entrar sin sesion; ahora si, y ofrecer un boton que va a fallar es
+              peor que decir lo que falta. Que los creditos se agoten es otro
+              caso distinto y lo cubre handleQuotaError. */}
+          {!aiAvailable ? (
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-[11px]" style={{ color: "var(--color-fg-4)" }}>
+                Sign in for the free AI tier, or add your own Claude API key.
+              </span>
+              <button
+                onClick={() => useNavStore.getState().navigate("settings")}
+                className="flex items-center justify-center rounded-md text-[11px] transition-opacity hover:opacity-80 shrink-0"
+                style={{ height: 28, padding: "0 10px", background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
+                Open Settings
+              </button>
+            </div>
+          ) : (
           <div className="flex gap-2">
             {isError && debugAssistEnabled && (
               <button
@@ -743,6 +763,7 @@ export function ResponsePanel() {
               </button>
             )}
           </div>
+          )}
         </div>
       )}
     </div>

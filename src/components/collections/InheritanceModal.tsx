@@ -316,7 +316,7 @@ export function InheritanceModal({ collection, folderId, saving, onClose, onSave
               {choice !== "inherit" && choice !== "none" && (
                 <p className="text-[10px]" style={{ color: "var(--color-fg-4)" }}>
                   Use <code style={{ fontFamily: "Geist Mono, monospace" }}>{"{{VAR}}"}</code> instead
-                  of pasting a secret — the collection file is meant to be committed.
+                  of pasting a secret: the collection file is meant to be committed.
                 </p>
               )}
             </div>
