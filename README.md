@@ -422,6 +422,20 @@ npm run tauri build
 
 ---
 
+## Contributing
+
+Bug reports, feature requests, documentation fixes and code are all welcome.
+
+| | |
+|---|---|
+| A question, or an idea | [Discussions](https://github.com/angeldevmobile/Flux-Post/discussions) |
+| Something broken | [Issues](https://github.com/angeldevmobile/Flux-Post/issues) |
+| Code or docs | [Contributing guide](CONTRIBUTING.md) — how to build Flux locally and open a pull request |
+
+If something in the documentation is unclear, say so in Discussions: that is the fastest way to get it fixed.
+
+---
+
 ## License
 
 MIT

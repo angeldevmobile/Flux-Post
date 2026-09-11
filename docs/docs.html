@@ -17,7 +17,7 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCQF29NN2W"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
+      function gtag() { dataLayer.push(arguments); }
       gtag('js', new Date());
       gtag('config', 'G-ZCQF29NN2W');
     </script>
@@ -941,7 +941,8 @@
           <div class="search-results" id="search-results"></div>
         </div>
         <a href="index.html" class="topbar-link">Home</a>
-        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="topbar-link" data-cta="github-topbar">GitHub</a>
+        <a href="https://github.com/angeldevmobile/Flux-Post" target="_blank" class="topbar-link"
+          data-cta="github-topbar">GitHub</a>
       </div>
     </header>
 
@@ -1129,6 +1130,17 @@
           <button class="sidebar-item sidebar-sub" onclick="show('settings-proxy')">Proxy & Network</button>
           <button class="sidebar-item sidebar-sub" onclick="show('settings-cookies')">Cookie Jar</button>
           <button class="sidebar-item sidebar-sub" onclick="show('settings-privacy')">Data & Privacy</button>
+          <button class="sidebar-item sidebar-sub" onclick="show('terms')">Terms of Service</button>
+        </div>
+
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">Contribute</div>
+          <a class="sidebar-item" href="https://github.com/angeldevmobile/Flux-Post/discussions"
+            target="_blank" rel="noopener" data-cta="discussions-sidebar">Ask a question</a>
+          <a class="sidebar-item" href="https://github.com/angeldevmobile/Flux-Post/issues"
+            target="_blank" rel="noopener">Report a bug</a>
+          <a class="sidebar-item" href="https://github.com/angeldevmobile/Flux-Post/blob/main/CONTRIBUTING.md"
+            target="_blank" rel="noopener">Contributing guide</a>
         </div>
 
       </aside>
@@ -1152,7 +1164,9 @@
             <a href="https://github.com/angeldevmobile/Flux-Post/discussions" target="_blank" rel="noopener"
               data-cta="discussions-docs">Discussions</a> &mdash; questions about the docs are the fastest way to get
             them fixed. Something broken goes in
-            <a href="https://github.com/angeldevmobile/Flux-Post/issues" target="_blank" rel="noopener">Issues</a>.
+            <a href="https://github.com/angeldevmobile/Flux-Post/issues" target="_blank" rel="noopener">Issues</a>, and
+            the <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/CONTRIBUTING.md" target="_blank"
+            rel="noopener">contributing guide</a> covers building Flux and opening a pull request.
           </p>
 
           <div class="cards">
@@ -1262,7 +1276,8 @@
             <li><strong>Frontend:</strong> React 18, TypeScript, Vite, Tailwind CSS v4, Zustand, Radix UI</li>
             <li><strong>Backend:</strong> Rust + Tauri 2.0, reqwest (HTTP engine), rusqlite (history)</li>
             <li><strong>Code editor:</strong> Monaco Editor with local workers, no CDN dependency</li>
-            <li><strong>AI:</strong> Anthropic Claude API, metered free tier or BYOK with Sonnet, Opus and Haiku selectable</li>
+            <li><strong>AI:</strong> Anthropic Claude API, metered free tier or BYOK with Sonnet, Opus and Haiku
+              selectable</li>
           </ul>
         </section>
 
@@ -1274,7 +1289,8 @@
             host machine.</p>
 
           <h2>Download</h2>
-          <p>Go to the <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="docs-install">latest
+          <p>Go to the <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank"
+              data-dl="docs-install">latest
               release</a> on GitHub and download the installer for your platform.</p>
 
           <table>
@@ -1355,7 +1371,8 @@
           <p>An account adds cloud sync and the free AI tier, which is metered per account and is why it needs one. The
             AI also works without an account if you bring your own Claude API key, in
             <strong>Settings → AI &amp; Claude</strong>. You can sign in at any time from the avatar menu or from
-            Settings, and nothing on this machine is lost when you do.</p>
+            Settings, and nothing on this machine is lost when you do.
+          </p>
 
           <div class="steps">
             <div class="step">
@@ -1372,7 +1389,8 @@
                 <div class="step-title">Enter a URL and hit Send</div>
                 <div class="step-desc">Type <code>https://jsonplaceholder.typicode.com/todos/1</code>, select
                   <code>GET</code>, then press <kbd>Enter</kbd> or click <strong>Send</strong>. The Response Panel on
-                  the right fills with the JSON response.</div>
+                  the right fills with the JSON response.
+                </div>
               </div>
             </div>
             <div class="step">
@@ -1417,13 +1435,14 @@
           <p class="page-lead">What changed in each release, and what you need to know before updating. The full
             history lives in
             <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/CHANGELOG.md" target="_blank"
-              rel="noopener">CHANGELOG.md</a>.</p>
+              rel="noopener">CHANGELOG.md</a>.
+          </p>
 
           <h2>0.2.0</h2>
 
           <div class="callout warn">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -1446,18 +1465,21 @@
 headers["Content-Type"]   <span class="token-cmt">// same as headers.content-type</span>
 duration &lt; 500            <span class="token-cmt">// now works in all three</span></code></pre>
           <p>Failures also say what they got: <code>expected status == 404, got 200</code>. See
-            <a href="#" onclick="show('resp-tests');return false;">Tests</a> for the full syntax.</p>
+            <a href="#" onclick="show('resp-tests');return false;">Tests</a> for the full syntax.
+          </p>
 
           <h3>AI without an API key</h3>
           <p>Every signed-in account gets 100 AI actions a month, up to 20 a day, with nothing to
             configure. Free-tier prompts are relayed through a small Flux proxy, which is how the quota is
             applied at all; with your own key nothing is relayed and calls go straight from your machine to Anthropic.
-            <a href="#" onclick="show('settings-privacy');return false;">Privacy</a> spells out what each mode sends.</p>
+            <a href="#" onclick="show('settings-privacy');return false;">Privacy</a> spells out what each mode sends.
+          </p>
           <p>Settings&nbsp;&rarr;&nbsp;AI&nbsp;&amp;&nbsp;Claude shows what you have spent this month and today, and a
             toggle switches between the free tier and your own key without having to delete the key first. Hitting a
             limit says which one and when it resets. The model selector is disabled on the free tier, which runs on a
             fixed model, instead of accepting a choice that was silently ignored. See
-            <a href="#" onclick="show('ai');return false;">AI &amp; Claude</a>.</p>
+            <a href="#" onclick="show('ai');return false;">AI &amp; Claude</a>.
+          </p>
 
           <h3>Pre and post-request scripts run in CI</h3>
           <p>The CLI embeds a JavaScript engine and the same <code>pm</code> shim the app uses. A collection that
@@ -1465,27 +1487,32 @@ duration &lt; 500            <span class="token-cmt">// now works in all three</
           <pre><code>flux run collection.yaml <span class="token-cmt">// scripts execute, no longer skipped</span></code></pre>
           <p><code>pm.test()</code> results count as assertions, so a failing Postman-style test fails the build, and
             <code>console.log</code> output appears under each request. See
-            <a href="#" onclick="show('cli');return false;">CLI Runner</a> for what it still does not do.</p>
+            <a href="#" onclick="show('cli');return false;">CLI Runner</a> for what it still does not do.
+          </p>
 
           <h3>A Content Security Policy for the webview</h3>
           <p>The webview shipped without one. Everything now loads from the app itself, the only outbound destination
             allowed from the frontend is your own Supabase project, and <code>object-src</code>,
             <code>frame-ancestors</code> and <code>base-uri</code> are locked down. <code>unsafe-eval</code> is kept on
             purpose: pre and post-request scripts run through <code>new Function()</code>, and without it the whole
-            scripting feature would break in release builds only.</p>
+            scripting feature would break in release builds only.
+          </p>
           <p>Fonts are served from the bundle instead of a third-party CDN. Flux no longer contacts
-            <code>fonts.bunny.net</code> on launch, and typography works offline.</p>
+            <code>fonts.bunny.net</code> on launch, and typography works offline.
+          </p>
 
           <h3>Collections carry the whole request</h3>
           <p>Saving a request used to keep only its method, URL, headers and body. Auth, query params, pre and
             post-response scripts, variable extractors, GraphQL queries and form bodies were dropped, and assertions
             were written out empty. All of it is saved and restored now, and the
-            <a href="#" onclick="show('cli');return false;">CLI</a> honours it too, so a collection that works in the app
-            works in CI.</p>
+            <a href="#" onclick="show('cli');return false;">CLI</a> honours it too, so a collection that works in the
+            app
+            works in CI.
+          </p>
 
           <div class="callout info">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -1495,7 +1522,8 @@ duration &lt; 500            <span class="token-cmt">// now works in all three</
               <div class="callout-text">Saving a request whose auth holds a literal token now warns before writing it
                 to disk, and offers to move it into the active environment as a masked
                 <code>&#123;&#123;VAR&#125;&#125;</code> in one click. It matters because collections are meant to be
-                committed, see <a href="#" onclick="show('github');return false;">GitHub Sync</a>.</div>
+                committed, see <a href="#" onclick="show('github');return false;">GitHub Sync</a>.
+              </div>
             </div>
           </div>
 
@@ -1525,7 +1553,8 @@ duration &lt; 500            <span class="token-cmt">// now works in all three</
           <h3>gRPC streaming</h3>
           <p>Server-streaming, client-streaming and bidirectional calls, with a live message log, per-message send,
             end-of-stream and cancel. Previously a streaming method could be selected but not invoked. See
-            <a href="#" onclick="show('grpc');return false;">gRPC</a>.</p>
+            <a href="#" onclick="show('grpc');return false;">gRPC</a>.
+          </p>
 
           <h3>Import fixes worth knowing about</h3>
           <ul>
@@ -1572,11 +1601,12 @@ Content-Type: application/json
           <p>The body works exactly as it does for <code>POST</code>, see
             <a href="#" onclick="show('body');return false;">Body</a>. Because the method is safe, a server may cache
             the response and a client may retry it, which is the difference from sending the same payload as
-            <code>POST</code>.</p>
+            <code>POST</code>.
+          </p>
 
           <div class="callout info">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -1751,7 +1781,8 @@ Content-Type: application/json
               <tr>
                 <td>Bearer Token</td>
                 <td>Adds <code>Authorization: Bearer &lt;token&gt;</code>. Supports
-                  <code>&#123;&#123;variables&#125;&#125;</code>.</td>
+                  <code>&#123;&#123;variables&#125;&#125;</code>.
+                </td>
               </tr>
               <tr>
                 <td>Basic Auth</td>
@@ -1805,8 +1836,8 @@ Bearer token
             local collection.</p>
 
           <div class="callout warn">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -1841,7 +1872,8 @@ Bearer token
 
           <h3>JSON</h3>
           <p>Full Monaco Editor with syntax highlighting, error detection, and inline linting. Press <kbd>Shift</kbd> +
-            <kbd>Alt</kbd> + <kbd>F</kbd> to auto-format.</p>
+            <kbd>Alt</kbd> + <kbd>F</kbd> to auto-format.
+          </p>
           <pre><code><span class="token-key">"name"</span>: <span class="token-str">"Alice"</span>,
 <span class="token-key">"age"</span>:  <span class="token-num">30</span>,
 <span class="token-key">"admin"</span>: <span class="token-bool">false</span></code></pre>
@@ -1858,7 +1890,8 @@ Bearer token
 
           <h3>Form URL-encoded</h3>
           <p>Key-value table editor, identical to the Params tab. Encoded as
-            <code>application/x-www-form-urlencoded</code>.</p>
+            <code>application/x-www-form-urlencoded</code>.
+          </p>
 
           <h3>Multipart Form</h3>
           <p>Supports text fields and file uploads. Each part can be individually named and typed.</p>
@@ -1920,8 +1953,8 @@ Bearer token
           </table>
 
           <div class="callout info">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -1930,7 +1963,8 @@ Bearer token
               <div class="callout-title">Scripts change headers and variables, not the whole request</div>
               <div class="callout-text">A pre-request script can set headers and environment variables. The URL, method
                 and body come from the request builder, so edit those there using
-                <code>&#123;&#123;variables&#125;&#125;</code> for anything the script computes.</div>
+                <code>&#123;&#123;variables&#125;&#125;</code> for anything the script computes.
+              </div>
             </div>
           </div>
 
@@ -1944,8 +1978,8 @@ pm.request.headers.<span class="token-fn">upsert</span>(<span class="token-str">
 pm.request.headers.<span class="token-fn">upsert</span>(<span class="token-str">"Authorization"</span>, <span class="token-str">"Bearer "</span> + secret);</code></pre>
 
           <div class="callout tip">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path
                   d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
               </svg></span>
@@ -1954,7 +1988,8 @@ pm.request.headers.<span class="token-fn">upsert</span>(<span class="token-str">
               <div class="callout-text">The <a href="#" onclick="show('cli');return false;">CLI runner</a> has no
                 JavaScript engine, so pre and post-response scripts are skipped in CI. It prints a notice when a
                 collection contains them. Anything a run in CI depends on should come from the request itself or from
-                <code>--env</code>.</div>
+                <code>--env</code>.
+              </div>
             </div>
           </div>
         </section>
@@ -2007,7 +2042,8 @@ pm.request.headers.<span class="token-fn">upsert</span>(<span class="token-str">
                 <td><code>pm.expect(value)</code></td>
                 <td>Chai-style assertions: <code>.to.equal</code>, <code>.to.eql</code>, <code>.to.include</code>,
                   <code>.to.be.a</code>, <code>.to.be.ok</code>, <code>.to.be.null</code>, <code>.to.be.above</code>,
-                  <code>.to.be.below</code></td>
+                  <code>.to.be.below</code>
+                </td>
               </tr>
               <tr>
                 <td><code>console.log</code></td>
@@ -2029,8 +2065,8 @@ pm.<span class="token-fn">test</span>(<span class="token-str">"login returns a t
 });</code></pre>
 
           <div class="callout tip">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path
                   d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
               </svg></span>
@@ -2038,7 +2074,8 @@ pm.<span class="token-fn">test</span>(<span class="token-str">"login returns a t
               <div class="callout-title">For a plain field, use the extractor instead</div>
               <div class="callout-text">Pulling one value out of a response does not need a script:
                 <a href="#" onclick="show('extract');return false;">Extract</a> does it with a JSONPath rule, and
-                unlike scripts it also works in the CLI.</div>
+                unlike scripts it also works in the CLI.
+              </div>
             </div>
           </div>
         </section>
@@ -2065,7 +2102,8 @@ pm.<span class="token-fn">test</span>(<span class="token-str">"login returns a t
               <div class="step-body">
                 <div class="step-title">Enter the path</div>
                 <div class="step-desc">For JSON: use dot notation like <code>data.user.id</code> or bracket syntax
-                  <code>items[0].id</code>.</div>
+                  <code>items[0].id</code>.
+                </div>
               </div>
             </div>
             <div class="step">
@@ -2185,7 +2223,8 @@ pm.<span class="token-fn">test</span>(<span class="token-str">"login returns a t
 
           <h2>Headers tab</h2>
           <p>All response headers are shown in a searchable table. Click any row to copy the value. Common headers like
-            <code>Content-Type</code>, <code>Cache-Control</code>, and <code>X-Request-Id</code> are highlighted.</p>
+            <code>Content-Type</code>, <code>Cache-Control</code>, and <code>X-Request-Id</code> are highlighted.
+          </p>
 
           <h2>Cookies tab</h2>
           <p>Cookies set by the response (via <code>Set-Cookie</code>) appear here with all attributes: name, value,
@@ -2199,7 +2238,8 @@ pm.<span class="token-fn">test</span>(<span class="token-str">"login returns a t
           <h1 class="page-title">Tests</h1>
           <p class="page-lead">One assertion per line, no scripting. Tests run automatically after each request and
             show pass / fail inline, and the same assertions run in the Collection Runner and in CI through the
-            <a href="#" onclick="show('cli');return false;">CLI</a>.</p>
+            <a href="#" onclick="show('cli');return false;">CLI</a>.
+          </p>
 
           <h2>Writing tests</h2>
           <p>An assertion is a path, an operator and a value:</p>
@@ -2245,7 +2285,8 @@ body contains <span class="token-str">"success"</span></code></pre>
           <h2>Operators</h2>
           <p><code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>,
             <code>&gt;=</code>, and <code>contains</code> for substring checks. <code>===</code> and <code>!==</code>
-            are accepted as aliases.</p>
+            are accepted as aliases.
+          </p>
           <p>Values are <code>null</code>, <code>true</code>, <code>false</code>, a number, or a quoted string. A
             numeric string in the response matches a number in the assertion, so <code>json.id == 5</code> passes when
             the body has <code>"id": "5"</code>.</p>
@@ -2258,19 +2299,21 @@ json.count == {{EXPECTED_COUNT}}
 body contains <span class="token-str">"{{TENANT}}"</span></code></pre>
           <p>Interpolation happens after the operator has been read, so a variable whose value contains
             <code>==</code> cannot change how the line is parsed. A variable that is not defined is left as written, so
-            the assertion fails and the message shows <code>{{VAR}}</code> rather than passing silently.</p>
+            the assertion fails and the message shows <code>{{VAR}}</code> rather than passing silently.
+          </p>
           <p>Reports and history show the assertion as you wrote it, with the <code>{{VAR}}</code> in place, so the
             value of a secret variable does not end up in a CI log or in the request history.</p>
 
           <h2>Absent fields</h2>
           <p>A field that is not in the response counts as <code>null</code>, so both of these hold when
-            <code>token</code> is missing:</p>
+            <code>token</code> is missing:
+          </p>
           <pre><code>json.token == null        <span class="token-cmt">// passes</span>
 json.token != null        <span class="token-cmt">// fails</span></code></pre>
 
           <div class="callout warn">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -2286,20 +2329,23 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <h2>Where assertions run</h2>
           <p>The same lines are evaluated by the same engine in three places: inline under the response, in the
             <a href="#" onclick="show('collections');return false;">Collection Runner</a>, and in the
-            <a href="#" onclick="show('cli');return false;">CLI</a>. An assertion means the same thing in all three.</p>
+            <a href="#" onclick="show('cli');return false;">CLI</a>. An assertion means the same thing in all three.
+          </p>
 
           <div class="callout tip">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path
                   d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
               </svg></span>
             <div class="callout-body">
               <div class="callout-title">Need real logic?</div>
-              <div class="callout-text">Assertions are deliberately declarative. For anything that needs code, such as signing
+              <div class="callout-text">Assertions are deliberately declarative. For anything that needs code, such as
+                signing
                 a payload, looping or conditionals, use a
                 <a href="#" onclick="show('postreq');return false;">post-response script</a>, which gives you the
-                <code>pm</code> API. Scripts run in the app but not in the CLI.</div>
+                <code>pm</code> API. Scripts run in the app but not in the CLI.
+              </div>
             </div>
           </div>
 
@@ -2436,12 +2482,42 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Rename</td><td>✓</td><td>✓</td><td>✓</td></tr>
-              <tr><td>New request / folder inside</td><td>✓</td><td>✓</td><td></td></tr>
-              <tr><td>Duplicate</td><td></td><td></td><td>✓</td></tr>
-              <tr><td>Move to…</td><td></td><td></td><td>✓</td></tr>
-              <tr><td>Inherited settings</td><td>✓</td><td>✓</td><td></td></tr>
-              <tr><td>Delete</td><td>✓</td><td>✓</td><td>✓</td></tr>
+              <tr>
+                <td>Rename</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>New request / folder inside</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>Duplicate</td>
+                <td></td>
+                <td></td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Move to…</td>
+                <td></td>
+                <td></td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Inherited settings</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>Delete</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
             </tbody>
           </table>
           <p>Renaming happens in place. <strong>Move to…</strong> asks which collection first and then which folder of
@@ -2466,7 +2542,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               Headers and scripts from outer levels still apply.</li>
           </ul>
           <p>The same cascade runs when you press Send, in the Collection Runner, on the Tests screen and in
-            <a href="#" onclick="show('cli');return false;">the CLI</a>.</p>
+            <a href="#" onclick="show('cli');return false;">the CLI</a>.
+          </p>
 
           <h2>Request YAML schema</h2>
           <p>A collection saves everything the request builder holds, so reopening a request gives back what you
@@ -2523,12 +2600,14 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <tr>
                 <td><code>bodyType</code></td>
                 <td><code>json</code>, <code>form</code>, <code>multipart</code>, <code>binary</code>,
-                  <code>raw</code> or <code>graphql</code></td>
+                  <code>raw</code> or <code>graphql</code>
+                </td>
               </tr>
               <tr>
                 <td><code>body</code></td>
                 <td>The raw body as a string. For <code>form</code> use the <code>form</code> map instead, and for
-                  <code>graphql</code> use the <code>graphql</code> block.</td>
+                  <code>graphql</code> use the <code>graphql</code> block.
+                </td>
               </tr>
               <tr>
                 <td><code>graphql</code></td>
@@ -2536,8 +2615,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               </tr>
               <tr>
                 <td><code>auth</code></td>
-                <td><code>type</code> plus its fields. See <a href="#"
-                    onclick="show('auth');return false;">Auth</a>.</td>
+                <td><code>type</code> plus its fields. See <a href="#" onclick="show('auth');return false;">Auth</a>.
+                </td>
               </tr>
               <tr>
                 <td><code>scripts</code></td>
@@ -2557,8 +2636,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           </table>
 
           <div class="callout warn">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -2567,7 +2646,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <div class="callout-title">Keep credentials out of the file</div>
               <div class="callout-text">Collection files are meant to be committed, so auth values should be
                 <code>&#123;&#123;VAR&#125;&#125;</code> references, never literal tokens. Flux warns when you save a
-                literal one and offers to move it into the environment for you.</div>
+                literal one and offers to move it into the environment for you.
+              </div>
             </div>
           </div>
 
@@ -2586,7 +2666,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <h2>Mixed HTTP and gRPC collections</h2>
           <p>Collections support both HTTP and gRPC requests in the same folder. gRPC requests include an extra
             <code>kind: grpc</code> field and a <code>grpc:</code> block. Clicking a gRPC request in the sidebar
-            automatically navigates to the gRPC screen.</p>
+            automatically navigates to the gRPC screen.
+          </p>
 
           <h2>Collection Runner</h2>
           <p>Select a collection in the sidebar and click <strong>Run Collection</strong>. The runner executes all
@@ -2595,7 +2676,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
 
           <h2>Import</h2>
           <p>Flux can import collections from <strong>Postman v2.1</strong> and <strong>OpenAPI 3.0</strong>. Go to
-            <strong>File → Import</strong> or drag a file onto the sidebar.</p>
+            <strong>File → Import</strong> or drag a file onto the sidebar.
+          </p>
 
           <h3>What comes across</h3>
           <table>
@@ -2633,7 +2715,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
             </tbody>
           </table>
           <p>Postman tests arrive as post-response scripts and keep working, in the app and in
-            <a href="#" onclick="show('cli');return false;">CI</a>.</p>
+            <a href="#" onclick="show('cli');return false;">CI</a>.
+          </p>
 
           <div class="callout info">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -2645,7 +2728,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
             <div class="callout-body">
               <div class="callout-title">GitHub Sync</div>
               <div class="callout-text">Collections can be automatically pushed and pulled from a GitHub repository. See
-                <a href="#" onclick="show('github')">GitHub Sync</a> for setup.</div>
+                <a href="#" onclick="show('github')">GitHub Sync</a> for setup.
+              </div>
             </div>
           </div>
         </section>
@@ -2695,10 +2779,12 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <p>A global is a default and the environment specialises it: a global
             <code>BASE_URL</code> pointing at production is overridden the moment a <strong>Local</strong> environment
             defines its own. A script writes into the active environment, so a token refreshed by a pre-request script
-            overrides a stale global of the same name.</p>
+            overrides a stale global of the same name.
+          </p>
           <p>Substitution is a single pass over the text. A value that itself contains
             <code>&#123;&#123;VAR&#125;&#125;</code> is not expanded a second time, and a variable that nothing defines
-            is left as written, braces included, so the mistake is visible instead of turning into an empty string.</p>
+            is left as written, braces included, so the mistake is visible instead of turning into an empty string.
+          </p>
 
           <h2>Creating an environment</h2>
           <div class="steps">
@@ -2707,7 +2793,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <div class="step-body">
                 <div class="step-title">Open the Environments screen</div>
                 <div class="step-desc">Click the <strong>Environments</strong> icon in the NavRail, or press
-                  <kbd>Ctrl</kbd> + <kbd>E</kbd>.</div>
+                  <kbd>Ctrl</kbd> + <kbd>E</kbd>.
+                </div>
               </div>
             </div>
             <div class="step">
@@ -2715,7 +2802,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <div class="step-body">
                 <div class="step-title">Click + New Environment</div>
                 <div class="step-desc">Give it a name like <strong>Production</strong>, <strong>Staging</strong>, or
-                  <strong>Local</strong>.</div>
+                  <strong>Local</strong>.
+                </div>
               </div>
             </div>
             <div class="step">
@@ -2799,7 +2887,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <p>For unlimited use, go to <strong>Settings → AI & Claude</strong>, paste your API key (starts with
             <code>sk-ant-</code>), and select a model. Your key is stored only on your device, and AI calls then go
             straight from your machine to Anthropic, never through Flux servers. Usage is billed by Anthropic on your
-            own account.</p>
+            own account.
+          </p>
 
           <h2>Available models</h2>
           <p>Model selection applies when you use your own API key. On the free tier the model is chosen for you and
@@ -2901,7 +2990,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <div class="step-body">
                 <div class="step-title">Pull or Push</div>
                 <div class="step-desc">Click <strong>Pull</strong> to download the latest collections from GitHub, or
-                  <strong>Push</strong> to upload local changes.</div>
+                  <strong>Push</strong> to upload local changes.
+                </div>
               </div>
             </div>
           </div>
@@ -2955,7 +3045,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <p>Click the <strong>Bookmark</strong> icon next to a loaded proto to save it to the Proto Library. Saved
             protos persist on disk across sessions in <code>{app_data}/protos/</code> and appear in the
             <strong>Library</strong> section at the bottom of the left panel. Click any saved proto to reload it
-            instantly.</p>
+            instantly.
+          </p>
 
           <h2>Invoking a method</h2>
           <div class="steps">
@@ -3021,7 +3112,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
             </tbody>
           </table>
           <p>The glyph next to each method in the service tree tells you which kind it is. Unary methods show
-            <code>→</code>.</p>
+            <code>→</code>.
+          </p>
 
           <h2>Streaming calls</h2>
           <p>Selecting a streaming method turns <strong>Invoke</strong> into <strong>Start stream</strong>. Messages
@@ -3056,11 +3148,12 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
             </tbody>
           </table>
           <p>The status bar shows whether the stream is open, how many messages have arrived, and how it ended:
-            <code>completed</code> when the server closed it, <code>cancelled</code> when you did.</p>
+            <code>completed</code> when the server closed it, <code>cancelled</code> when you did.
+          </p>
 
           <div class="callout info">
-            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -3118,7 +3211,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
 
           <h2>Sending messages</h2>
           <p>Type a message (plain text or JSON) in the composer at the bottom and press <kbd>Enter</kbd> or click
-            <strong>Send</strong>. Click <strong>Disconnect</strong> to close the connection.</p>
+            <strong>Send</strong>. Click <strong>Disconnect</strong> to close the connection.
+          </p>
 
           <div class="callout info">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3148,7 +3242,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
 
           <h2>Event log</h2>
           <p>Each SSE event appears as a row in the log showing its <code>event</code> type, <code>id</code>, and
-            <code>data</code>. The data field is auto-formatted if it contains JSON.</p>
+            <code>data</code>. The data field is auto-formatted if it contains JSON.
+          </p>
 
           <h2>Filtering</h2>
           <p>Use the event type filter to show only specific event types (e.g., only <code>update</code> events,
@@ -3253,7 +3348,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
                 <div class="step-title">Define the response body</div>
                 <div class="step-desc">Enter JSON (or any other content type) in the body editor. Supports dynamic
                   values like <code>&#123;&#123;$uuid&#125;&#125;</code> and
-                  <code>&#123;&#123;$timestamp&#125;&#125;</code>.</div>
+                  <code>&#123;&#123;$timestamp&#125;&#125;</code>.
+                </div>
               </div>
             </div>
             <div class="step">
@@ -3261,7 +3357,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <div class="step-body">
                 <div class="step-title">Start the server</div>
                 <div class="step-desc">Click <strong>Start</strong>. The mock listens on
-                  <code>http://localhost:&lt;port&gt;</code> (port configurable, default 3001).</div>
+                  <code>http://localhost:&lt;port&gt;</code> (port configurable, default 3001).
+                </div>
               </div>
             </div>
           </div>
@@ -3313,7 +3410,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               <div class="step-body">
                 <div class="step-title">Enter a URL</div>
                 <div class="step-desc">Type the request URL in the top bar. Use
-                  <code>&#123;&#123;baseUrl&#125;&#125;</code> to reference the base URL of each environment.</div>
+                  <code>&#123;&#123;baseUrl&#125;&#125;</code> to reference the base URL of each environment.
+                </div>
               </div>
             </div>
             <div class="step">
@@ -3340,7 +3438,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
               deploy</li>
             <li><strong>Migration validation:</strong> Compare old and new API versions endpoint by endpoint</li>
             <li><strong>Multi-region testing:</strong> Hit <code>us-east</code>, <code>eu-west</code>, and
-              <code>ap-south</code> in one shot</li>
+              <code>ap-south</code> in one shot
+            </li>
           </ul>
         </section>
 
@@ -3357,7 +3456,8 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
 
           <h2>Running a collection</h2>
           <p>Point <code>flux run</code> at a YAML file or a directory of them. Only requests that have
-            <code>tests</code> are executed.</p>
+            <code>tests</code> are executed.
+          </p>
           <pre><code><span class="token-cmt"># One collection file</span>
 flux run ./my-api/users.yaml
 
@@ -3390,7 +3490,8 @@ flux run ./my-api --bail</code></pre>
               <tr>
                 <td><code>--env-file PATH</code></td>
                 <td>Reads variables from a <code>.env</code> style file: <code>KEY=VALUE</code> per line,
-                  <code>#</code> for comments, optional quotes, a leading <code>export</code> ignored. Repeatable.</td>
+                  <code>#</code> for comments, optional quotes, a leading <code>export</code> ignored. Repeatable.
+                </td>
               </tr>
               <tr>
                 <td><code>--folder NAME</code></td>
@@ -3422,13 +3523,15 @@ flux run ./my-api --bail</code></pre>
               <div class="callout-title">Secrets come from the environment, not the file</div>
               <div class="callout-text">Collections hold <code>&#123;&#123;VAR&#125;&#125;</code> references, so pass
                 the values at run time from your CI secret store:
-                <code>--env API_TOKEN=$API_TOKEN</code>. Nothing sensitive needs to live in the repository.</div>
+                <code>--env API_TOKEN=$API_TOKEN</code>. Nothing sensitive needs to live in the repository.
+              </div>
             </div>
           </div>
 
           <h2>Chaining requests</h2>
           <p>What a request captures is available to the ones after it, both through a variable extractor and through
-            <code>pm.environment.set()</code> in a post-response script:</p>
+            <code>pm.environment.set()</code> in a post-response script:
+          </p>
           <pre><code><span class="token-key">requests</span>:
   - <span class="token-key">name</span>: Login
     <span class="token-key">method</span>: POST
@@ -3445,7 +3548,8 @@ flux run ./my-api --bail</code></pre>
           <p>Requests carrying assertions always run. One without any still runs when it has extractors or scripts,
             because that is what the login step of a chain looks like and skipping it would leave the rest of the batch
             without a token. A request with none of the three is skipped.</p>
-          <p>The same chain behaves identically when you press Send, in the Collection Runner and on the Tests screen.</p>
+          <p>The same chain behaves identically when you press Send, in the Collection Runner and on the Tests screen.
+          </p>
 
           <h2>Where variables come from</h2>
           <p>The CLI has no named environments and no global variables &mdash; those live in the app, on your machine.
@@ -3453,14 +3557,16 @@ flux run ./my-api --bail</code></pre>
           <pre><code>flux run ./my-api --env-file ci.env --env API_TOKEN=$API_TOKEN</code></pre>
           <p>Later sources win, so <code>--env</code> on the command line overrides a file, and a second
             <code>--env-file</code> overrides the first. That ordering is what lets a pipeline keep the shared values in
-            a committed file and override just one of them for a particular job.</p>
+            a committed file and override just one of them for a particular job.
+          </p>
           <p>A variable that no source defines is left in the request exactly as written, braces and all, rather than
             becoming an empty string. A request that goes out to <code>&#123;&#123;BASE_URL&#125;&#125;/users</code>
             fails loudly instead of quietly hitting the wrong host.</p>
 
           <h3>Dynamic values</h3>
           <p>The same built-ins as the app, resolved fresh at each occurrence, so two
-            <code>&#123;&#123;$guid&#125;&#125;</code> in one request are two different ids:</p>
+            <code>&#123;&#123;$guid&#125;&#125;</code> in one request are two different ids:
+          </p>
           <table>
             <thead>
               <tr>
@@ -3514,7 +3620,8 @@ flux run ./my-api --bail</code></pre>
           <p>A collection saved in the app runs the same way here: auth, query params, form and GraphQL bodies,
             environment interpolation, folders at any depth, and the same
             <a href="#" onclick="show('resp-tests');return false;">assertion language</a> evaluated by the same
-            engine.</p>
+            engine.
+          </p>
           <table>
             <thead>
               <tr>
@@ -3548,7 +3655,8 @@ flux run ./my-api --bail</code></pre>
             token and sets it with <code>pm.environment.set()</code> works before the request goes out, and headers
             added with <code>pm.request.headers.upsert()</code> are sent.</p>
           <p>Each <code>pm.test()</code> counts as an assertion, so a failing test fails the run and exits
-            <code>1</code>, and <code>console.log()</code> output appears under its request.</p>
+            <code>1</code>, and <code>console.log()</code> output appears under its request.
+          </p>
           <pre><code><span class="token-cmt">My API   4 requests with tests</span>
 <span class="token-cmt">  running pre/post scripts on 2 request(s)</span>
 
@@ -3902,7 +4010,8 @@ flux run ./my-api --bail</code></pre>
                 regenerated daily and discarded after two days, so the hash cannot be reversed or matched
                 across days. Nothing else about you is recorded. To stop the check entirely, block
                 <code>fluxapi.dev</code> and <code>github.com</code> in your firewall &mdash; Flux will keep
-                working and simply stop offering updates.</div>
+                working and simply stop offering updates.
+              </div>
             </div>
           </div>
 
@@ -3913,7 +4022,8 @@ flux run ./my-api --bail</code></pre>
             <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/src/lib/__tests__/analytics.test.ts"
               target="_blank" rel="noopener">tests</a> &mdash; and the server side is
             <a href="https://github.com/angeldevmobile/Flux-Post/tree/main/supabase/functions" target="_blank"
-              rel="noopener"><code>supabase/functions/</code></a>.</p>
+              rel="noopener"><code>supabase/functions/</code></a>.
+          </p>
 
           <div class="callout success">
             <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3932,6 +4042,87 @@ flux run ./my-api --bail</code></pre>
           </div>
         </section>
 
+        <!--   TERMS OF SERVICE   -->
+        <section class="doc-section" id="sec-terms">
+          <div class="page-eyebrow">Settings</div>
+          <h1 class="page-title">Terms of Service</h1>
+          <p class="page-lead">Flux is free and open source under the MIT licence. These terms cover the parts that are
+            not simply the software on your machine: the optional account, cloud sync and the AI free tier.</p>
+          <p><strong>Last updated:</strong> 10 September 2026</p>
+
+          <h2>The software</h2>
+          <p>Flux is released under the <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE"
+              target="_blank" rel="noopener">MIT licence</a>. You can use it for anything, including commercially,
+            modify
+            it and redistribute it. That licence governs the software itself, and where it and this page disagree about
+            the software, the licence wins.</p>
+          <p>As the licence says, Flux is provided <strong>as is, without warranty of any kind</strong>. You are
+            responsible for the requests you send with it and for having permission to send them.</p>
+
+          <h2>Accounts</h2>
+          <p>An account is optional: Flux runs without one. If you create one, with an e-mail address or through
+            GitHub, you agree to give accurate details and to keep your credentials to yourself. You are responsible
+            for what happens under your account.</p>
+          <p>You can delete your account at any time from <strong>Settings &rarr; Data &amp; Privacy</strong>. Deleting
+            it removes what is stored on the server; whatever is already on your machine stays there.</p>
+          <p>An account may be suspended if it is used to attack the service, to get around the AI limits, or to do
+            something illegal. Where it is reasonable to do so, you will be told why first.</p>
+
+          <h2>Cloud sync</h2>
+          <p>Sync is opt-in. When it is on, your collections, environments, request history and app settings are stored
+            on the server so that other machines signed into the same account can read them. What is stored, and how to
+            delete it, is set out in <a href="#" onclick="show('settings-privacy');return false;">Data &amp;
+              Privacy</a>.</p>
+          <p>Keep your own backups of anything you cannot afford to lose. Collections are plain YAML files on your
+            machine, so a copy or a Git repository is enough. There is no promise that the service will be available at
+            any particular time, and synced data cannot be guaranteed against loss.</p>
+          <p>Do not put credentials in a collection file. Flux is built so that secrets live in environment variables
+            and collections reference them as <code>&#123;&#123;VAR&#125;&#125;</code>, and it warns you before saving
+            one in plain text.</p>
+
+          <h2>The AI features</h2>
+          <p>Flux can use Claude, from Anthropic, in two ways:</p>
+          <ul>
+            <li><strong>With your own API key.</strong> Requests go from your machine straight to Anthropic. The key
+              never leaves your device and never reaches the Flux servers. Your relationship for that use is with
+              Anthropic, under their terms.</li>
+            <li><strong>With the free tier</strong>, which needs an account. Prompts are relayed through a Flux proxy,
+              which is what applies the per-account limit, and then on to Anthropic.</li>
+          </ul>
+          <p>The free tier is a beta courtesy with a monthly and a daily limit, both shown in <strong>Settings &rarr;
+              AI &amp; Claude</strong>. Those limits can change, and the free tier can be reduced or withdrawn, without
+            notice. If you depend on the AI features, use your own API key.</p>
+          <p>Whichever route you use, what you send reaches Anthropic and is subject to their terms and their policies.
+            Do not send anything through the AI features that you are not allowed to share with a third party.</p>
+
+          <h2>Acceptable use</h2>
+          <p>Do not use Flux or its services to break the law, to attack systems you have no permission to test, or to
+            put someone else's personal data through the AI features without a basis for doing so. Load testing can
+            generate a lot of traffic: only point it at something you are authorised to load test.</p>
+
+          <h2>Liability</h2>
+          <p>To the extent the law allows, Flux and its author are not liable for loss of data, loss of profit, or any
+            indirect or consequential damage arising from use of the software or the services. Nothing here removes
+            rights that cannot be removed by agreement, including any consumer rights you have where you live.</p>
+
+          <h2>Changes</h2>
+          <p>These terms can change as Flux changes. Material changes are noted in the
+            <a href="https://github.com/angeldevmobile/Flux-Post/blob/main/CHANGELOG.md" target="_blank"
+              rel="noopener">changelog</a>, and the date above is updated. Continuing to use the account services after
+            a
+            change means you accept the new terms; if you do not, you can stop using them and keep using Flux locally,
+            or delete your account.
+          </p>
+
+          <h2>Contact</h2>
+          <p>Questions about these terms, or about an account, go to
+            <a href="https://github.com/angeldevmobile/Flux-Post/issues" target="_blank" rel="noopener">GitHub
+              issues</a> for anything public, or to the address in <strong>Settings &rarr; Data &amp; Privacy</strong>
+            for anything about your own data.
+          </p>
+        </section>
+
+
         <div class="doc-cta">
           <div>
             <div class="doc-cta-title">Flux is free and open source</div>
@@ -3941,7 +4132,8 @@ flux run ./my-api --bail</code></pre>
             class="doc-cta-btn" data-cta="star-docs">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
             Star on GitHub
           </a>
@@ -3959,11 +4151,6 @@ flux run ./my-api --bail</code></pre>
       const sections = document.querySelectorAll('.doc-section');
       const sidebarItems = document.querySelectorAll('.sidebar-item');
 
-      //   On-this-page index
-      //
-      //   Antes era un mapa de titulos escrito a mano, en paralelo al
-      //   documento y sin nada que los atara. Ahora sale de los <h2>/<h3>
-      //   reales de la seccion visible, asi que no hay nada que mantener.
       const slugify = t => t.toLowerCase().trim()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-');
@@ -3986,8 +4173,6 @@ flux run ./my-api --bail</code></pre>
         });
         buildToc(id);
         window.scrollTo({ top: 0 });
-        // La seccion va en el hash para poder enlazarla desde fuera: la app
-        // manda aqui desde "Privacy Policy", y sin esto se abria la portada.
         if (!fromHash && location.hash.slice(1) !== id) {
           history.replaceState(null, '', '#' + id);
         }
@@ -4047,12 +4232,6 @@ flux run ./my-api --bail</code></pre>
 
       buildToc('intro');
 
-      //   Search
-      //
-      //   The topbar box used to be decoration: it focused a #search-input
-      //   that did not exist, and nothing listened for Ctrl+K. The index is
-      //   built from the document itself, so new sections are searchable
-      //   without registering them anywhere.
       const searchIndex = [];
 
       (function buildSearchIndex() {
@@ -4110,10 +4289,10 @@ flux run ./my-api --bail</code></pre>
         searchCursor = searchHits.length ? 0 : -1;
         searchResults.innerHTML = searchHits.length
           ? searchHits.map((h, i) =>
-              `<button class="search-hit${i === 0 ? ' active' : ''}" data-i="${i}">` +
-              `<span class="search-hit-title">${escapeHtml(h.text)}</span>` +
-              `<span class="search-hit-ctx">${escapeHtml(h.page)}</span></button>`
-            ).join('')
+            `<button class="search-hit${i === 0 ? ' active' : ''}" data-i="${i}">` +
+            `<span class="search-hit-title">${escapeHtml(h.text)}</span>` +
+            `<span class="search-hit-ctx">${escapeHtml(h.page)}</span></button>`
+          ).join('')
           : '<div class="search-empty">No matches for &ldquo;' + escapeHtml(searchInput.value.trim()) + '&rdquo;</div>';
 
         searchResults.classList.add('open');
@@ -4139,8 +4318,6 @@ flux run ./my-api --bail</code></pre>
         show(hit.id);
         closeSearch();
         searchInput.blur();
-        // show() sube al principio de la pagina, asi que el salto al
-        // encabezado tiene que ir despues de que pinte.
         if (hit.anchor) {
           requestAnimationFrame(() => {
             const el = document.getElementById(hit.anchor);
@@ -4171,9 +4348,6 @@ flux run ./my-api --bail</code></pre>
         if (!e.target.closest('.topbar-search')) closeSearch();
       });
 
-      /* ── Outbound click tracking, sent to GA4 only, nothing shown on the page ──
-         Both events share the link_location parameter, so one custom dimension
-         in GA4 covers downloads and CTAs alike. */
       document.addEventListener('click', function (e) {
         if (typeof gtag !== 'function') return;
 
@@ -4195,15 +4369,6 @@ flux run ./my-api --bail</code></pre>
         }
       });
 
-      /* ── Engagement depth ──
-         GA4 daba 13 s de interacción media y 62,5 % de rebote sin ninguna forma
-         de saber si eso era "la landing no convence" o "GA4 no sabe medir una
-         página de scroll largo". Sin ningún evento después de la carga, GA4
-         cuenta la sesión como rebote aunque alguien lea la página entera.
-
-         Estos dos eventos separan las dos cosas: quien llega al 50 % leyó de
-         verdad. `scroll_depth` lleva el porcentaje como parámetro para no
-         gastar cuatro nombres de evento distintos. */
       (function () {
         if (typeof gtag !== 'function') return;
 
@@ -4224,8 +4389,6 @@ flux run ./my-api --bail</code></pre>
           if (fired.size === marks.length) window.removeEventListener('scroll', onScroll);
         }
 
-        /* rAF en vez de llamar a check() en cada evento: el scroll dispara
-           decenas de veces por gesto y esto corre en el hilo principal. */
         let ticking = false;
         function onScroll() {
           if (ticking) return;
@@ -4234,9 +4397,6 @@ flux run ./my-api --bail</code></pre>
         }
         window.addEventListener('scroll', onScroll, { passive: true });
 
-        /* Marca de lectura real. Es el evento que hay que leer junto al rebote:
-           una visita de 30 s con scroll no es un rebote por mucho que GA4 la
-           cuente así. No corre mientras la pestaña está en segundo plano. */
         let engaged = 0;
         const timer = setInterval(function () {
           if (document.visibilityState !== 'visible') return;

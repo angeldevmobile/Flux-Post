@@ -195,10 +195,15 @@ export function Login({ onLogin, onGoSignUp, onUseLocally }: LoginProps) {
           </p>
         </div>
 
-        {/* Solo lo que existe de verdad. Habia tambien un "Terms of Service"
-            que no llevaba a ninguna parte porque no hay terminos escritos: un
-            enlace legal muerto es peor que no ponerlo. */}
         <div className="mt-6 flex gap-4">
+          <button
+            onClick={async () => {
+              const { openUrl } = await import("@tauri-apps/plugin-opener");
+              await openUrl("https://fluxapi.dev/docs.html#terms");
+            }}
+            className="text-[11px] text-[#3F3F46] hover:text-[#71717A]">
+            Terms of Service
+          </button>
           <button
             onClick={async () => {
               const { openUrl } = await import("@tauri-apps/plugin-opener");

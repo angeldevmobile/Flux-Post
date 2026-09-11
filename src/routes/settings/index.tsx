@@ -1045,6 +1045,8 @@ function AboutSection() {
           { label: "GitHub",         desc: "Source code, issues and contributions",      url: "https://github.com/angeldevmobile/Flux-Post" },
           { label: "Releases",       desc: "Download installers for all platforms",       url: "https://github.com/angeldevmobile/Flux-Post/releases" },
           { label: "Report an issue",desc: "Found a bug? Open an issue on GitHub",       url: "https://github.com/angeldevmobile/Flux-Post/issues" },
+          { label: "Discussions",    desc: "Ask a question or suggest a feature",        url: "https://github.com/angeldevmobile/Flux-Post/discussions" },
+          { label: "Contributing",   desc: "Build Flux locally and open a pull request", url: "https://github.com/angeldevmobile/Flux-Post/blob/main/CONTRIBUTING.md" },
           { label: "License",        desc: "MIT License free to use and modify",        url: "https://github.com/angeldevmobile/Flux-Post/blob/main/LICENSE" },
         ].map((link, i, arr) => (
           <button key={link.label} onClick={() => openUrl(link.url)}
