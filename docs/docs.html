@@ -1076,6 +1076,7 @@
             </svg>
             Collections
           </button>
+          <button class="sidebar-item" onclick="show('inheritance')">Inherited settings</button>
           <button class="sidebar-item" onclick="show('environments')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -2574,25 +2575,6 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
           <p><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> creates a collection, and the <strong>+</strong> button
             in the Collections header does the same.</p>
 
-          <h2>Inherited settings</h2>
-          <p>Auth, headers and scripts can be set once on a collection or a folder instead of being repeated on every
-            request. Click the shield next to any collection or folder; it lights up when that level defines something.
-            A folder shows what it would inherit before you change anything.</p>
-          <ul>
-            <li><strong>The nearest level wins.</strong> Request over folder, closest folder over outer folder, folder
-              over collection.</li>
-            <li><strong>Auth is all or nothing.</strong> The nearest definition is used whole, never merged field by
-              field with an outer one, because a half-built credential is worse than none.</li>
-            <li><strong>Headers merge</strong>, matched case-insensitively, with the closest level overriding.</li>
-            <li><strong>Scripts concatenate</strong> from the outside in rather than overriding, so a collection-level
-              script can fetch a token and a folder-level one can use it.</li>
-            <li><strong>A folder set to <code>None</code> sends no auth</strong> even when the collection defines one.
-              Headers and scripts from outer levels still apply.</li>
-          </ul>
-          <p>The same cascade runs when you press Send, in the Collection Runner, on the Tests screen and in
-            <a href="#" onclick="show('cli');return false;">the CLI</a>.
-          </p>
-
           <h2>Request YAML schema</h2>
           <p>A collection saves everything the request builder holds, so reopening a request gives back what you
             built. Only <code>name</code> is required; anything unset is left out of the file.</p>
@@ -2783,6 +2765,33 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
         </section>
 
         <!-- ═══════════════ ENVIRONMENTS ═══════════════ -->
+                <!--   INHERITED SETTINGS   -->
+        <section class="doc-section" id="sec-inheritance">
+          <div class="page-eyebrow">Core Features</div>
+          <h1 class="page-title">Inherited settings</h1>
+          <p class="page-lead">Set auth, headers and scripts once on a collection or a folder instead of repeating
+            them on every request. Stop pasting the same bearer token into forty places, and change it in one.</p>
+
+          <p>Click the shield next to any collection or folder in the sidebar, or right-click it and choose
+            <strong>Inherited settings</strong>. The shield lights up when that level defines something, so you can see
+            at a glance where the auth comes from. A folder tells you what it would inherit before you change
+            anything.</p>
+          <ul>
+            <li><strong>The nearest level wins.</strong> Request over folder, closest folder over outer folder, folder
+              over collection.</li>
+            <li><strong>Auth is all or nothing.</strong> The nearest definition is used whole, never merged field by
+              field with an outer one, because a half-built credential is worse than none.</li>
+            <li><strong>Headers merge</strong>, matched case-insensitively, with the closest level overriding.</li>
+            <li><strong>Scripts concatenate</strong> from the outside in rather than overriding, so a collection-level
+              script can fetch a token and a folder-level one can use it.</li>
+            <li><strong>A folder set to <code>None</code> sends no auth</strong> even when the collection defines one.
+              Headers and scripts from outer levels still apply.</li>
+          </ul>
+          <p>The same cascade runs when you press Send, in the Collection Runner, on the Tests screen and in
+            <a href="#" onclick="show('cli');return false;">the CLI</a>.
+          </p>
+        </section>
+
         <section class="doc-section" id="sec-environments">
           <div class="page-eyebrow">Core Features</div>
           <h1 class="page-title">Environments</h1>
@@ -3067,8 +3076,11 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
         <section class="doc-section" id="sec-grpc">
           <div class="page-eyebrow">Protocols</div>
           <h1 class="page-title">gRPC</h1>
-          <p class="page-lead">Flux has a dedicated gRPC screen with support for proto files, server reflection, unary
-            invocations, metadata, and a persistent proto library.</p>
+          <p class="page-lead">Call a gRPC service the way you would call a REST endpoint. Useful when the service has no
+            HTTP gateway and <code>grpcurl</code> is the only other option, or when you want the call saved in the same
+            collection as the rest of the API.</p>
+          <p>Proto files, server reflection, unary and streaming calls, metadata, and a persistent proto library so a
+            <code>.proto</code> is imported once and reused.</p>
 
           <h2>Getting started</h2>
           <p>Click the <strong>gRPC</strong> icon in the NavRail (grid of squares). The screen is split into a left
@@ -3306,8 +3318,11 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
         <section class="doc-section" id="sec-loadtest">
           <div class="page-eyebrow">Tools</div>
           <h1 class="page-title">Load Test</h1>
-          <p class="page-lead">Fire a configurable number of concurrent requests against any endpoint and see latency
-            distribution, throughput, and error rates in real time.</p>
+          <p class="page-lead">Find out what an endpoint does under load before your users do. Run it before a deploy to
+            see whether the endpoint holds, or raise the concurrency until it starts to degrade and learn where the
+            ceiling is.</p>
+          <p>A configurable number of concurrent requests against any endpoint, with latency distribution, throughput
+            and error rate reported as it runs.</p>
 
           <h2>Configuration</h2>
           <table>

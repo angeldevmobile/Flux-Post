@@ -29,3 +29,6 @@ flux-cli/target/
 # Supabase CLI (estado local del enlace y del entorno de desarrollo)
 supabase/.temp/
 supabase/.branches/
+
+# Notas de trabajo: valoraciones internas y pendientes, no parte del proyecto
+notas.md
