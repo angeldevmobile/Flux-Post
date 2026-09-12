@@ -1,7 +1,7 @@
 # Team Workspaces. Plan de implementación
 
 > Documento de diseño. Estado: **propuesta**, sin implementar.
-> Contexto: Flux 0.2.0, ya en producción con usuarios reales.
+> Contexto: escrito para Flux 0.2.0. Ver §0.1 para lo que cambió en la 0.3.0.
 
 ---
 
@@ -17,6 +17,88 @@ el coste es del orden de meses y no de semanas.
 El diferenciador frente a Postman no es la paridad de funciones. Ahí ellos llevan una
 década de ventaja, sino que el workspace pueda vivir en **la infraestructura del propio
 cliente** (fase 8). Postman no puede ofrecer eso sin romper su negocio.
+
+---
+
+## 0.1 Revisión de premisas (0.3.0, septiembre 2026)
+
+> La §0 se escribió con Flux 0.2.0. La 0.3.0 cambió dos de sus premisas, así que
+> antes de empezar la Fase 2 conviene releer esto y confirmar o corregir la
+> decisión. No se toca la §0: queda como estaba, para no perder el razonamiento
+> original.
+
+### Qué cambió
+
+**Multi-raíz.** Flux mantiene varias carpetas de colecciones abiertas a la vez,
+así que una colección puede vivir dentro del repositorio cuya API prueba y
+ramificarse, revisarse y clonarse con el código. La §0 descarta "el camino barato
+(compartir vía repositorio de GitHub)", pero ese camino acaba de dejar de ser
+incómodo: ya no obliga a meter todas las colecciones bajo un mismo padre.
+
+**Herencia y organización.** El auth, los headers y los scripts se definen una vez
+por colección o carpeta, y la barra lateral permite renombrar, crear, mover y
+borrar. Dos cosas que un equipo necesita antes que cualquier función de
+colaboración, y que ya no bloquean nada.
+
+**Login opcional.** La cuenta dejó de ser obligatoria. Eso separa dos cosas que
+antes iban juntas: usar Flux y tener identidad en el servidor. Un equipo puede
+compartir sin que nadie cree cuenta.
+
+### Lo que ya funciona para un equipo
+
+Compartir colecciones **ya es posible hoy**, por GitHub Sync o simplemente
+commiteando la carpeta. Lo que no funciona bien es la edición concurrente.
+
+| Problema real de un equipo | Lo resuelve | Coste |
+|---|---|---|
+| El diff de un PR es ilegible | file-per-request | ~1 semana |
+| Dos personas editan la misma colección y chocan en un fichero enorme | file-per-request | incluido |
+| Ver el cambio del otro al instante | Fases 2 a 6 | meses |
+| Invitar por email, roles, permisos | Fases 2 a 4 | meses |
+| Compartir con quien no usa git (QA, producto) | Fases 2 a 4 | meses |
+| Secretos compartidos y cifrados | Fase 5 | meses |
+
+### La tensión con el principio nº 1
+
+El principio dice: *"la granularidad del conflicto define la granularidad del
+modelo. Si dos personas pueden editar dos requests a la vez sin pisarse, el
+request es una fila"*.
+
+Es correcto, y **file-per-request es la misma observación con otra
+implementación**: si el request es la unidad de conflicto, es un fichero. Git ya
+sabe fusionar ficheros distintos sin ayuda, y el equipo ya lo tiene instalado.
+
+La Fase 3, descrita en el propio documento como "el grueso del trabajo", compra
+esa misma granularidad construyendo el servidor que la arbitra.
+
+### Qué habría que decidir antes de la Fase 2
+
+1. **¿Quién es el equipo?** Si son desarrolladores que ya usan git, la ruta de
+   ficheros les da lo esencial en una semana. Si incluye a alguien que no va a
+   clonar un repositorio, la nube es la única respuesta y el plan sigue en pie.
+
+2. **¿Hay demanda concreta?** Una persona esperando la función cambia el cálculo.
+   Una hipótesis, no.
+
+3. **¿Qué dicen los números?** La 0.3.0 es la primera versión que puede medir
+   instalaciones reales: hasta ahora el muro de login hacía que la mayoría no
+   llegara al código que reporta. Las funciones de equipo monetizan usuarios que
+   ya existen, no los crean.
+
+### Recomendación
+
+Hacer **file-per-request primero**, por este orden de razones:
+
+- Sirve también al usuario individual: diffs limpios, sin reordenaciones.
+- Es prerrequisito que se querría igual en cualquier escenario.
+- Permite que un equipo colabore de verdad **ya**, con su git, lo que valida si
+  la colaboración es la demanda antes de invertir meses en arbitrarla.
+- Si después resulta que hace falta la nube, nada de lo hecho se tira.
+
+El diferenciador que sostiene la §0 (el workspace en la infraestructura del
+propio cliente) sigue siendo válido y sigue sin tener competencia. Pero es la
+Fase 8, y llegar hasta ahí sin saber si alguien quiere la Fase 4 es apostar
+meses contra una hipótesis.
 
 ---
 
