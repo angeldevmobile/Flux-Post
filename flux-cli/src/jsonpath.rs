@@ -38,7 +38,7 @@ fn walk(segments: &[&str], data: &Value) -> Option<String> {
         }
 
         if *seg == "*" {
-            let Some(items) = current.as_array() else { return None };
+            let items = current.as_array()?;
             // El resto de la ruta se proyecta sobre cada elemento:
             // `[*].id` -> "1, 2". Un elemento que no la cumple deja hueco.
             let rest = &segments[i + 1..];
@@ -59,14 +59,8 @@ fn walk(segments: &[&str], data: &Value) -> Option<String> {
 
         // Un segmento numerico indexa solo si lo que hay es un array.
         current = match (seg.parse::<usize>(), current) {
-            (Ok(idx), Value::Array(items)) => match items.get(idx) {
-                Some(v) => v,
-                None => return None,
-            },
-            (_, Value::Object(map)) => match map.get(*seg) {
-                Some(v) => v,
-                None => return None,
-            },
+            (Ok(idx), Value::Array(items)) => items.get(idx)?,
+            (_, Value::Object(map)) => map.get(*seg)?,
             _ => return None,
         };
     }
