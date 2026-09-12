@@ -4,6 +4,8 @@ One desktop app instead of four. API client, mock server, load tester and gRPC c
 
 Flux is a local-first API client built with Tauri and React. Under 30 MB RAM, native performance, no Electron. Collections are plain YAML you can commit next to the code they test.
 
+![Flux: send a request, start a mock server and run a load test, without leaving the app](docs/demo-flux.gif)
+
 ---
 
 ## Why Flux
@@ -18,6 +20,22 @@ Flux has all four, and they share your collections, environments and variables:
 | **Load test**: concurrent runner, P50/P95/P99, throughput, latency histogram | k6, wrk, ab |
 | **gRPC**: `.proto` import, server reflection, unary and streaming | grpcurl |
 | **WebSocket and SSE**: full duplex log, streaming viewer | wscat, curl |
+
+### The load test is a real load test
+
+100 requests, 10 concurrent, with P50 / P95 / P99, throughput and a latency histogram. No `k6` script, no second tool.
+
+![Load test report: 100 of 100 completed, 0% errors, P95 390ms, 69.7 req/s, and a latency distribution histogram](docs/readme-loadtest.png)
+
+### The mock server runs inside the app
+
+Define endpoints with their status, body and delay, press Start, and `http://localhost:3001` is live. Including the errors you cannot ask a real API to produce on demand.
+
+![Mock server running on port 3001 with three endpoints returning 200, 201 and 404](docs/readme-mock.png)
+
+### And it is still an API client
+
+![Flux main view: a GET request returning 200 OK in 486ms, with the JSON response and two collections folders open](docs/readme-hero.png)
 
 **And the things a client should have already.** Collections as plain YAML in your repo, folder-level auth and headers, a CLI runner that behaves exactly like the app, declarative assertions without scripts, and AI that explains a 4xx and offers a one-click fix.
 
