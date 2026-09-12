@@ -8,8 +8,8 @@
  *
  * `dirty` responde a "¿puedo adoptar el remoto sin perder nada?". Se marca
  * ANTES de intentar el push y solo se limpia cuando el servidor confirma, de
- * modo que cualquier interrupcion —sin red, la app cerrada a media escritura,
- * un conflicto— deja la marca puesta. El error cae siempre del lado de
+ * modo que cualquier interrupcion (sin red, la app cerrada a media escritura,
+ * un conflicto) deja la marca puesta. El error cae siempre del lado de
  * preguntar en vez del de pisar.
  *
  * Vive aqui y no en el YAML de la coleccion a proposito. Esos ficheros se

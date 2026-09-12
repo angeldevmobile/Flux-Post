@@ -116,7 +116,7 @@ pub async fn sse_connect(
                                     current_event = "message".to_string();
                                     current_data.clear();
                                 } else if line.starts_with(':') {
-                                    // SSE comment — ignore
+                                    // SSE comment. Ignore
                                 } else if let Some(colon_pos) = line.find(':') {
                                     let field = &line[..colon_pos];
                                     let value_start = colon_pos + 1;

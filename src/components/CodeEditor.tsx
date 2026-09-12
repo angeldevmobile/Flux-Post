@@ -133,7 +133,7 @@ export function CodeEditor({
       className={`flex flex-col flex-1 min-h-0 overflow-hidden${noBorder ? "" : " rounded-lg"}`}
       style={noBorder ? {} : { border: "1px solid var(--color-border)" }}
     >
-      {/* AI toolbar — shown only when onAiEdit is provided and not readOnly */}
+      {/* AI toolbar. Shown only when onAiEdit is provided and not readOnly */}
       {onAiEdit && !readOnly && (
         <div
           className="flex items-center shrink-0 gap-1 px-2"

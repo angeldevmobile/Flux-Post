@@ -58,6 +58,7 @@ const PLATFORMS = new Set(["windows", "macos", "linux", "unknown"]);
  */
 const ALLOWED_TYPES = new Set([
   "app_open",
+  "app_ready",
   "route_view",
   "request_send",
   "request_perf",

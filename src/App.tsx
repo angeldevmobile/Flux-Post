@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Toaster, toast } from "sonner";
 import { NavRail, type Route } from "@/components/NavRail";
 import { useAppearance } from "@/hooks/useAppearance";
@@ -63,7 +63,7 @@ function AppShell() {
     trackEvent("route_view", { route });
   }, [route]);
 
-  // Check for updates 4s after mount — non-blocking, silent on failure
+  // Check for updates 4s after mount. Non-blocking, silent on failure
   useEffect(() => {
     const t = setTimeout(async () => {
       const update = await checkForUpdates();
@@ -134,7 +134,22 @@ function AppShell() {
 
 export default function App() {
   const [screen, setScreen] = useState<AuthScreen>("loading");
+  /**
+   * `app_open` se dispara al arrancar, antes de saber si hay sesion, asi que no
+   * dice donde acabo el usuario. `app_ready` se manda una sola vez cuando la
+   * pantalla ya esta decidida, y con eso se puede separar cuanta gente entra con
+   * cuenta, cuanta sin ella, y cuanta se queda en el login.
+   */
+  const readyReported = useRef(false);
   const { setSession, clearSession } = useUserStore();
+
+  useEffect(() => {
+    if (screen === "loading" || readyReported.current) return;
+    readyReported.current = true;
+    trackEvent("app_ready", {
+      mode: screen === "app" ? (isLocalMode() ? "local" : "account") : "signin",
+    });
+  }, [screen]);
 
   useEffect(() => {
     initCrashReporting();
@@ -150,7 +165,7 @@ export default function App() {
         return;
       }
 
-      // If "remember me" is off, always start at login — no session restore
+      // If "remember me" is off, always start at login. No session restore
       if (!rememberMe) {
         await clearSessionDb().catch(() => {});
         await supabase.auth.signOut({ scope: "local" }).catch(() => {});
@@ -190,7 +205,7 @@ export default function App() {
             setScreen("app");
             return;
           }
-          // Token expired and couldn't refresh — clear backup
+          // Token expired and couldn't refresh. Clear backup
           await clearSessionDb();
         }
       } catch {

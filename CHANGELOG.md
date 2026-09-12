@@ -1,14 +1,14 @@
 # Changelog
 
 All notable changes to Flux are documented here.  
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — versioning follows [Semantic Versioning](https://semver.org/).
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/): versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
 ## [Unreleased]
 
 ### Added
-- Collections can be organised from the sidebar. Right-click a collection, a folder or a request to rename it, create a request or folder inside it, duplicate, move a request to another folder, or delete. Renaming happens inline. Until now the only way to rename a folder, create one, delete a single request or move anything was to edit the YAML by hand. The four actions the store already exposed only ever looked at the top level — `deleteRequest` filtered the collection's own requests and ignored the folders — so they would have done nothing for anything nested; the operations now live in one tested module that works at any depth.
+- Collections can be organised from the sidebar. Right-click a collection, a folder or a request to rename it, create a request or folder inside it, duplicate, move a request to another folder, or delete. Renaming happens inline. Until now the only way to rename a folder, create one, delete a single request or move anything was to edit the YAML by hand. The four actions the store already exposed only ever looked at the top level. `deleteRequest` filtered the collection's own requests and ignored the folders, so they would have done nothing for anything nested; the operations now live in one tested module that works at any depth.
 - A request can be moved to another collection, not just to another folder of its own. "Move to…" asks which collection first and then which folder of it. The destination file is written before the source one, so a failure half way through leaves the request in both places rather than in neither.
 - `Ctrl+Shift+N` creates a collection. The keyboard shortcuts screen had been advertising it with nothing behind it.
 
@@ -16,31 +16,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - Saving a collection rewrote its headers, query parameters, form fields and gRPC metadata in a different order every time, because they were `HashMap`s and Rust randomises their iteration order per process. With the collection in a repository that meant a diff on every save without having changed anything, and merge conflicts on lines nobody touched. They are `BTreeMap`s now: same file, byte for byte, every time.
 
 ### Added
+- An `app_ready` event reports where a launch ended up: with an account, without one, or still on the sign-in screen. `app_open` fires before the session has been restored, so it could never say that, which made it impossible to tell a decline of the telemetry prompt from an install that never got past the login wall. Only the outcome is sent, nothing about who.
+
+### Added
 - There are Terms of Service. They cover the parts that are not simply the software on your machine: the optional account, cloud sync and the AI free tier, including that the free tier is a beta courtesy whose limits can change. The software itself stays under the MIT licence, which wins wherever the two disagree.
-- Flux opens without an account. "Use Flux without an account" on the sign-in screen goes straight in and the choice is remembered; you can sign in later from Settings or from the avatar menu. Until now the only way into the app was through the sign-in screen, which contradicted what the site and the docs said and meant anyone who did not want an account left at the first screen — a part of the funnel nobody could see, since both the telemetry and the update check run inside the app. Everything local works without an account: requests, collections, environments, scripts, tests, the mock server, load tests, gRPC, WebSocket and SSE. Cloud sync and the free AI tier need one, and the AI also works without one if you bring your own Claude key.
+- Flux opens without an account. "Use Flux without an account" on the sign-in screen goes straight in and the choice is remembered; you can sign in later from Settings or from the avatar menu. Until now the only way into the app was through the sign-in screen, which contradicted what the site and the docs said and meant anyone who did not want an account left at the first screen. A part of the funnel nobody could see, since both the telemetry and the update check run inside the app. Everything local works without an account: requests, collections, environments, scripts, tests, the mock server, load tests, gRPC, WebSocket and SSE. Cloud sync and the free AI tier need one, and the AI also works without one if you bring your own Claude key.
 - The documentation described a collection as a directory tree with one file per request and a `flux.yml` alongside it, which is not how Flux stores anything. A collection is one YAML file with its folders inside. Anyone following that page would have built a layout Flux does not read.
-- The links in Settings labelled "Open docs" and "Documentation — full user guide" opened the website's front page rather than the documentation, and pointed at the `github.io` address, which only reaches the site through a redirect. Both go to `fluxapi.dev/docs.html` now, and the front page has its own entry.
+- The links in Settings labelled "Open docs" and "Documentation. Full user guide" opened the website's front page rather than the documentation, and pointed at the `github.io` address, which only reaches the site through a redirect. Both go to `fluxapi.dev/docs.html` now, and the front page has its own entry.
 - The "Terms of Service" and "Privacy Policy" links on the sign-in and sign-up screens were buttons with no handler: they looked like the usual legal links and did nothing. Both now open the documentation. Documentation sections can also be linked directly by URL, which is what makes them land on the right page.
 - The AI panel under a response offered "Generate Tests" and "Debug with AI" even when neither an account nor a Claude key was available, because it was shown from the settings toggles rather than from whether the AI could actually run. It did not matter while signing in was mandatory; now it can happen, so the panel says what is missing and opens Settings instead of offering a button that fails. The Tests screen, the request panel and the mock server already did this.
 - The avatar and the Settings screen say plainly when there is no account rather than showing an empty profile and a sign-out that does nothing, and the sleep lock no longer sends someone who chose not to have an account to the sign-in screen.
 
 ### Added
-- Flux can keep several collections folders open at once. It used to hold a single directory, so every collection had to live under one shared parent — which rules out the arrangement that makes collections useful in a team: one inside each repository, branching, reviewed and cloned with the code it tests. "Add folder" now appends instead of replacing, each open folder can be closed without touching its files, and every collection remembers which folder it came from so saving writes back there. The old single-folder setting is migrated on first launch. When two folders hold a file with the same name the second collection's id is prefixed with its folder, so ids are unchanged for anyone with a single folder and cloud sync does not see new collections after updating.
+- Flux can keep several collections folders open at once. It used to hold a single directory, so every collection had to live under one shared parent, which rules out the arrangement that makes collections useful in a team: one inside each repository, branching, reviewed and cloned with the code it tests. "Add folder" now appends instead of replacing, each open folder can be closed without touching its files, and every collection remembers which folder it came from so saving writes back there. The old single-folder setting is migrated on first launch. When two folders hold a file with the same name the second collection's id is prefixed with its folder, so ids are unchanged for anyone with a single folder and cloud sync does not see new collections after updating.
 - Auth, headers and scripts can now be set once on a collection or a folder and every request inside inherits them. The shield button in the sidebar opens the editor; a folder shows what it would inherit before you change anything. The nearest level wins, a folder set to `None` stops inheriting even if the collection defines auth, and scripts concatenate from the outside in rather than overriding. The same cascade runs in the app and in `flux run`, covered by tests on both sides so a suite cannot pass locally and fail in CI.
 - `flux run --reporter junit --output report.xml` writes JUnit XML, which is what GitLab CI, Jenkins and the GitHub Actions reporters read. One `<testcase>` per assertion, so a failure points at the assertion instead of at the whole collection; a request that never answered is reported as an `<error>` rather than a failure.
 - `flux run --env-file .env` reads variables from a file, repeatable, with `--env` still winning so a pipeline can override one value inline.
 - `flux run --folder Admin/Users` runs only one subtree of a collection.
 
 ### Fixed
-- `flux run` did not apply variable extractors, and threw away whatever a post-response script wrote, so a chained collection — log in, capture the token, use it — worked in the app and fell apart in CI, sending the rest of the batch unauthenticated. The JSONPath evaluator is now ported to Rust with the app's test table mirrored case by case, captured values and script-set variables carry forward to the following requests, and a request with no assertions still runs when it has extractors or scripts, since that is exactly what a login step looks like.
-- A script that threw was only written to the console panel, so in the app the request went out silently missing whatever the script was supposed to add. A broken script now shows as a toast when you press Send and as a failed assertion in the Collection Runner and the Tests screen — the same verdict `flux run` gives. The request is still sent and the response still shown, which is the point of running it in the UI.
-- The Collection Runner and the Tests screen sent requests but never ran anything around them: no pre/post scripts and no variable extractors. The most ordinary suite there is — log in, capture the token, use it in the requests that follow — therefore worked only by pressing Send request by request, and silently sent the rest unauthenticated in a batch run. Both screens now run a request end to end through one shared path: inherited and own scripts, variable interpolation, auth, extractors, and the captured values written back to the active environment so the next request sees them. A failing `pm.test()` now shows as a failed assertion instead of vanishing.
-- The request panel ran the request's own scripts but not the ones inherited from its collection or folder, so a collection-level script applied in `flux run` and did nothing when you pressed Send. All four paths — Send, the runner, the Tests screen and the CLI — now concatenate collection, folder and request scripts in that order.
-- `pm.environment.set()` was not visible to a later `pm.environment.get()` in the same script. `set` wrote only to the outgoing mutations while `get` read the values the script started with, so the common `set` a signature then read it back to build a header returned an empty string — in the app only, since the CLI's shim always wrote to both. Signing and correlation-id scripts worked in CI and quietly produced empty headers in the app.
-- A global variable overrode the environment's variable of the same name, which is backwards and made environments unable to specialise anything. Selecting a **Local** environment that set `BASE_URL` did nothing if a global `BASE_URL` existed, so requests kept going to whatever the global pointed at — production, typically. The same ordering broke the token-refresh pattern the README documents: `pm.environment.set("ACCESS_TOKEN", …)` writes into the active environment, so a stale global of that name silently won and the request went out with the old token. The order is now environment over global, which is what the Environments page has always documented, what the Load Test screen already did, and what Postman, Insomnia and Bruno do. If you have the same name in both scopes on purpose, the environment's value now wins.
-- The CLI did not support the dynamic built-ins, so `{{$guid}}`, `{{$timestamp}}`, `{{$isoTimestamp}}` and `{{$randomInt}}` were sent to the server as those literal characters. A request using `{{$guid}}` as an idempotency key or `{{$timestamp}}` in a signature worked in the app and went out malformed from CI — and could still report a pass, because a server will often accept the literal string as a plausible-looking value. The four are now implemented in the CLI with the same semantics as the app, each occurrence resolved separately.
+- `flux run` did not apply variable extractors, and threw away whatever a post-response script wrote, so a chained collection. Log in, capture the token, use it. Worked in the app and fell apart in CI, sending the rest of the batch unauthenticated. The JSONPath evaluator is now ported to Rust with the app's test table mirrored case by case, captured values and script-set variables carry forward to the following requests, and a request with no assertions still runs when it has extractors or scripts, since that is exactly what a login step looks like.
+- A script that threw was only written to the console panel, so in the app the request went out silently missing whatever the script was supposed to add. A broken script now shows as a toast when you press Send and as a failed assertion in the Collection Runner and the Tests screen. The same verdict `flux run` gives. The request is still sent and the response still shown, which is the point of running it in the UI.
+- The Collection Runner and the Tests screen sent requests but never ran anything around them: no pre/post scripts and no variable extractors. The most ordinary suite there is. Log in, capture the token, use it in the requests that follow. Therefore worked only by pressing Send request by request, and silently sent the rest unauthenticated in a batch run. Both screens now run a request end to end through one shared path: inherited and own scripts, variable interpolation, auth, extractors, and the captured values written back to the active environment so the next request sees them. A failing `pm.test()` now shows as a failed assertion instead of vanishing.
+- The request panel ran the request's own scripts but not the ones inherited from its collection or folder, so a collection-level script applied in `flux run` and did nothing when you pressed Send. All four paths. Send, the runner, the Tests screen and the CLI. Now concatenate collection, folder and request scripts in that order.
+- `pm.environment.set()` was not visible to a later `pm.environment.get()` in the same script. `set` wrote only to the outgoing mutations while `get` read the values the script started with, so the common `set` a signature then read it back to build a header returned an empty string. In the app only, since the CLI's shim always wrote to both. Signing and correlation-id scripts worked in CI and quietly produced empty headers in the app.
+- A global variable overrode the environment's variable of the same name, which is backwards and made environments unable to specialise anything. Selecting a **Local** environment that set `BASE_URL` did nothing if a global `BASE_URL` existed, so requests kept going to whatever the global pointed at. Production, typically. The same ordering broke the token-refresh pattern the README documents: `pm.environment.set("ACCESS_TOKEN", …)` writes into the active environment, so a stale global of that name silently won and the request went out with the old token. The order is now environment over global, which is what the Environments page has always documented, what the Load Test screen already did, and what Postman, Insomnia and Bruno do. If you have the same name in both scopes on purpose, the environment's value now wins.
+- The CLI did not support the dynamic built-ins, so `{{$guid}}`, `{{$timestamp}}`, `{{$isoTimestamp}}` and `{{$randomInt}}` were sent to the server as those literal characters. A request using `{{$guid}}` as an idempotency key or `{{$timestamp}}` in a signature worked in the app and went out malformed from CI, and could still report a pass, because a server will often accept the literal string as a plausible-looking value. The four are now implemented in the CLI with the same semantics as the app, each occurrence resolved separately.
 - CLI variable substitution now runs in a single pass, like the app's. It used to walk the variable map replacing one key at a time, so a value that itself contained `{{OTHER}}` could be expanded a second time depending on the map's iteration order.
-- `{{VAR}}` was not interpolated inside an assertion. `json.token == "{{TOKEN}}"` compared the response against the literal eight characters `{{TOKEN}}` and failed every time, while the header on the same request went out correctly resolved — so the assertion looked wrong when the request was right. Variables now resolve on both sides of the operator, and inside a `contains` needle. The substitution happens after the operator has been read, so a variable whose value contains `==` cannot change how the line is parsed. The reported assertion keeps the `{{VAR}}` as written: substituting it would put the value of a secret variable into CI logs and request history.
+- `{{VAR}}` was not interpolated inside an assertion. `json.token == "{{TOKEN}}"` compared the response against the literal eight characters `{{TOKEN}}` and failed every time, while the header on the same request went out correctly resolved, so the assertion looked wrong when the request was right. Variables now resolve on both sides of the operator, and inside a `contains` needle. The substitution happens after the operator has been read, so a variable whose value contains `==` cannot change how the line is parsed. The reported assertion keeps the `{{VAR}}` as written: substituting it would put the value of a secret variable into CI logs and request history.
 - The collection runner did not interpolate variables at all. A collection with `baseUrl: {{BASE_URL}}` was sent with the braces still in it, so every request in a batch run went to a nonsense URL. The runner now resolves variables in the URL, headers, query parameters and body, like the rest of the app.
 - The Tests screen joined an absolute request URL onto the collection's `baseUrl`, producing `https://base/https://other/x`. It carried its own copy of the URL builder that, unlike the shared one, did not treat an absolute URL as absolute.
 - The collection runner sent every request unauthenticated. Turning the configured auth into a header only happened inside the request panel's own store, which the runner does not use, so a batch run of a collection with auth silently exercised the unauthenticated paths and reported whatever came back. The conversion now lives in one place shared by the panel, the runner and the tests screen. The runner was also dropping the request's saved query parameters.
@@ -50,29 +53,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - `flux run` appended a second value instead of replacing when the same header was set at more than one level, so a request could not override a header coming from its folder.
 
 ### Changed
-- Running a saved request — inherited and own scripts, variable interpolation, auth, extractors — now happens in one shared function used by the Collection Runner and the Tests screen, rather than each screen sending the request on its own and skipping the rest.
-- Building the outgoing request from a saved one — inheritance, auth, variable interpolation and query parameters — now happens in a single tested function shared by the collection runner and the Tests screen. Each had its own partial copy, and neither did the whole job.
+- Running a saved request. Inherited and own scripts, variable interpolation, auth, extractors. Now happens in one shared function used by the Collection Runner and the Tests screen, rather than each screen sending the request on its own and skipping the rest.
+- Building the outgoing request from a saved one. Inheritance, auth, variable interpolation and query parameters. Now happens in a single tested function shared by the collection runner and the Tests screen. Each had its own partial copy, and neither did the whole job.
 
 ---
 
-## [0.2.1] — 2026-09-05
+## [0.2.1]: 2026-09-05
 
 ### Security
-- Request history no longer stores the value of a secret variable. The URL was saved after variable interpolation, so sending `?api_key={{API_KEY}}` wrote the literal key into local history and, with sync enabled, into the cloud — masked in the environments panel, in plain text in the table. Secret values are now rewritten back to `{{VAR}}` before the entry is written, in one place both the HTTP and gRPC paths go through. Values shorter than four characters are left alone: they occur throughout ordinary URLs and masking them would make history unreadable without protecting anything that was really a secret.
+- Request history no longer stores the value of a secret variable. The URL was saved after variable interpolation, so sending `?api_key={{API_KEY}}` wrote the literal key into local history and, with sync enabled, into the cloud. Masked in the environments panel, in plain text in the table. Secret values are now rewritten back to `{{VAR}}` before the entry is written, in one place both the HTTP and gRPC paths go through. Values shorter than four characters are left alone: they occur throughout ordinary URLs and masking them would make history unreadable without protecting anything that was really a secret.
 - Entries written before this version can still hold a secret value. Cloud history will be cleared once this version is in wide use; the history on your own machine is not touched, and nothing re-uploads it.
 - Usage telemetry no longer sends the request URL. `request_send` reported `resolved.url`, which is the URL *after* variable interpolation, so a request to `?api_key={{API_KEY}}` sent the literal key to the analytics table. Only the method, the scheme and whether the host was localhost are reported now. The hostname is dropped too: an internal host like `api.staging.acme.local` identifies the user's employer.
 - Crash reports are redacted before leaving the machine. URLs, home-directory paths (which carry the user's real name), e-mail addresses, credential-shaped strings and long tokens are stripped by a single function covered by tests.
 - The telemetry reporting views were readable by anyone. They were created over tables with row-level security assuming they would inherit it; a Postgres view runs with its *owner's* privileges, and the owner bypasses RLS. `telemetry_crashes` served real crash messages to anyone holding the anon key, which ships inside every Flux binary. Fixed the same day it was introduced, before any release carried it.
 
 ### Fixed
-- Editing the same collection on two machines no longer loses one of the edits. Saving uploaded the whole collection and the last write won, silently and unrecoverably — and the pull side made it worse by discarding the cloud copy whenever a collection with that id already existed locally, so the other machine's change was never even seen. Saving now declares which version it started from and the server rejects it if someone else got there first; a conflict opens a side-by-side diff where you choose which version survives. When the cloud is ahead and this machine has nothing pending, the change is simply applied.
+- Editing the same collection on two machines no longer loses one of the edits. Saving uploaded the whole collection and the last write won, silently and unrecoverably, and the pull side made it worse by discarding the cloud copy whenever a collection with that id already existed locally, so the other machine's change was never even seen. Saving now declares which version it started from and the server rejects it if someone else got there first; a conflict opens a side-by-side diff where you choose which version survives. When the cloud is ahead and this machine has nothing pending, the change is simply applied.
 - `updated_at` on synced collections is now set by the server. It was sent by the client, so a machine with a skewed clock always won or always lost.
-- Anonymous usage telemetry was being discarded in silence. The row-level security policy only allowed inserts `to authenticated`, and signing in to Flux is optional, so the majority of installations — which never authenticate — had every event rejected by Postgres and swallowed by an empty `catch`. Months of data were lost without a single symptom. Telemetry now goes through an edge function that validates the payload and writes with a service role, and the tables stay closed to the anon role.
+- Anonymous usage telemetry was being discarded in silence. The row-level security policy only allowed inserts `to authenticated`, and signing in to Flux is optional, so the majority of installations, which never authenticate. Had every event rejected by Postgres and swallowed by an empty `catch`. Months of data were lost without a single symptom. Telemetry now goes through an edge function that validates the payload and writes with a service role, and the tables stay closed to the anon role.
 
 ### Added
-- Flux can now measure how it is actually used, not just how many people visit the website. An anonymous per-installation identifier makes it possible to count active installations and retention instead of loose event counts. It identifies a copy of Flux, not a person: it is a random UUID, is not linked to a Flux account, and clearing local data resets it. Off by default — Settings → Data & Privacy → Send usage analytics.
+- Flux can now measure how it is actually used, not just how many people visit the website. An anonymous per-installation identifier makes it possible to count active installations and retention instead of loose event counts. It identifies a copy of Flux, not a person: it is a random UUID, is not linked to a Flux account, and clearing local data resets it. Off by default. Settings → Data & Privacy → Send usage analytics.
 - Update checks now go through Flux's own endpoint, which serves the same manifest proxied from GitHub and counts the installation as active. GitHub remains configured as a second endpoint, so if the service is down updates keep working. The check stores a salted hash of the IP and user agent, never the address itself; the salt rotates daily and is discarded after two days. Documented in the app's Data & Privacy page.
-- `npm run stats:app` reports real usage — active installations, retention, which sections of the app get opened, and grouped crashes.
+- `npm run stats:app` reports real usage. Active installations, retention, which sections of the app get opened, and grouped crashes.
 
 ### Changed
 - Replaying a request from history now restores the variable rather than the value it resolved to, so the request goes out with the current credential instead of whatever was valid when the entry was recorded
@@ -80,7 +83,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## [0.2.0] — 2026-08-17
+## [0.2.0]: 2026-08-17
 
 ### Added
 - The CLI runs pre and post-request scripts. It embeds a JavaScript engine and the same `pm` shim the app uses, so a collection that authenticates through a pre-request script now works in CI instead of being skipped with a warning. `pm.test()` results count as assertions, so a failing Postman-style test fails the build, and `console.log` output appears under each request.
@@ -97,36 +100,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 ### Security
 - A Content Security Policy is now applied to the webview, which had none. Everything loads from the app itself; the only outbound destination allowed from the frontend is your own Supabase project, and `object-src`, `frame-ancestors` and `base-uri` are locked down. `unsafe-eval` is kept deliberately: pre and post-request scripts run through `new Function()`, and without it the whole scripting feature would fail in release builds only.
 - Fonts are served from the bundle instead of a third-party CDN. Flux no longer contacts fonts.bunny.net on launch, typography works offline, and the policy above needs no exception for it.
-- An assertion whose left side was not recognised resolved to null, so `anything.at.all == null` passed against any response — including in CI, where the run exited 0. Unknown paths now fail with `unknown path '…'`. Pipelines that were silently green may start reporting real failures.
+- An assertion whose left side was not recognised resolved to null, so `anything.at.all == null` passed against any response, including in CI, where the run exited 0. Unknown paths now fail with `unknown path '…'`. Pipelines that were silently green may start reporting real failures.
 
 ### Changed
 - One assertion engine, one language. The collection runner, the Tests screen and the CLI used three different implementations: `json.token == null` passed in one and failed in another, `duration < 500` only worked in two of the three. All three now evaluate through the same engine, `json.` and `body.` are interchangeable, and `headers.x` and `headers["x"]` both work. A shared contract table is asserted by both the TypeScript and Rust test suites so they cannot drift apart again.
-- Assertion failures now say what they got (`expected status == 404 — got 200`) instead of a bare value
+- Assertion failures now say what they got (`expected status == 404. Got 200`) instead of a bare value
 - `body_type` in collection files is now written as `bodyType`, matching the rest of the schema; the old spelling is still read
 - The model selector is hidden on the free tier, which runs on a fixed model, instead of accepting a choice that was silently ignored
 
 ---
 
-## [0.1.7] — 2026-08-15
+## [0.1.7]: 2026-08-15
 
 ### Added
-- `QUERY` method support (RFC 10008) — safe and cacheable like `GET`, but with a request body
+- `QUERY` method support (RFC 10008): safe and cacheable like `GET`, but with a request body
 - gRPC streaming: server-streaming, client-streaming and bidirectional calls, with a live message log, per-message send, end-of-stream and cancel
 - Nested folders in collections, and a stable `id` on every request and folder
-- Unit tests for the request core — JSONPath extraction, assertion evaluation, Postman/OpenAPI/cURL import and export, and proto rendering (92 cases)
+- Unit tests for the request core. JSONPath extraction, assertion evaluation, Postman/OpenAPI/cURL import and export, and proto rendering (92 cases)
 - Rust tests for collection YAML round-tripping, gRPC descriptors and the proto library on disk (31 cases)
 - `CI` workflow: typecheck, tests, build, clippy and `flux-cli` build on every push and pull request
 - `npm run test`, `npm run test:watch` and `npm run typecheck` scripts
 
 ### Security
-- Selecting a collection request, replaying from history, or opening a result from the command palette carried the previously open request's auth, scripts and extractors over to the new one — sending credentials to whatever host was loaded next. All three now reset the request state first.
+- Selecting a collection request, replaying from history, or opening a result from the command palette carried the previously open request's auth, scripts and extractors over to the new one. Sending credentials to whatever host was loaded next. All three now reset the request state first.
 
 ### Fixed
 - Every singular proto3 field was reported as `optional`, so the generated proto marked the whole message optional; only fields declared with the keyword are flagged now (proto2 labels handled separately)
 - Enum fields rendered as the literal word `enum` in the proto view instead of their type name
 - Collection `description` was parsed but silently dropped on every save
 - Request ids were positional, so deleting or reordering renumbered every request below; ids are now written to the collection file and stay stable
-- cURL import dropped any body containing double quotes — which is most JSON — and left the method as `GET`
+- cURL import dropped any body containing double quotes, which is most JSON, and left the method as `GET`
 - cURL import could not find the URL unless it came first, so Flux could not re-import its own exported snippets
 - JSONPath `$.items[*].field` returned whole objects instead of projecting the field over the array
 - Assertions: an *absent* JSON field failed `== null` while an explicitly-null one passed; the branch written to handle it was unreachable
@@ -139,7 +142,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## [0.1.6] — 2026-06-07
+## [0.1.6]: 2026-06-07
 
 ### Added
 - GitHub integration: browse repositories, sync collections to and from YAML files, commit from inside the app
@@ -152,7 +155,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## [0.1.5] — 2026-05-30
+## [0.1.5]: 2026-05-30
 
 ### Added
 - Screenshot gallery and animated demo on the docs site
@@ -162,32 +165,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## [0.1.4] — 2026-05-30
+## [0.1.4]: 2026-05-30
 
 ### Fixed
-- Add `createUpdaterArtifacts: true` to bundle config — enables `.sig` generation for auto-updater
+- Add `createUpdaterArtifacts: true` to bundle config. Enables `.sig` generation for auto-updater
 - Releases now publish automatically (non-draft)
 
 ---
 
-## [0.1.3] — 2026-05-30
+## [0.1.3]: 2026-05-30
 
 ### Fixed
-- Regenerate signing keypair and update public key — restores auto-updater signature verification
+- Regenerate signing keypair and update public key. Restores auto-updater signature verification
 - Correct pubkey in `tauri.conf.json` to match new signing credentials
 
 ---
 
-## [0.1.2] — 2026-05-29
+## [0.1.2]: 2026-05-29
 
 ### Fixed
 - Move bundle targets to the correct level in `tauri.windows.conf.json`
-- Skip WiX/MSI on Windows and use NSIS only — WiX ICE rejects bundled `.exe` resources
+- Skip WiX/MSI on Windows and use NSIS only. WiX ICE rejects bundled `.exe` resources
 - Build `flux-cli` before `tauri bundle` in CI and normalize binary path across platforms
 
 ---
 
-## [0.1.1] — 2026-05-28
+## [0.1.1]: 2026-05-28
 
 ### Added
 - CLI runner integration bundled as a resource inside the app
@@ -205,9 +208,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## [0.1.0] — 2026-05-26
+## [0.1.0]: 2026-05-26
 
-### Added — Initial public release
+### Added. Initial public release
 
 **HTTP Requests**
 - All methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
@@ -243,7 +246,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 **Local Mock Server**
 - Localhost HTTP server, no Docker or external tools
 - Wildcard path matching (`/api/users/*`)
-- Hot-reload — add endpoints while the server is running
+- Hot-reload. Add endpoints while the server is running
 - AI-generated response bodies per endpoint (Claude API key required)
 
 **Load Test**
@@ -263,7 +266,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - Batch failure analysis
 
 **Application**
-- Command Palette (Ctrl+K) — search collections and history
+- Command Palette (Ctrl+K): search collections and history
 - Request history with replay, search, and clear
 - Monaco Editor for request body, GraphQL, scripts, and response (VS Code engine)
 - Cloud sync via Supabase (optional, your own project)

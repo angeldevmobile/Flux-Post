@@ -333,7 +333,7 @@ function AuthTab() {
         // result comes via "oauth-token" event
       } catch (e) {
         setOauthError(String(e));
-        setOauthStatus("waiting"); // stay waiting — event listener handles success
+        setOauthStatus("waiting"); // stay waiting. Event listener handles success
       }
     }
   }
@@ -747,7 +747,7 @@ export function RequestPanel() {
         body: req.body ? resolveVariable(req.body) : undefined,
       };
 
-      // Apply AWS SigV4 (async — must run after env resolution)
+      // Apply AWS SigV4 (async. Must run after env resolution)
       const authState = useRequestStore.getState();
       if (authState.authType === "awssigv4" && authState.authAwsAccessKeyId) {
         const { signAwsRequest } = await import("@/lib/awsSigV4");

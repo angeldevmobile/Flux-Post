@@ -84,8 +84,8 @@ export function requestsWithTests(collection: Collection): CollectionRequest[] {
  * Operaciones de organizacion: renombrar, crear, borrar y mover.
  *
  * Todas trabajan a cualquier profundidad y devuelven una coleccion nueva. Las
- * de la store solo miraban el nivel raiz —`deleteRequest` filtraba
- * `collection.requests` y se olvidaba de las carpetas— asi que con algo anidado
+ * de la store solo miraban el nivel raiz (`deleteRequest` filtraba
+ * `collection.requests` y se olvidaba de las carpetas), asi que con algo anidado
  * no hacian nada y no se quejaban.
  */
 

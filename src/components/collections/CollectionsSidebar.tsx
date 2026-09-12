@@ -313,7 +313,7 @@ export function CollectionsSidebar() {
   /**
    * Carga todas las raices abiertas y las junta en una sola lista.
    *
-   * Una raiz que falle —una unidad de red caida, una carpeta borrada— no tumba
+   * Una raiz que falle (una unidad de red caida, una carpeta borrada) no tumba
    * a las demas: se avisa de cual y se sigue con el resto.
    */
   const reloadAll = useCallback(async (list: string[]) => {

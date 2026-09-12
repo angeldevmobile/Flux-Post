@@ -162,12 +162,12 @@ function getCurrentType(text: string, schema: ParsedSchema): string {
             // inline fragment `... on TypeName { }`
             typeStack.push(word);
           } else {
-            // operation name or unknown — stay at current type
+            // operation name or unknown. Stay at current type
             typeStack.push(typeStack[typeStack.length - 1]);
           }
         }
       } else {
-        // shorthand query `{ field }` — root type
+        // shorthand query `{ field }`: root type
         typeStack.push(typeStack[typeStack.length - 1]);
       }
     } else if (ch === "}") {

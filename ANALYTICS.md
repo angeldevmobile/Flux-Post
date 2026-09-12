@@ -5,15 +5,14 @@ qué pasos hay que dar a mano.
 
 **Esto no es documentación para usuarios.** Vive en la raíz del repo y no en
 `docs/`, porque `docs/` es la raíz de GitHub Pages (fluxapi.dev) y sirve todos
-sus archivos. Lo que un usuario de Flux necesita saber —qué datos se envían,
-cuáles no y cómo apagarlos— está en la web, en
+sus archivos. Lo que un usuario de Flux necesita saber (qué datos se envían,
+cuáles no y cómo apagarlos) está en la web, en
 [Data & Privacy](https://fluxapi.dev/docs.html#sec-settings-privacy), y se
 mantiene en `docs/docs.html`. Si cambias qué se envía, **actualiza los dos**.
 
 Que este archivo sea público no es un descuido: el repo es open-source y aquí no
 hay nada secreto. La `service_role` key no está escrita en ninguna parte del
-repositorio, y ni el ID de GA4 ni la URL del proyecto de Supabase lo son —
-viajan ya dentro del binario y del HTML publicado.
+repositorio, y ni el ID de GA4 ni la URL del proyecto de Supabase lo son: viajan ya dentro del binario y del HTML publicado.
 
 ---
 
@@ -78,6 +77,8 @@ privacidad no es un extra aquí, es el argumento frente a Postman.
 - Versión de la app y sistema operativo (windows / macos / linux).
 - Nombre del evento, de una lista blanca cerrada en la edge function.
 - De una request: método, esquema (`https`), y si iba a localhost. Nada más.
+- De `app_ready`: si el arranque acabó con cuenta, sin cuenta o en el login
+  (`account` / `local` / `signin`). Nada sobre quién.
 - Mensajes de crash, pasados por `redact()`.
 
 La garantía está en `src/lib/analytics.ts` y cubierta por
@@ -109,15 +110,15 @@ supabase db push
 
 O pegar en el SQL Editor de Supabase, **en este orden y las dos**:
 
-1. `20260905000000_telemetry_anon.sql` — esquema, funciones y vistas.
-2. `20260905010000_secure_telemetry_views.sql` — cierra las vistas.
+1. `20260905000000_telemetry_anon.sql`: esquema, funciones y vistas.
+2. `20260905010000_secure_telemetry_views.sql`: cierra las vistas.
 
 Ambas son idempotentes.
 
 **La segunda no es opcional.** Una vista de Postgres se ejecuta con los
 privilegios de su propietario, no con los de quien consulta, así que las vistas
 de la primera migración saltan el RLS de las tablas que leen y quedan legibles
-con la anon key — que va dentro de cada binario de Flux. Comprobación:
+con la anon key, que va dentro de cada binario de Flux. Comprobación:
 
 ```bash
 curl -s "https://zmzfupygrhseljaxzyeb.supabase.co/rest/v1/telemetry_crashes?select=*" \
@@ -234,6 +235,20 @@ comportamiento, mira `app` y trátala como una muestra, no como un censo.
 **El número que decide la hoja de ruta** es el porcentaje de instalaciones que
 abren Flux una vez y no vuelven. Si es alto, no hay campaña de marketing que
 arregle nada: el problema está en los primeros cinco minutos de uso.
+
+**`updater` va a subir cuando salga la release que hace opcional el login, y no
+es crecimiento.** Hasta entonces la comprobación de actualizaciones solo corría
+después de iniciar sesión, así que quien instalaba y se iba en el muro de login
+no aparecía en ninguna cifra. Al poder entrar sin cuenta, esa gente empieza a
+contarse. El escalón de esa semana es gente que ya estaba y no se veía; la
+comparación válida es entre la línea base de después y la de dentro de un mes,
+no contra el mes anterior.
+
+**`app_ready` separa por dónde entra la gente.** `mode=account` entró con
+cuenta, `local` sin ella, `signin` se quedó en la pantalla de login. La
+proporción entre `local` y `account` dice si la cuenta estorbaba, y `signin`
+debería tender a cero ahora que hay alternativa. Ojo: como toda la telemetría es
+opt-in, esto es una muestra de quien la aceptó, no un censo.
 
 ---
 

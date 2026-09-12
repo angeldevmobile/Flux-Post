@@ -13,7 +13,7 @@ import type { TestResult } from "@/stores/testResults";
  *
  * El collection runner y la pantalla de Tests solo enviaban la peticion. Ni
  * ejecutaban los scripts ni aplicaban los extractores, asi que la cadena
- * habitual —login, capturar el token, usarlo en las siguientes— no funcionaba
+ * habitual (login, capturar el token, usarlo en las siguientes) no funcionaba
  * en ninguna de las dos: solo pulsando Send request a request. El panel si lo
  * hacia, y `flux run` ejecuta los scripts pero tampoco los extractores, de modo
  * que la misma coleccion se comportaba de tres maneras distintas.

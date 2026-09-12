@@ -1,6 +1,6 @@
 import type { HttpMethod } from "@/lib/tauri";
 
-// Single list of selectable methods — the pickers all read from here.
+// Single list of selectable methods. The pickers all read from here.
 // QUERY is RFC 10008: safe and cacheable like GET, but carries a body.
 export const HTTP_METHODS: HttpMethod[] = [
   "GET", "POST", "QUERY", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS",

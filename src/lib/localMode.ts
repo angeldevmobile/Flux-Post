@@ -2,7 +2,7 @@
  * Modo local: usar Flux sin cuenta.
  *
  * Hasta ahora el unico camino a la aplicacion pasaba por iniciar sesion, asi
- * que quien instalaba y no queria cuenta se iba en la primera pantalla — y ese
+ * que quien instalaba y no queria cuenta se iba en la primera pantalla, y ese
  * tramo del embudo no lo veia nadie, porque tanto la telemetria como la
  * comprobacion de actualizaciones corren ya dentro de la app.
  *

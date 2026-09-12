@@ -303,7 +303,7 @@ export function ResponsePanel() {
         )}
       </div>
 
-      {/* Body area — Monaco needs overflow-hidden, everything else overflow-y-auto */}
+      {/* Body area. Monaco needs overflow-hidden, everything else overflow-y-auto */}
       {useMonaco ? (
         <div className="flex flex-col flex-1 overflow-hidden">
           <CodeEditor
@@ -347,7 +347,7 @@ export function ResponsePanel() {
             )
           )}
 
-          {/* Heavy text body — plain render, no editor and no reformatting */}
+          {/* Heavy text body. Plain render, no editor and no reformatting */}
           {tab === "Body" && response && !isBinary && !error && isHeavyBody && (
             <div className="flex flex-col gap-2">
               <div className="rounded-lg px-3 py-2 text-[11px]"

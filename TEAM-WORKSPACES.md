@@ -1,4 +1,4 @@
-# Team Workspaces — plan de implementación
+# Team Workspaces. Plan de implementación
 
 > Documento de diseño. Estado: **propuesta**, sin implementar.
 > Contexto: Flux 0.2.0, ya en producción con usuarios reales.
@@ -14,8 +14,8 @@ Se descarta explícitamente el camino barato (compartir vía repositorio de GitH
 ya existe parcialmente). El criterio elegido es **seguro y escalable**, aceptando que
 el coste es del orden de meses y no de semanas.
 
-El diferenciador frente a Postman no es la paridad de funciones — ahí ellos llevan una
-década de ventaja — sino que el workspace pueda vivir en **la infraestructura del propio
+El diferenciador frente a Postman no es la paridad de funciones. Ahí ellos llevan una
+década de ventaja, sino que el workspace pueda vivir en **la infraestructura del propio
 cliente** (fase 8). Postman no puede ofrecer eso sin romper su negocio.
 
 ---
@@ -264,7 +264,7 @@ de Postman, que guarda los *initial values* en claro en su nube.
 de datos generada en cliente y envuelta para cada miembro. El coste real no es el
 cifrado, es la **distribución de claves**: Supabase autentica por email/OAuth y ahí no
 hay ningún par de claves del usuario. Hay que generarlo, protegerlo con una passphrase y
-resolver la recuperación — si se pierde, los secretos se pierden. Por eso es activable
+resolver la recuperación, si se pierde, los secretos se pierden. Por eso es activable
 por workspace y no el comportamiento por defecto: el usuario individual no debe pagar
 esa UX.
 
@@ -295,7 +295,7 @@ Cero filas devueltas = conflicto. La UI muestra un diff y deja elegir.
 > `@monaco-editor/react`.
 
 Realtime: canal por workspace con filtro `workspace_id=eq.<id>` sobre `postgres_changes`,
-más un canal de *presence* para «quién está viendo qué request» — que es la señal visible
+más un canal de *presence* para «quién está viendo qué request», que es la señal visible
 que justifica el plan de equipo a ojos del usuario.
 
 > **Realtime no sirve de nada hasta que el defecto A esté arreglado.** Supabase entregará
@@ -326,7 +326,7 @@ Solo `select` para `admin` y `owner`. Escritura exclusiva desde funciones
 
 Cada fase es desplegable por separado y deja el producto en un estado coherente.
 
-### Fase 0 — Infraestructura de migraciones
+### Fase 0. Infraestructura de migraciones
 
 Había dos ficheros sueltos (`supabase/schema.sql`, `supabase/ai_usage.sql`) con un
 comentario que admitía que podían haber divergido de lo desplegado. Eso ya era frágil para
@@ -349,7 +349,7 @@ el comportamiento contra datos reales.
 **Salida:** una migración se aplica desde cero en CI sin intervención manual. La convención
 para escribir migraciones está en `supabase/README.md`.
 
-### Fase 1 — Arreglar el sync (independiente de todo lo demás)
+### Fase 1. Arreglar el sync (independiente de todo lo demás)
 
 Beneficia a los usuarios actuales, no necesita workspaces, y es prerrequisito de
 Realtime.
@@ -371,7 +371,7 @@ Realtime.
 la vez produce un conflicto visible, nunca una pérdida silenciosa. Ninguna URL del
 historial contiene el valor de una variable marcada como secreta.
 
-#### Purga del historial remoto — se ejecuta al final, no al principio
+#### Purga del historial remoto. Se ejecuta al final, no al principio
 
 El enmascarado solo cubre lo que se escriba desde la versión que lo incluye. Las filas ya
 escritas en `flux_history` siguen conteniendo secretos en claro, y no hay forma de
@@ -394,14 +394,14 @@ delete from public.flux_history;
 **Qué ve el usuario: nada.** Toda la UI de historial lee de SQLite local
 (`src/routes/history/index.tsx`, la paleta de comandos, el contador de Ajustes, el export).
 Lo remoto solo lo toca `pullHistory`, que sale antes de tocar nada si la tabla viene vacía
-y que únicamente *añade* lo que falta en local — nunca borra. Y nada sube el historial
+y que únicamente *añade* lo que falta en local. Nunca borra. Y nada sube el historial
 local en bloque, así que la tabla no se repuebla sola con lo viejo.
 
 Lo único que se pierde es la restauración en nube: quien reinstale o entre desde una
 segunda máquina ya no recupera lo anterior a la purga. Va anunciado en las notas de
 versión.
 
-### Fase 2 — Workspaces personales (sin UI de equipo)
+### Fase 2. Workspaces personales (sin UI de equipo)
 
 Se introduce el concepto sin exponerlo todavía.
 
@@ -413,7 +413,7 @@ Se introduce el concepto sin exponerlo todavía.
 
 **Salida:** toda fila de datos pertenece a un workspace. Cero cambios en la UI.
 
-### Fase 3 — Normalización (el grueso del trabajo)
+### Fase 3. Normalización (el grueso del trabajo)
 
 - Tablas de §3.2 y sus policies.
 - El cliente escribe en **ambos** modelos durante un tiempo (dual-write).
@@ -422,13 +422,13 @@ Se introduce el concepto sin exponerlo todavía.
 - Retirada de `flux_collections` solo cuando la telemetría diga que no queda nadie
   escribiendo en él.
 - El esquema local de SQLite se alinea con el mismo modelo de filas. El YAML se queda
-  como formato de **import/export** — que es lo que consume `flux-cli` y lo que la gente
+  como formato de **import/export**: que es lo que consume `flux-cli` y lo que la gente
   mete en git.
 
 **Salida:** dos personas editan requests distintos de la misma colección
 simultáneamente y ninguna pierde nada.
 
-### Fase 4 — Equipo de verdad
+### Fase 4. Equipo de verdad
 
 - Invitaciones por email con token hasheado y caducidad.
 - Roles y comprobación de capacidades en RLS.
@@ -440,7 +440,7 @@ simultáneamente y ninguna pierde nada.
 **Salida:** un usuario invitado ve exactamente lo que le corresponde por su rol, y hay un
 test automatizado que lo demuestra para cada tabla.
 
-### Fase 5 — Secretos cifrados
+### Fase 5. Secretos cifrados
 
 - `workspace_secrets`, RPCs de acceso, cifrado en reposo (§3.4).
 - Migración de los secretos que hoy están en claro dentro de los blobs de entorno.
@@ -449,15 +449,15 @@ test automatizado que lo demuestra para cada tabla.
 **Salida:** ningún valor secreto se puede leer con un JWT de usuario mediante una query
 directa a una tabla.
 
-### Fase 6 — Tiempo real
+### Fase 6. Tiempo real
 
 - Canales de `postgres_changes` por workspace.
 - Presence: quién está viendo qué.
 - Indicadores de edición concurrente en la UI.
 
-### Fase 7 — Facturación y cuota de equipo
+### Fase 7. Facturación y cuota de equipo
 
-`flux_ai_reserve` está bien construida — reserva atómica con lock de fila, `settle` y
+`flux_ai_reserve` está bien construida. Reserva atómica con lock de fila, `settle` y
 `refund`. Generaliza sin reescribir la lógica: la clave deja de ser «usuario» y pasa a
 ser **sujeto de facturación** (`user_id` en free, `workspace_id` en plan de equipo). La
 tabla se re-clava sobre ese sujeto y la función recibe cuál aplica.
@@ -465,7 +465,7 @@ tabla se re-clava sobre ese sujeto y la función recibe cuál aplica.
 - Límite de colaboradores en el plan free (Postman da 3).
 - Cuota de IA agrupada por workspace en planes de pago.
 
-### Fase 8 — Bring your own Supabase
+### Fase 8. Bring your own Supabase
 
 El diferenciador real. Requiere que la fase 0 esté bien hecha.
 
@@ -491,7 +491,7 @@ Hay usuarios reales con la app instalada. El orden no admite atajos:
 
 **Las versiones antiguas de la app siguen ejecutándose en las máquinas de la gente.** Un
 cliente 0.2.0 hace `upsert` sin `workspace_id`. Poner `not null` sin más les rompe el
-sync en silencio: verían el toast de «Sync failed — working offline» y nada más.
+sync en silencio: verían el toast de «Sync failed. Working offline» y nada más.
 
 Mitigación: trigger `before insert` que resuelva el workspace personal cuando llega
 `null`, mantenido durante varias versiones.
@@ -538,7 +538,7 @@ razonamiento completo; las tres últimas son de producto y de negocio.
 Compartir el historial sería difundir eso al equipo entero, de forma automática y sin que
 nadie lo pida.
 
-*Escalabilidad.* Es la tabla que más crece — una fila por request enviado. `pullHistory`
+*Escalabilidad.* Es la tabla que más crece. Una fila por request enviado. `pullHistory`
 trae 200 filas y deduplica en cliente comparando `method|url|timestamp`. Un feed
 compartido exigiría paginación, retención y filtrado construidos desde cero, justo sobre
 la tabla de mayor volumen.
@@ -554,7 +554,7 @@ Compartir preferencias de UI no aporta nada y sí abre superficie. Los device-on
 (`claudeApiKey`, `clientCertPem`, `clientKeyPem`) ya están excluidos del sync y ahí siguen.
 
 **El matiz que sí importa:** algunos ajustes actuales no son preferencias, son **postura
-de seguridad** — el toggle de verificación SSL y la configuración de proxy. En un equipo,
+de seguridad**: el toggle de verificación SSL y la configuración de proxy. En un equipo,
 «aquí nadie desactiva la verificación SSL» es una política del workspace, no un gusto
 personal, y es exactamente el tipo de control que compra un cliente de empresa.
 
@@ -570,12 +570,12 @@ cruzan**. La colección aterriza en el destino con sus `{{VAR}}` sin resolver, y
 workspace define sus propios valores. Una copia nunca transporta credenciales a través de
 una frontera de permisos.
 
-**Mover** de verdad — mismo ID, auditoría continua — queda restringido a quien sea `owner`
+**Mover** de verdad. Mismo ID, auditoría continua. Queda restringido a quien sea `owner`
 o `admin` en **ambos** workspaces, y deja entrada en los dos audit logs.
 
 **Por qué mover tiene que ser una RPC transaccional.** Con `workspace_id` denormalizado
 (§3.2), mover es un `UPDATE` sobre tres tablas. Si se queda a medias, quedan filas cuyo
-`workspace_id` no concuerda con el de su colección — y como RLS filtra precisamente por
+`workspace_id` no concuerda con el de su colección, y como RLS filtra precisamente por
 esa columna, **son datos que existen pero que no puede ver nadie**, irrecuperables sin
 `service_role`. Nunca orquestado desde el cliente.
 
@@ -583,7 +583,7 @@ esa columna, **son datos que existen pero que no puede ver nadie**, irrecuperabl
 
 El mismo número que Postman, para que la comparación sea inmediata a quien venga de allí.
 
-### 7.5 E2E en el plan más alto — pero la línea base no se monetiza
+### 7.5 E2E en el plan más alto, pero la línea base no se monetiza
 
 La **capa 1** de §3.4 (secretos fuera del blob, cifrados en reposo, acceso solo por RPC)
 va en **todos los planes, free incluido**. Lo que se cobra es el control de la clave, no
@@ -598,7 +598,7 @@ con el discurso de la fase 8.
 
 ## 8. Planes y precios
 
-### 8.1 La licencia decide qué se puede cobrar — y bloquea la fase 0
+### 8.1 La licencia decide qué se puede cobrar, y bloquea la fase 0
 
 Flux es **MIT y el repositorio es público**. Cualquiera puede forkear el cliente, quitar la
 comprobación de plan y redistribuirlo, y estaría en su derecho. De ahí salen dos reglas.
@@ -646,7 +646,7 @@ precio plano elimina esa fricción entera. Es un diferenciador, no un descuento.
 
 *Ingeniería.* El cobro por asiento obliga a prorrateos, altas y bajas a mitad de ciclo y
 reconciliación de asientos contra Stripe. Tramos planos con tope de miembros son una
-fracción de ese código — y aquí eso importa, porque lo mantiene una persona.
+fracción de ese código, y aquí eso importa, porque lo mantiene una persona.
 
 *Contrapartida.* Se deja dinero sobre la mesa con equipos grandes. Se compensa con tramos
 por tamaño, y con Enterprise por encima del último tramo.
@@ -660,7 +660,7 @@ por tamaño, y con Enterprise por encima del último tramo.
 | **Business** | ~79 €/mes, hasta **25** miembros | Lo anterior + audit log extendido |
 | **Enterprise** | A medida | BYO Supabase, E2E opt-in, `workspace_policies`, SSO/SCIM, DPA y SLA |
 
-Referencia: Postman ronda los 14 $/asiento en su tier básico — **verificar, el dato puede
+Referencia: Postman ronda los 14 $/asiento en su tier básico. **verificar, el dato puede
 estar desfasado**. Un equipo de 10 pagaría allí ~140 $/mes frente a ~29 € aquí. La
 diferencia es lo bastante grande como para no necesitar explicación.
 
@@ -704,16 +704,16 @@ quemar el saldo de veinte.
 
 | Fase | Plan |
 |---|---|
-| 0–3 (migraciones, sync, workspaces personales, normalización) | Todos, free incluido — son arreglos, no funciones de pago |
+| 0–3 (migraciones, sync, workspaces personales, normalización) | Todos, free incluido. Son arreglos, no funciones de pago |
 | 4 (roles, invitaciones, audit log) | Es lo que **hace existir** el plan Team |
 | 5 capa 1 (cifrado en reposo) | Todos, free incluido (§7.5) |
 | 5 capa 2 (E2E) | Enterprise |
 | 6 (realtime, presence) | Team |
 | 7 | El motor de cobro en sí |
-| 8 (BYO Supabase) | Enterprise — y es la que choca con MIT (§8.1) |
+| 8 (BYO Supabase) | Enterprise, y es la que choca con MIT (§8.1) |
 
 Conviene verlo claro de antemano: **las fases 0 a 3 no venden nada**. Son cuatro fases de
-trabajo duro sin ingreso asociado, y es correcto que lo sean — son el suelo sobre el que la
+trabajo duro sin ingreso asociado, y es correcto que lo sean. Son el suelo sobre el que la
 fase 4 se puede cobrar. Saberlo evita desanimarse a mitad.
 
 ---

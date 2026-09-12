@@ -268,7 +268,7 @@ export function TestsRoute() {
                 </div>
               )}
 
-              {/* Analyze failures button — visible when there are failures and API key is set */}
+              {/* Analyze failures button. Visible when there are failures and API key is set */}
               {activeResults && totalFailed > 0 && aiAvailable && (
                 <button
                   onClick={handleAnalyze}

@@ -616,7 +616,7 @@ export function GrpcRoute() {
   return (
     <div className="flex flex-1 h-full overflow-hidden" style={{ background: "var(--color-bg)" }}>
 
-      {/* Left sidebar — service tree */}
+      {/* Left sidebar. Service tree */}
       <div className="flex flex-col shrink-0 overflow-hidden" style={{ width: 220, borderRight: "1px solid var(--color-border)", background: "var(--color-sidebar)" }}>
 
         {/* Proto source buttons */}

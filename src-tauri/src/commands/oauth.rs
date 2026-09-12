@@ -195,7 +195,7 @@ pub async fn start_oauth_callback(app: tauri::AppHandle) -> Result<u16, String> 
     Ok(42813)
 }
 
-/// Client Credentials flow — no browser needed, returns token directly.
+/// Client Credentials flow. No browser needed, returns token directly.
 #[tauri::command]
 pub async fn oauth_client_credentials(
     client_id: String,

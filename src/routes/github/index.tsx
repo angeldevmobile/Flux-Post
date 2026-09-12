@@ -151,7 +151,7 @@ function ConnectPanel({ onConnected }: { onConnected: (token: string, user: GitH
   );
 }
 
-/*    Sync Panel — repo file browser                             */
+/*    Sync Panel. Repo file browser                             */
 
 function SyncPanel({
   token, repo, onClose,
@@ -439,7 +439,7 @@ function SyncPanel({
             );
           }
 
-          // other files — no checkbox, dimmed
+          // other files. No checkbox, dimmed
           return (
             <div
               key={item.path}

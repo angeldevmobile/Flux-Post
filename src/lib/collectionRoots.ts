@@ -84,7 +84,7 @@ export function clearRoots(): string[] {
 /**
  * Dónde escribir una coleccion.
  *
- * La suya si la tiene; si no —una que acaba de bajar de la nube, por ejemplo—
+ * La suya si la tiene; si no (una que acaba de bajar de la nube, por ejemplo),
  * la de otra coleccion ya cargada con el mismo id, y como ultimo recurso la
  * primera raiz abierta. Devuelve null si no hay ninguna, y entonces no hay
  * fichero que escribir.
@@ -110,7 +110,7 @@ export function rootLabel(dir: string): string {
  * coleccion y resolviendo los ids repetidos.
  *
  * El id de una coleccion es el nombre de su fichero, asi que dos repos con un
- * `api.yaml` cada uno colisionan — y con colecciones que viven dentro de su
+ * `api.yaml` cada uno colisionan, y con colecciones que viven dentro de su
  * repo eso no es raro, es lo normal. La primera que aparece conserva su id y las
  * siguientes se prefijan con el nombre de su carpeta.
  *

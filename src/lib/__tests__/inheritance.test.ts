@@ -100,7 +100,7 @@ describe("auth inheritance", () => {
     expect(out.authSource?.kind).toBe("request");
   });
 
-  it("does not mix fields from two levels — the nearest auth wins whole", () => {
+  it("does not mix fields from two levels. The nearest auth wins whole", () => {
     const col = collection({
       auth: { type: "basic", username: "u", password: "p" },
       folders: [folder("f", { auth: { type: "bearer", token: "t" }, requests: [req("a")] })],

@@ -1,32 +1,25 @@
 # Flux
 
-Modern desktop API client. Local-first, AI-powered, cloud-synced.
+One desktop app instead of four. API client, mock server, load tester and gRPC client in a single 15 MB binary, with no account required.
 
-Flux is a lightweight desktop app for testing and exploring APIs, built with Tauri and React. Under 30 MB RAM, native performance, no Electron.
+Flux is a local-first API client built with Tauri and React. Under 30 MB RAM, native performance, no Electron. Collections are plain YAML you can commit next to the code they test.
 
 ---
 
 ## Why Flux
 
-| | Postman | Flux |
-|---|---|---|
-| RAM usage | 200–400 MB | < 30 MB |
-| Installer size | ~150 MB | 11–15 MB |
-| Requires account | Yes | No — everything local works without one |
-| AI test generation | Paid plan | Free tier included, or your own key |
-| AI debug on errors | No | 4xx/5xx analysis + one-click Apply fixes |
-| AI script editing | No | Natural language edits |
-| SSE / EventStream | No | Full streaming viewer |
-| GraphQL autocomplete | Basic | Schema introspection + Monaco |
-| Declarative assertions | No | `status == 200` without scripts |
-| WebSocket | Basic | Full duplex log with timestamps |
-| Cloud sync | Postman servers | Your own Supabase, you own the data |
-| CLI runner for CI/CD | Newman (paid) | Free, open source, runs your scripts and assertions |
-| Code snippets | Manual copy | One-click, any language |
-| Auto variable extraction | Paid Team plan | Free, no scripts needed |
-| Mock servers | Cloud-hosted, limited free | 100% local, instant, AI-generated bodies |
-| Load testing | Paid plan | Built-in, no k6 needed |
-| Request timeline | No | Waterfall like DevTools |
+**The four-tools problem.** Testing an API usually means an API client, then `k6` or `wrk` for load, then `json-server` or WireMock to mock a dependency, then `grpcurl` when the service speaks gRPC. Four installs, four mental models, four places your knowledge about that API ends up.
+
+Flux has all four, and they share your collections, environments and variables:
+
+| | Instead of |
+|---|---|
+| **Mock server**: runs in-process on localhost, hot-reloads endpoints, AI-generated bodies | json-server, WireMock, Prism |
+| **Load test**: concurrent runner, P50/P95/P99, throughput, latency histogram | k6, wrk, ab |
+| **gRPC**: `.proto` import, server reflection, unary and streaming | grpcurl |
+| **WebSocket and SSE**: full duplex log, streaming viewer | wscat, curl |
+
+**And the things a client should have already.** Collections as plain YAML in your repo, folder-level auth and headers, a CLI runner that behaves exactly like the app, declarative assertions without scripts, and AI that explains a 4xx and offers a one-click fix.
 
 ---
 
@@ -56,13 +49,13 @@ Flux is a lightweight desktop app for testing and exploring APIs, built with Tau
 - Global variables shared across all environments, acting as defaults: a variable defined in the active environment overrides the global of the same name, and so does one written by a script with `pm.environment.set()`
 - Secret keys, masked in UI and never logged
 - Environment variable resolution at send time
-- Variable extractor (JSONPath): define `$.data.token -> {{token}}` rules, values captured automatically after every request — when you press Send, in the Collection Runner, on the Tests screen and in `flux run`, so a login can feed the requests that follow it
+- Variable extractor (JSONPath): define `$.data.token -> {{token}}` rules, values captured automatically after every request, when you press Send, in the Collection Runner, on the Tests screen and in `flux run`, so a login can feed the requests that follow it
 
 ### Tests
 - Assertion syntax: `status == 200`, `body.token != null`, `duration < 500`
 - `{{VAR}}` works inside an assertion: `json.token == "{{EXPECTED_TOKEN}}"`. Interpolation happens after the operator is read, so a value containing `==` cannot change how the line is parsed, and reports show the assertion as written so a secret's value never reaches a CI log
 - AI-generated assertions from Claude, one click after any response
-- AI fix suggestion on failing assertions — Apply button applies the fix directly to the request (header or body)
+- AI fix suggestion on failing assertions. Apply button applies the fix directly to the request (header or body)
 - Batch test runner across every request in a collection, folders included, with a pass/fail report
 - Post-response scripts with `pm.test()` and `pm.expect()` Chai-style API
 
@@ -98,7 +91,7 @@ Flux opens and works without an account: requests, collections, environments, sc
 During the beta every signed-in account gets 100 AI actions a month, up to 20 a day, with nothing to configure. On the free tier prompts are relayed through a Flux proxy, which is how the quota is applied. Add your own Claude API key for unlimited use: it never leaves your device and calls go straight to Anthropic.
 
 - Generate test assertions from any response
-- Debug assist on 4xx/5xx errors: Flux-aware analysis with structured explanation (what, cause, steps) and one-click Apply fixes — suggested headers, params, or body values are applied directly to the request without leaving the panel
+- Debug assist on 4xx/5xx errors: Flux-aware analysis with structured explanation (what, cause, steps) and one-click Apply fixes. Suggested headers, params, or body values are applied directly to the request without leaving the panel
 - Edit pre/post scripts with natural language
 - Fix failing assertions: AI suggests the corrected value and an Apply button applies it to the request headers or body automatically
 - Analyze batch test failures
@@ -131,13 +124,13 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 
 ## Quick Start
 
-1. **Send a request** — type a URL in the top bar, pick a method, press `Ctrl+Enter`.
-2. **Save to a collection** — click the `+` in the sidebar to organize requests in folders.
-3. **Use environment variables** — go to Environments and add `{{BASE_URL}}` style variables to reuse across requests.
-4. **Try the AI features** — they work out of the box on the free tier. For unlimited use, add your own Claude API key in Settings, AI and Claude.
-5. **Import existing work** — import a Postman collection, OpenAPI spec, or cURL command from the sidebar import button.
-6. **Mock an API** — go to Mock Server, add endpoints, hit Start. Your local server is live on `http://localhost:3001`.
-7. **Stress-test an endpoint** — go to Load Test, set total requests and concurrency, hit Run.
+1. **Send a request**: type a URL in the top bar, pick a method, press `Ctrl+Enter`.
+2. **Save to a collection**: click the `+` in the sidebar to organize requests in folders.
+3. **Use environment variables**: go to Environments and add `{{BASE_URL}}` style variables to reuse across requests.
+4. **Try the AI features**: they work out of the box on the free tier. For unlimited use, add your own Claude API key in Settings, AI and Claude.
+5. **Import existing work**: import a Postman collection, OpenAPI spec, or cURL command from the sidebar import button.
+6. **Mock an API**: go to Mock Server, add endpoints, hit Start. Your local server is live on `http://localhost:3001`.
+7. **Stress-test an endpoint**: go to Load Test, set total requests and concurrency, hit Run.
 
 ---
 
@@ -226,7 +219,7 @@ Download the latest release from the [Releases page](https://github.com/angeldev
 - Team workspaces: shared collections with real-time sync via Supabase Realtime
 
 ### Planned
-- Native CI/CD integrations: GitHub Actions, GitLab CI, Jenkins — trigger collection runs and post results directly from the pipeline UI
+- Native CI/CD integrations: GitHub Actions, GitLab CI, Jenkins. Trigger collection runs and post results directly from the pipeline UI
 - Slack and webhook notifications: send pass/fail summaries after a collection run to any channel or endpoint
 - API monitoring: schedule collection runs on a cron, get alerted when an endpoint goes down or a test regresses
 - Postman-compatible public workspace / template gallery: browse and fork community collections from inside the app
@@ -289,7 +282,7 @@ folders:
         # the folder auth replaced the collection one entirely.
 
   - name: Public
-    # Stops inheriting the auth on purpose — these endpoints take no
+    # Stops inheriting the auth on purpose. These endpoints take no
     # credentials. The X-Tenant header from the collection still applies.
     auth:
       type: none
@@ -302,10 +295,10 @@ folders:
 The rules:
 
 - **The nearest level wins.** Request over folder, closest folder over outer folder, folder over collection.
-- **Auth is all or nothing.** The nearest definition is used whole, never merged field by field with an outer one — a half-built credential is worse than none.
+- **Auth is all or nothing.** The nearest definition is used whole, never merged field by field with an outer one. A half-built credential is worse than none.
 - **Headers merge**, matched case-insensitively, with the closest level overriding.
 - **Scripts concatenate** from the outside in rather than overriding, so a collection-level script can fetch a token and a folder-level one can use it.
-- **`type: none` cuts the auth inheritance** for that subtree. Headers and scripts from outer levels still apply — in the example above, `Health` sends no credentials but still sends `X-Tenant: acme`.
+- **`type: none` cuts the auth inheritance** for that subtree. Headers and scripts from outer levels still apply. In the example above, `Health` sends no credentials but still sends `X-Tenant: acme`.
 
 The same cascade runs in the app and in `flux run`, with the contract covered by tests on both sides so a suite cannot pass locally and fail in CI.
 
@@ -332,7 +325,7 @@ flux run collection.yaml --env-file .env --reporter junit --output report.xml
 
 The path can be a single YAML file or a directory, in which case every collection in it runs. The exit code is non-zero if any assertion fails or any request errors.
 
-Requests with assertions always run. One without any also runs when it has extractors or scripts — that is the login step of a chain, and skipping it would leave the rest of the batch without a token. A request with nothing of the three is skipped.
+Requests with assertions always run. One without any also runs when it has extractors or scripts, that is the login step of a chain, and skipping it would leave the rest of the batch without a token. A request with nothing of the three is skipped.
 
 ### Chaining requests
 
@@ -359,7 +352,7 @@ The same chain behaves identically when you press Send, in the Collection Runner
 
 ### Where variables come from
 
-The CLI has no named environments and no global variables — those live in the app, on your machine. In CI every value arrives on the command line:
+The CLI has no named environments and no global variables. Those live in the app, on your machine. In CI every value arrives on the command line:
 
 ```bash
 flux run ./collections --env-file ci.env --env API_TOKEN=$API_TOKEN
@@ -367,13 +360,13 @@ flux run ./collections --env-file ci.env --env API_TOKEN=$API_TOKEN
 
 Later sources win: `--env` overrides an `--env-file`, and a second `--env-file` overrides the first. That is what lets a pipeline keep the shared values in a committed file and override one of them for a particular job.
 
-A variable that no source defines is left in the request as written, braces and all, rather than becoming an empty string — so a request to `{{BASE_URL}}/users` fails loudly instead of quietly hitting the wrong host.
+A variable that no source defines is left in the request as written, braces and all, rather than becoming an empty string, so a request to `{{BASE_URL}}/users` fails loudly instead of quietly hitting the wrong host.
 
 The dynamic built-ins work the same as in the app, resolved fresh at each occurrence, so two `{{$guid}}` in one request are two different ids:
 
 | Variable | Value |
 |---|---|
-| `{{$guid}}` | A v4 UUID — an idempotency key or a request id |
+| `{{$guid}}` | A v4 UUID. An idempotency key or a request id |
 | `{{$timestamp}}` | Milliseconds since the epoch |
 | `{{$isoTimestamp}}` | ISO-8601, e.g. `2026-09-09T12:34:56.789Z` |
 | `{{$randomInt}}` | An integer from 0 to 999 |
@@ -430,7 +423,7 @@ Bug reports, feature requests, documentation fixes and code are all welcome.
 |---|---|
 | A question, or an idea | [Discussions](https://github.com/angeldevmobile/Flux-Post/discussions) |
 | Something broken | [Issues](https://github.com/angeldevmobile/Flux-Post/issues) |
-| Code or docs | [Contributing guide](CONTRIBUTING.md) — how to build Flux locally and open a pull request |
+| Code or docs | [Contributing guide](CONTRIBUTING.md): how to build Flux locally and open a pull request |
 
 If something in the documentation is unclear, say so in Discussions: that is the fastest way to get it fixed.
 

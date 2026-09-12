@@ -155,7 +155,7 @@ export interface GrpcRequestFields {
   protoName?: string;
 }
 
-/** Credential fields hold `{{VAR}}` references, not literals — see `findLiteralSecrets`. */
+/** Credential fields hold `{{VAR}}` references, not literals. See `findLiteralSecrets`. */
 export interface CollectionAuth {
   type: string;
   token?: string;

@@ -113,7 +113,7 @@ async function post(payload: unknown, keepalive = false): Promise<boolean> {
         // La función conserva activada la verificación de JWT. No pide sesión:
         // la anon key basta para satisfacerla, y eso deja fuera al ruido de
         // fondo de internet en vez de exponer un endpoint de escritura abierto.
-        // No es un secreto —va dentro del binario— pero sí un obstáculo.
+        // No es un secreto (va dentro del binario) pero sí un obstáculo.
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         apikey: SUPABASE_ANON_KEY,
       },
@@ -187,7 +187,7 @@ export function trackCrash(message: string) {
 /**
  * La URL entra pero no sale: solo se conservan la forma y las métricas. El
  * parámetro sigue ahí para no obligar a las llamadas a saber qué es seguro
- * mandar — esa decisión vive aquí, en un único sitio.
+ * mandar. Esa decisión vive aquí, en un único sitio.
  */
 export function trackPerf(url: string, method: string, ms: number, status: number) {
   if (!useSettingsStore.getState().perfMetrics) return;
@@ -219,7 +219,7 @@ export function initCrashReporting() {
   setInterval(() => void flushEvents(), FLUSH_INTERVAL_MS);
 
   // El primer lote sale enseguida en vez de esperar 60s. Una sesión corta
-  // —abrir Flux, mirar algo, cerrar— es exactamente la que hay que contar para
+  // (abrir Flux, mirar algo, cerrar) es exactamente la que hay que contar para
   // saber cuánta gente instala y no se queda.
   setTimeout(() => void flushEvents(), 3_000);
 }

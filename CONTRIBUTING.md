@@ -1,6 +1,6 @@
 # Contributing to Flux
 
-Thank you for your interest in Flux. Contributions are welcome — bug reports, feature requests, documentation improvements, and code changes.
+Thank you for your interest in Flux. Contributions are welcome. Bug reports, feature requests, documentation improvements, and code changes.
 
 ---
 
@@ -86,7 +86,7 @@ Key source files:
 ## Submitting a pull request
 
 1. Fork the repository and create a branch from `main`.
-2. Keep changes focused — one feature or fix per PR.
+2. Keep changes focused. One feature or fix per PR.
 3. Run the same checks CI runs (below). Clippy runs with `-D warnings`, so a
    warning fails the build.
 4. Write a clear PR description: what changed and why.

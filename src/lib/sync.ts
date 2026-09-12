@@ -177,7 +177,7 @@ export async function pushCollection(collection: Collection): Promise<PushResult
 
     if (error) {
       if (isSupabase401(error)) { markSessionInvalid(); return { status: "failed" }; }
-      toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+      toast.warning("Sync failed. Working offline", { id: "sync-fail", duration: 4000 });
       return { status: "failed" };
     }
 
@@ -199,7 +199,7 @@ export async function pushCollection(collection: Collection): Promise<PushResult
     markSynced(collection.id, row.version);
     return { status: "saved" };
   } catch {
-    toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    toast.warning("Sync failed. Working offline", { id: "sync-fail", duration: 4000 });
     return { status: "failed" };
   }
 }
@@ -284,10 +284,10 @@ async function pushSettings(userId: string) {
     });
     if (error) {
       if (isSupabase401(error)) { markSessionInvalid(); return; }
-      toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+      toast.warning("Sync failed. Working offline", { id: "sync-fail", duration: 4000 });
     }
   } catch {
-    toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    toast.warning("Sync failed. Working offline", { id: "sync-fail", duration: 4000 });
   }
 }
 
@@ -346,9 +346,9 @@ async function pushEnvironments(userId: string) {
     );
     if (any401) { markSessionInvalid(); return; }
     const anyFailed = results.some(r => r.status === "rejected" || (r.status === "fulfilled" && (r.value as { error: unknown }).error));
-    if (anyFailed) toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    if (anyFailed) toast.warning("Sync failed. Working offline", { id: "sync-fail", duration: 4000 });
   } catch {
-    toast.warning("Sync failed — working offline", { id: "sync-fail", duration: 4000 });
+    toast.warning("Sync failed. Working offline", { id: "sync-fail", duration: 4000 });
   }
 }
 
@@ -375,7 +375,7 @@ async function pullEnvironments(userId: string) {
 }
 
 //
-// SUBSCRIPTION — settings auto-push
+// SUBSCRIPTION. Settings auto-push
 //
 
 let settingsUnsubscribe: (() => void) | null = null;
@@ -456,7 +456,7 @@ async function warnIfSchemaBehind(): Promise<void> {
 }
 
 //
-// ON LOGIN — pull everything
+// ON LOGIN. Pull everything
 //
 
 let _syncInProgress = false;
@@ -471,7 +471,7 @@ export async function syncOnLogin(userId: string) {
     // Verify the session is still valid before making any API calls
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || session.user.id !== userId) {
-      // Session gone or mismatched — try a refresh
+      // Session gone or mismatched. Try a refresh
       const { error } = await supabase.auth.refreshSession();
       if (error) {
         // Refresh also failed: token is truly expired → sign out cleanly

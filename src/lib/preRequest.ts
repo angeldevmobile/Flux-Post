@@ -6,8 +6,8 @@ export interface PreRequestMutations {
   headers: Record<string, string>;
   envVars: Record<string, string>;
   /**
-   * El script reventó. Se sigue enviando la peticion —en la UI quieres ver que
-   * ha llegado— pero quien llame tiene que poder decirlo en voz alta: un aviso
+   * El script reventó. Se sigue enviando la peticion (en la UI quieres ver que
+   * ha llegado) pero quien llame tiene que poder decirlo en voz alta: un aviso
    * en el panel de consola es demasiado facil de no ver, y la peticion sale sin
    * la cabecera o el token que el script iba a poner.
    */

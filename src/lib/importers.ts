@@ -228,7 +228,7 @@ interface OpenApiDoc {
   security?: Record<string, unknown>[];
 }
 
-// Operation keys defined by the OpenAPI path item object — QUERY is not one of them yet.
+// Operation keys defined by the OpenAPI path item object. QUERY is not one of them yet.
 const OPENAPI_METHODS = ["get", "post", "put", "patch", "delete", "head", "options"] as const;
 
 /** Muestra de valor a partir de un esquema, para cuando el spec no trae `example`. */
@@ -423,7 +423,7 @@ export function importCurl(command: string): CollectionRequest {
     }
   }
 
-  // The quoted argument is matched whole — stopping at the first double quote
+  // The quoted argument is matched whole. Stopping at the first double quote
   // would drop any JSON body.
   const dMatch = flat.match(
     /(?:--data(?:-raw|-binary|-urlencode)?|-d)\s+(?:'([^']*)'|"((?:[^"\\]|\\.)*)"|(\S+))/

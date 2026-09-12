@@ -1007,7 +1007,7 @@ pub fn load_collections(dir: String) -> Result<Vec<CollectionOut>, String> {
     // Root yaml files (no group)
     let mut collections = load_yaml_files_from(path, None);
 
-    // One level of subdirectories — each becomes a group
+    // One level of subdirectories. Each becomes a group
     if let Ok(entries) = fs::read_dir(path) {
         for entry in entries.filter_map(|e| e.ok()) {
             let sub = entry.path();
