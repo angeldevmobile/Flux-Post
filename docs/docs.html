@@ -1388,9 +1388,32 @@
             </div>
           </div>
 
+          <h2>Updating</h2>
+          <p>From 0.3.1 on, Flux checks for a new version a few seconds after it starts and offers
+            <strong>Update &amp; Restart</strong> when there is one. Nothing is installed without you clicking it.</p>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">On 0.3.0 or earlier? Download 0.3.1 by hand once</div>
+              <div class="callout-text">Automatic updates never worked before 0.3.1: the app was not allowed to run the
+                check, and the failure was silent. An older Flux will never offer an update. Download the
+                <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank"
+                  data-dl="docs-update">latest release</a> and install it over your current one; collections,
+                environments and settings are kept. From then on updates arrive on their own.</div>
+            </div>
+          </div>
+
           <h2>Account</h2>
-          <p>A free account is required to sync collections. Sign up with your email or with GitHub OAuth directly
-            inside the app on first launch. No credit card needed.</p>
+          <p>No account is needed. Choose <strong>Use Flux without an account</strong> on the first screen and
+            everything local works: requests, collections, environments, scripts, tests, the mock server, load tests,
+            gRPC, WebSocket and SSE. An account adds cloud sync and the free AI tier; sign up with your email or GitHub
+            from Settings whenever you want. No credit card needed.</p>
 
           <h2>System requirements</h2>
           <ul>
@@ -1487,6 +1510,79 @@
               rel="noopener">CHANGELOG.md</a>.
           </p>
 
+          <h2>0.3.1</h2>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Download this one by hand</div>
+              <div class="callout-text">Automatic updates never worked before this release, so 0.3.0 and earlier will
+                not offer it. Install it from the
+                <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank"
+                  data-dl="docs-whatsnew">latest release</a> once; from here on Flux updates itself.
+              </div>
+            </div>
+          </div>
+
+          <h3>Automatic updates work</h3>
+          <p>Tauri only lets the app call a plugin it has been granted, and the updater was never granted. Every check
+            failed, the error was swallowed, and Flux reported that there was nothing new. The permission is in place
+            now, and a failed check is logged to the console instead of hidden.</p>
+
+          <h3>Smaller fixes</h3>
+          <ul>
+            <li>A collections folder that was moved or deleted no longer leaves only a red error: the sidebar offers to
+              create it again or stop opening it.</li>
+            <li>The What's new panel showed the 0.2.1 notes to everyone on 0.3.0.</li>
+          </ul>
+
+          <h2>0.3.0</h2>
+
+          <div class="callout warn">
+            <span class="callout-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg></span>
+            <div class="callout-body">
+              <div class="callout-title">Two changes that can alter results</div>
+              <div class="callout-text">A variable in the active environment now overrides a global of the same name; it
+                used to be the other way round. And the Tests screen now runs the tests inside folders, so a suite
+                that passed may start failing: those tests were never being run.
+              </div>
+            </div>
+          </div>
+
+          <h3>No account needed</h3>
+          <p>Flux opens straight into the app with <strong>Use Flux without an account</strong>. Everything local works
+            without one; sign in later from Settings for cloud sync and the free AI tier.</p>
+
+          <h3>Collections that live in your repo</h3>
+          <p>Several collections folders can be open at once, so a collection can sit inside the repository whose API it
+            tests and be branched, reviewed and cloned with the code. Each collection remembers which folder it came
+            from and saves back there.</p>
+
+          <h3>Inherited auth, headers and scripts</h3>
+          <p>Set them once on a collection or a folder with the shield button in the sidebar, and every request inside
+            uses them. The nearest level wins and scripts concatenate from the outside in. The same cascade runs in
+            <code>flux run</code>.</p>
+
+          <h3>Organise from the sidebar</h3>
+          <p>Right-click a collection, folder or request to rename, create, duplicate, move it to any folder of any open
+            collection, or delete it. <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> creates a collection.</p>
+
+          <h3>CLI</h3>
+          <p><code>--reporter junit --output report.xml</code> for GitLab CI, Jenkins and GitHub Actions,
+            <code>--env-file</code>, and <code>--folder</code> to run one subtree. Chained collections (log in, capture
+            the token, use it) now behave in CI exactly as in the app. See
+            <a href="#" onclick="show('cli');return false;">CLI Runner</a>.</p>
+
           <h2>0.2.0</h2>
 
           <div class="callout warn">
@@ -1541,7 +1637,7 @@ duration &lt; 500            <span class="token-cmt">// now works in all three</
 
           <h3>A Content Security Policy for the webview</h3>
           <p>The webview shipped without one. Everything now loads from the app itself, the only outbound destination
-            allowed from the frontend is your own Supabase project, and <code>object-src</code>,
+            allowed from the frontend is Flux's Supabase project, and <code>object-src</code>,
             <code>frame-ancestors</code> and <code>base-uri</code> are locked down. <code>unsafe-eval</code> is kept on
             purpose: pre and post-request scripts run through <code>new Function()</code>, and without it the whole
             scripting feature would break in release builds only.
@@ -2912,7 +3008,7 @@ json.token != null        <span class="token-cmt">// fails</span></code></pre>
 
           <h2>Clearing history</h2>
           <p>Click <strong>Clear History</strong> in the Settings → Data &amp; Privacy section or from the History
-            screen's overflow menu. This deletes the local database <em>and</em> the copy in your Supabase project, so
+            screen's overflow menu. This deletes the local database <em>and</em> the copy synced to your account, so
             signing in on another device will not bring it back. The action is irreversible.</p>
 
           <div class="callout info">
@@ -3939,7 +4035,7 @@ flux run ./my-api --bail</code></pre>
           <div class="page-eyebrow">Settings</div>
           <h1 class="page-title">Data &amp; Privacy</h1>
           <p class="page-lead">Flux is local first: everything works offline and lives on your machine. Signing in adds
-            optional sync to your own Supabase project. This page explains what is stored, where, and how to delete
+            optional cloud sync, stored in Flux's Supabase project under your account, where no other user can read it. This page explains what is stored, where, and how to delete
             it.</p>
 
           <h2>What Flux stores</h2>
@@ -3955,7 +4051,7 @@ flux run ./my-api --bail</code></pre>
               <tr>
                 <td>Collections</td>
                 <td>Selected directory on disk (YAML files)</td>
-                <td>Synced to your Supabase project when signed in, and to GitHub if you enable GitHub Sync</td>
+                <td>Synced to your Flux account when signed in, and to GitHub if you enable GitHub Sync</td>
               </tr>
               <tr>
                 <td>History</td>
@@ -4072,8 +4168,8 @@ flux run ./my-api --bail</code></pre>
                 It stores a salted hash of your IP and user agent, never the address itself; the salt is
                 regenerated daily and discarded after two days, so the hash cannot be reversed or matched
                 across days. Nothing else about you is recorded. To stop the check entirely, block
-                <code>fluxapi.dev</code> and <code>github.com</code> in your firewall. Flux will keep
-                working and simply stop offering updates.
+                <code>zmzfupygrhseljaxzyeb.supabase.co</code> and <code>github.com</code> in your firewall.
+                Flux will keep working and simply stop offering updates.
               </div>
             </div>
           </div>
