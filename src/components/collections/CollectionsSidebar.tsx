@@ -5,7 +5,7 @@ import { useRequestStore } from "@/stores/request";
 import { fromCollectionRequest } from "@/lib/requestFidelity";
 import { useGrpcStore } from "@/stores/grpcStore";
 import { useNavStore } from "@/stores/nav";
-import { saveCollection, grpcLoadProtoById, deleteYamlFile, clearRootYamlFiles } from "@/lib/tauri";
+import { saveCollection, grpcLoadProtoById, deleteYamlFile, clearRootYamlFiles, createCollectionsDir } from "@/lib/tauri";
 import { pushCollection } from "@/lib/sync";
 import { useUserStore } from "@/stores/user";
 import { methodColor, methodBg } from "@/lib/methods";
@@ -291,7 +291,7 @@ export function CollectionsSidebar() {
   const { navigate } = useNavStore();
   const [search, setSearch] = useState("");
   const [roots, setRoots] = useState<string[]>(() => getRoots());
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [failedRoots, setFailedRoots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [runnerOpen, setRunnerOpen] = useState(false);
@@ -319,13 +319,14 @@ export function CollectionsSidebar() {
   const reloadAll = useCallback(async (list: string[]) => {
     if (list.length === 0) {
       useCollectionsStore.setState({ collections: [] });
+      setFailedRoots([]);
       return;
     }
     setLoading(true);
-    setLoadError(null);
+    setFailedRoots([]);
     const { collections, failed } = await loadAllRoots();
     useCollectionsStore.setState({ collections });
-    setLoadError(failed.length > 0 ? `Could not read: ${failed.join(", ")}` : null);
+    setFailedRoots(failed);
     setLoading(false);
   }, []);
 
@@ -356,6 +357,19 @@ export function CollectionsSidebar() {
 
   function handleRemoveRoot(d: string) {
     setRoots(removeRoot(d));
+  }
+
+  /**
+   * Una carpeta borrada o movida no debe dejar solo un error rojo sin salida:
+   * se puede volver a crear vacia o dejar de abrirla.
+   */
+  async function handleRecreateRoot(d: string) {
+    try {
+      await createCollectionsDir(d);
+      await reloadAll(roots);
+    } catch (e) {
+      toast.error(`Could not create ${d}: ${e}`);
+    }
   }
 
   async function handleDelete(col: Collection) {
@@ -437,7 +451,7 @@ export function CollectionsSidebar() {
       await persist(updated);
       setEditingDescId(null);
     } catch (e) {
-      setLoadError(String(e));
+      toast.error(`Could not save the description: ${e}`);
     } finally {
       setSavingDesc(false);
     }
@@ -1038,16 +1052,28 @@ export function CollectionsSidebar() {
           </div>
 
           {/* Error */}
-          {loadError && (
-            <div className="mx-3 mt-3 rounded p-2 text-[11px]"
+          {failedRoots.map(root => (
+            <div key={root} className="mx-3 mt-3 rounded p-2 text-[11px] flex flex-col gap-1.5"
               style={{ background: "#EF444415", border: "1px solid #EF444430", color: "#EF4444" }}>
-              {loadError}
+              <span className="break-all">Folder not found: {root}</span>
+              <div className="flex gap-1.5">
+                <button onClick={() => handleRecreateRoot(root)}
+                  className="px-2 py-0.5 rounded hover:opacity-80 transition-opacity"
+                  style={{ background: "var(--color-input)", color: "var(--color-fg)", border: "1px solid var(--color-border)" }}>
+                  Create it
+                </button>
+                <button onClick={() => handleRemoveRoot(root)}
+                  className="px-2 py-0.5 rounded hover:opacity-80 transition-opacity"
+                  style={{ background: "var(--color-input)", color: "var(--color-fg)", border: "1px solid var(--color-border)" }}>
+                  Stop opening it
+                </button>
+              </div>
             </div>
-          )}
+          ))}
 
           {/* List */}
           <div className="flex-1 overflow-y-auto py-2">
-            {filtered.length === 0 && !loading && (
+            {filtered.length === 0 && !loading && (roots.length === 0 || failedRoots.length < roots.length) && (
               <div className="flex flex-col items-center justify-center gap-2 py-8 px-4">
                 <p className="text-[11px] text-center" style={{ color: "var(--color-fg-4)" }}>
                   {search ? "No matches found" : "No .yaml files in this folder"}

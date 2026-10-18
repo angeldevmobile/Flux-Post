@@ -63,6 +63,7 @@ pub fn run() {
             commands::ai::analyze_test_failures,
             commands::ai::ai_quota,
             commands::collections::load_collections,
+            commands::collections::create_collections_dir,
             commands::collections::save_collection,
             commands::websocket::ws_connect,
             commands::websocket::ws_send,

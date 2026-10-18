@@ -1026,6 +1026,13 @@ pub fn load_collections(dir: String) -> Result<Vec<CollectionOut>, String> {
     Ok(collections)
 }
 
+/// Vuelve a crear una carpeta de colecciones que ya no existe (borrada o
+/// movida), para que la barra lateral pueda recuperarse sin pedir otra ruta.
+#[tauri::command]
+pub fn create_collections_dir(dir: String) -> Result<(), String> {
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn save_collection(dir: String, collection: CollectionOut) -> Result<(), String> {
     // id may be "Group/stem" for grouped collections: use only the last segment as filename

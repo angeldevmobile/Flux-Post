@@ -91,7 +91,9 @@ Deno.serve(async (req: Request) => {
   const body = await upstream.text();
 
   // ── 2. Contar la visita. Nunca puede afectar a la respuesta ──
-  try {
+  // Solo GET: el updater de Tauri no manda otra cosa, y un OPTIONS o HEAD de
+  // un curl o de un escáner contaría como una instalación activa.
+  if (req.method === "GET") try {
     const url = new URL(req.url);
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

@@ -98,6 +98,10 @@ export function AnalyticsConsent() {
             "API keys, tokens or cookies",
             "Collection, environment or variable names",
           ]} />
+          <span className="text-[11px] leading-relaxed" style={{ color: "var(--color-fg-4)" }}>
+            Change this any time in Settings &rarr; Data &amp; Privacy. Crash reports are already
+            on and get redacted before sending. Same place to turn those off.
+          </span>
         </div>
 
         {/* Mismo tamaño, misma tipografía, mismo alto. Solo el fondo distingue
@@ -114,13 +118,6 @@ export function AnalyticsConsent() {
             style={{ height: 32, background: "var(--color-accent)", color: "#fff" }}>
             Turn it on
           </button>
-        </div>
-
-        <div className="px-5 pb-4 -mt-1">
-          <span className="text-[11px] leading-relaxed" style={{ color: "var(--color-fg-4)" }}>
-            Change this any time in Settings &rarr; Data &amp; Privacy. Crash reports are already
-            on and get redacted before sending. Same place to turn those off.
-          </span>
         </div>
       </div>
     </div>

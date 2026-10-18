@@ -250,6 +250,10 @@ export async function loadCollections(dir: string): Promise<Collection[]> {
   return invoke("load_collections", { dir });
 }
 
+export async function createCollectionsDir(dir: string): Promise<void> {
+  return invoke("create_collections_dir", { dir });
+}
+
 export async function saveCollection(dir: string, collection: Collection): Promise<void> {
   return invoke("save_collection", { dir, collection });
 }

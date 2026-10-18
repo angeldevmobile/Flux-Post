@@ -63,11 +63,13 @@ export function WhatsNewDialog({ onNavigate }: Props) {
             style={{ height: 32, color: "var(--color-fg-3)" }}>
             Dismiss
           </button>
-          <button onClick={() => { dismiss(); onNavigate("settings"); }}
-            className="px-3.5 rounded-md text-[12px] font-medium transition-opacity hover:opacity-90"
-            style={{ height: 32, background: "var(--color-accent)", color: "#fff" }}>
-            Open AI settings
-          </button>
+          {release.action && (
+            <button onClick={() => { dismiss(); onNavigate(release.action!.route); }}
+              className="px-3.5 rounded-md text-[12px] font-medium transition-opacity hover:opacity-90"
+              style={{ height: 32, background: "var(--color-accent)", color: "#fff" }}>
+              {release.action.label}
+            </button>
+          )}
         </div>
       </div>
     </div>

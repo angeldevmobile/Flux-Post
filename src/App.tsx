@@ -26,14 +26,14 @@ import { useUserStore } from "@/stores/user";
 import { useSettingsStore } from "@/stores/settings";
 import { loadSession, saveSession, clearSessionDb, pruneHistory } from "@/lib/tauri";
 import { initCrashReporting, trackEvent, flushEvents } from "@/lib/analytics";
-import { checkForUpdates, installAndRestart } from "@/lib/updater";
+import { checkForUpdates, installAndRestart, type Update } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
 import { useNavStore } from "@/stores/nav";
 import { isLocalMode, setLocalMode } from "@/lib/localMode";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
 
-function AppShell() {
+function AppShell({ update }: { update: Update | null }) {
   const [route, setRoute] = useState<Route>("requests");
   const [githubOpen, setGithubOpen] = useState(false);
   const tourSeen = useSettingsStore(s => s.tourSeen);
@@ -63,28 +63,24 @@ function AppShell() {
     trackEvent("route_view", { route });
   }, [route]);
 
-  // Check for updates 4s after mount. Non-blocking, silent on failure
+  // La comprobación se hace en App, también desde el login; aquí solo se avisa.
   useEffect(() => {
-    const t = setTimeout(async () => {
-      const update = await checkForUpdates();
-      if (!update) return;
-      toast(`v${update.version} available`, {
-        description: update.body ?? "A new version of Flux is ready.",
-        action: {
-          label: "Update & Restart",
-          onClick: () => {
-            // Cuánta gente acepta actualizar frente a cuánta lo ignora: sin
-            // esto no hay forma de saber si una release llega a la base.
-            trackEvent("update_installed", { to: update.version });
-            void flushEvents(true); // la app se reinicia justo después
-            installAndRestart(update);
-          },
+    if (!update) return;
+    toast(`v${update.version} available`, {
+      description: update.body ?? "A new version of Flux is ready.",
+      action: {
+        label: "Update & Restart",
+        onClick: () => {
+          // Cuánta gente acepta actualizar frente a cuánta lo ignora: sin
+          // esto no hay forma de saber si una release llega a la base.
+          trackEvent("update_installed", { to: update.version });
+          void flushEvents(true); // la app se reinicia justo después
+          installAndRestart(update);
         },
-        duration: Infinity,
-      });
-    }, 4000);
-    return () => clearTimeout(t);
-  }, []);
+      },
+      duration: Infinity,
+    });
+  }, [update]);
 
   // Re-open tour when tourSeen is reset to false (e.g. "Launch Tour" from Settings)
   useEffect(() => {
@@ -142,6 +138,18 @@ export default function App() {
    */
   const readyReported = useRef(false);
   const { setSession, clearSession } = useUserStore();
+  const [update, setUpdate] = useState<Update | null>(null);
+
+  // Se comprueba aquí y no en AppShell para que cuente también quien se queda
+  // en la pantalla de login: cada comprobación es la señal de instalaciones
+  // activas, y antes esas aperturas no se veían. 4 s después de arrancar para
+  // no competir con la carga inicial.
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      setUpdate(await checkForUpdates());
+    }, 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (screen === "loading" || readyReported.current) return;
@@ -297,5 +305,5 @@ export default function App() {
     );
   }
 
-  return <AppShell />;
+  return <AppShell update={update} />;
 }

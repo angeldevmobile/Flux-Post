@@ -7,11 +7,40 @@ export interface Release {
   points: string[];
   /** Muestra el panel de bienvenida al arrancar tras actualizar. */
   major?: boolean;
+  /**
+   * Botón principal del panel de bienvenida. Opcional: una versión cuyas
+   * novedades no tienen una pantalla a la que ir solo muestra "Dismiss".
+   */
+  action?: { label: string; route: "settings" | "requests" };
 }
 
 // Más reciente primero. Viaja dentro del binario a propósito: Flux es
 // offline-first y esto no debería depender de la red.
 export const RELEASES: Release[] = [
+  {
+    version: "0.3.1",
+    date: "2026-10-17",
+    title: "Automatic updates actually work now",
+    points: [
+      "Flux never had permission to check for updates, and the failure was silent, so no installation ever updated itself. From this version on, new releases arrive on their own. If you know someone on an older Flux, they need to download this one by hand once.",
+      "A collections folder that was moved or deleted no longer leaves just a red error: you can create it again or stop opening it.",
+      "The What's new panel showed the 0.2.1 notes to everyone on 0.3.0.",
+    ],
+  },
+  {
+    version: "0.3.0",
+    date: "2026-09-12",
+    title: "No account needed, and collections that live in your repo",
+    major: true,
+    points: [
+      "Flux opens without an account. Requests, collections, environments, scripts, tests, the mock server, load tests, gRPC, WebSocket and SSE are all local. Sign in later from Settings for cloud sync and the free AI tier.",
+      "Several collections folders can be open at once, so a collection can live inside the repository whose API it tests and be branched and reviewed with the code.",
+      "Auth, headers and scripts can be set once on a collection or folder, and every request inside inherits them. Click the shield next to it in the sidebar.",
+      "Right-click a collection, folder or request to rename, create, duplicate, move or delete it.",
+      "Heads up: a variable in the active environment now overrides a global of the same name, and the Tests screen now runs the tests inside folders too, so a suite that passed may start failing.",
+      "CLI: `--reporter junit`, `--env-file` and `--folder`, and chained collections (log in, capture the token, use it) now work in CI as they do in the app.",
+    ],
+  },
   {
     version: "0.2.1",
     date: "2026-09-05",
@@ -30,6 +59,7 @@ export const RELEASES: Release[] = [
     date: "2026-08-17",
     title: "Free AI tier, collections that keep everything, one assertion engine",
     major: true,
+    action: { label: "Open AI settings", route: "settings" },
     points: [
       "AI is now free to try: 100 actions a month, up to 20 a day, no API key and no setup. Your own key still works as before, unlimited and going straight from your machine to Anthropic.",
       "Collections now save the whole request: auth, query params, pre and post-request scripts, extractors, GraphQL and form bodies. Reopening a request gives back what you built.",

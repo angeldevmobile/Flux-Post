@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/): version
 
 ---
 
+## [0.3.1] - 2026-10-17
+
+**Automatic updates never worked, in any version until this one.** If you are on 0.3.0 or earlier, download 0.3.1 by hand once; from here on new releases arrive on their own.
+
+### Fixed
+- Flux never had permission to check for updates. Tauri 2 only lets the frontend call a plugin listed in the window's capabilities, and the updater and process plugins were registered in Rust but never granted, so every check failed and the empty `catch` around it reported "no update". No installation ever updated itself, and the update-check count used to measure active installs was empty for the same reason. The permissions are granted now, and a failed check is logged to the console instead of swallowed.
+- The update check now also runs on the sign-in screen. It used to start only once you were inside the app, so a launch that never got past the sign-in screen left no trace.
+- The update endpoint counted any request as an active installation, including an `OPTIONS` from `curl`. It now counts only `GET`, which is all the updater sends.
+- The What's new panel had no entry for 0.3.0, so everyone who updated to it was shown the 0.2.1 notes and never heard about running without an account, several collections folders or inherited auth. Both 0.3.0 and 0.3.1 are listed now.
+- The What's new panel always offered "Open AI settings", whatever the release was about. The button now only appears on releases that point somewhere, which today is only 0.2.0 and its free AI tier.
+- A collections folder that had been moved or deleted left only a red "Could not read" message with no way out. The sidebar now says the folder was not found and offers to create it again or stop opening it.
+- Saving a collection description that failed reported the error in the place reserved for folders that could not be read. It is a toast now.
+- The note under the telemetry question ("Change this any time in Settings...") sat below the buttons, outside the dialog's footer. It is above them now.
+---
+
 ## [0.3.0] - 2026-09-12
 
 Three changes alter behaviour you may be relying on. Everything else only adds.
