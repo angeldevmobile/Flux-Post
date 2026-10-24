@@ -25,6 +25,11 @@
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["flux"]
+      }
+    },
     "updater": {
       "endpoints": [
         "https://zmzfupygrhseljaxzyeb.supabase.co/functions/v1/app-update?v={{current_version}}&target={{target}}&arch={{arch}}",

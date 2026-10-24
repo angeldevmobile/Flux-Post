@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
  * fichero en `supabase/migrations/`, y se comparan como texto: al ser de ancho
  * fijo, el orden lexicografico coincide con el cronologico.
  */
-export const REQUIRED_SCHEMA_VERSION = "20260828000002";
+export const REQUIRED_SCHEMA_VERSION = "20261024000000";
 
 export type SchemaCheck =
   | { status: "ok" }

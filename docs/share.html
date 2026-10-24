@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shared collection · Flux</title>
+    <meta name="description" content="A Flux API collection shared with you. Open it in Flux to get your own copy." />
+    <!-- Un link compartido no es contenido publico: que no acabe en un buscador. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/png" sizes="128x128" href="icon-128.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Google Analytics 4. `page_location` sin el fragmento: el id del link va
+         ahi, y GA guardaria la URL entera. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCQF29NN2W"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ZCQF29NN2W', { page_location: location.origin + location.pathname });
+    </script>
+
+    <style>
+      .share-wrap { max-width: 760px; margin: 0 auto; padding: 48px 16px 80px; }
+      .share-kicker { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+      .share-title { font-size: 32px; font-weight: 800; letter-spacing: -0.6px; margin: 8px 0 6px; overflow-wrap: anywhere; }
+      .share-meta { font-size: 13px; color: var(--fg-4); }
+      .share-desc { font-size: 15px; color: var(--fg-3); margin-top: 12px; overflow-wrap: anywhere; }
+      .share-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 12px; }
+      .share-hint { font-size: 13px; color: var(--fg-4); }
+      .share-hint code, .share-note code { font-family: var(--mono); color: var(--fg-3); }
+      .share-tree { margin-top: 32px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); padding: 8px 0; }
+      .share-row { display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 13px; min-width: 0; }
+      .share-folder { color: var(--fg-2); font-weight: 600; }
+      .share-method { font-family: var(--mono); font-size: 11px; font-weight: 600; width: 58px; flex-shrink: 0; }
+      .share-name { color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+      .share-path { font-family: var(--mono); font-size: 12px; color: var(--fg-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+      .share-note { margin-top: 24px; font-size: 13px; color: var(--fg-4); line-height: 1.7; }
+      .share-error { margin-top: 24px; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); color: var(--fg-3); }
+      .share-error h2 { color: var(--fg); font-size: 18px; margin-bottom: 6px; }
+      @media (max-width: 640px) {
+        nav { padding: 0 16px; }
+        .share-title { font-size: 26px; }
+        .share-path { display: none; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <div class="nav-left">
+        <a href="index.html" class="nav-logo">Flux</a>
+      </div>
+      <a href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="share" class="btn btn-primary">Download Flux</a>
+    </nav>
+
+    <main class="share-wrap">
+      <div id="loading" class="share-meta">Loading the collection…</div>
+
+      <div id="error" class="share-error" hidden>
+        <h2>This link does not open</h2>
+        <p>It may have been revoked or expired, or it was copied incomplete. Ask whoever sent it for a new one.</p>
+      </div>
+
+      <section id="content" hidden>
+        <div class="share-kicker">Shared collection</div>
+        <h1 class="share-title" id="name"></h1>
+        <div class="share-meta" id="meta"></div>
+        <p class="share-desc" id="desc" hidden></p>
+
+        <div class="share-actions">
+          <a id="open" class="btn btn-primary" href="#">Open in Flux</a>
+          <button id="copy" class="btn btn-secondary" type="button">Copy link</button>
+          <a class="btn btn-secondary" href="https://github.com/angeldevmobile/Flux-Post/releases/latest" target="_blank" data-dl="share-body">Get Flux</a>
+        </div>
+        <p class="share-hint">
+          Nothing happens? Install Flux, then go to <code>Import → Link</code> and paste this page's address.
+        </p>
+
+        <div class="share-tree" id="tree"></div>
+
+        <p class="share-note">
+          You get your own copy. Edits on either side are not synced.
+          Credentials were replaced by variables like <code>{{API_TOKEN}}</code> before sharing:
+          set them in your environment.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        // Los mismos valores que la app (src/lib/supabase.ts). La anon key es
+        // publica: va dentro del binario. Lo que protege el link es que el id
+        // son 128 bits aleatorios y que la tabla no tiene ningun select abierto.
+        var SUPABASE_URL = "https://zmzfupygrhseljaxzyeb.supabase.co";
+        var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptemZ1cHlncmhzZWxqYXh6eWViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NzgyMzMsImV4cCI6MjA5NTI1NDIzM30.VgIxmqdOkpNowAF4MHaMT9gSV3fM72TNQQjBB3WLZ-Q";
+
+        var METHOD_COLORS = {
+          GET: "#22C55E", POST: "#F59E0B", PUT: "#3B82F6", PATCH: "#A855F7",
+          DELETE: "#EF4444", HEAD: "#71717A", OPTIONS: "#71717A", QUERY: "#06B6D4", GRPC: "#06B6D4"
+        };
+
+        var id = (location.hash || "").replace(/^#/, "").toLowerCase();
+        var $ = function (x) { return document.getElementById(x); };
+
+        function fail() {
+          $("loading").hidden = true;
+          $("error").hidden = false;
+        }
+
+        if (!/^[0-9a-f]{32}$/.test(id)) { fail(); return; }
+
+        function el(tag, cls, text) {
+          var n = document.createElement(tag);
+          if (cls) n.className = cls;
+          if (text != null) n.textContent = text;
+          return n;
+        }
+
+        function count(c) {
+          var n = (c.requests || []).length;
+          (c.folders || []).forEach(function (f) { n += count(f); });
+          return n;
+        }
+
+        function addRequests(tree, list, depth) {
+          (list || []).forEach(function (r) {
+            var row = el("div", "share-row");
+            row.style.paddingLeft = (16 + depth * 18) + "px";
+            var m = r.kind === "grpc" ? "GRPC" : (r.method || "GET");
+            var pill = el("span", "share-method", m);
+            pill.style.color = METHOD_COLORS[m] || "var(--fg-3)";
+            row.appendChild(pill);
+            row.appendChild(el("span", "share-name", r.name || "Untitled"));
+            var path = r.kind === "grpc" ? ((r.grpc && r.grpc.method) || "") : (r.path || "");
+            row.appendChild(el("span", "share-path", path));
+            tree.appendChild(row);
+          });
+        }
+
+        function addFolders(tree, list, depth) {
+          (list || []).forEach(function (f) {
+            var row = el("div", "share-row share-folder", "▸ " + (f.name || "Folder"));
+            row.style.paddingLeft = (16 + depth * 18) + "px";
+            tree.appendChild(row);
+            addFolders(tree, f.folders, depth + 1);
+            addRequests(tree, f.requests, depth + 1);
+          });
+        }
+
+        fetch(SUPABASE_URL + "/rest/v1/rpc/flux_get_shared_collection", {
+          method: "POST",
+          headers: { "apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_id: id })
+        })
+          .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+          .then(function (rows) {
+            var row = Array.isArray(rows) ? rows[0] : rows;
+            var col = row && row.data && row.data.collection;
+            if (!col) { fail(); return; }
+
+            $("name").textContent = row.name;
+            document.title = row.name + " · Flux";
+            var n = count(col);
+            var meta = n + " request" + (n === 1 ? "" : "s") +
+              " · shared " + new Date(row.created_at).toLocaleDateString();
+            if (row.expires_at) meta += " · expires " + new Date(row.expires_at).toLocaleDateString();
+            if (col.baseUrl) meta += " · " + col.baseUrl;
+            $("meta").textContent = meta;
+            if (col.description) { $("desc").textContent = col.description; $("desc").hidden = false; }
+
+            var tree = $("tree");
+            addFolders(tree, col.folders, 0);
+            addRequests(tree, col.requests, 0);
+            if (n === 0) tree.appendChild(el("div", "share-row share-path", "This collection has no requests yet."));
+
+            $("open").href = "flux://share/" + id;
+            $("copy").addEventListener("click", function () {
+              navigator.clipboard.writeText(location.href).then(function () {
+                $("copy").textContent = "Copied";
+                setTimeout(function () { $("copy").textContent = "Copy link"; }, 1500);
+              });
+            });
+
+            $("loading").hidden = true;
+            $("content").hidden = false;
+          })
+          .catch(fail);
+      })();
+    </script>
+  </body>
+
+</html>

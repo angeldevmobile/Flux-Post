@@ -1,18 +1,30 @@
-import { useState, useRef } from "react";
-import { X, Upload, FileJson, Terminal } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { X, Upload, FileJson, Terminal, Link2, Loader2 } from "lucide-react";
 import { importPostman, importOpenApi, importCurl, detectFormat, type ImportFormat } from "@/lib/importers";
+import { fetchShare, parseShareId, toImportable } from "@/lib/share";
+import { trackEvent } from "@/lib/analytics";
 import { useCollectionsStore } from "@/stores/collections";
 import type { CollectionRequest, CollectionFolder, Collection } from "@/stores/collections";
+
+type Tab = ImportFormat | "link";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  /**
+   * Guarda la coleccion importada en disco. Sin esto solo entraba al store y
+   * se perdia al recargar si nadie la editaba antes.
+   */
+  onImport: (col: Collection) => Promise<void>;
+  /** Abre directamente en la pestaña de link con este texto, desde `flux://share/…`. */
+  initialLink?: string | null;
 }
 
-const TABS: { id: ImportFormat | "curl"; label: string; icon: React.ReactNode; hint: string }[] = [
+const TABS: { id: Tab; label: string; icon: React.ReactNode; hint: string }[] = [
   { id: "postman", label: "Postman v2.1", icon: <FileJson size={13} />, hint: "Paste or drop a Postman Collection JSON file" },
   { id: "openapi", label: "OpenAPI 3.0", icon: <FileJson size={13} />, hint: "Paste or drop an OpenAPI 3.0 JSON spec" },
   { id: "curl", label: "cURL", icon: <Terminal size={13} />, hint: "Paste a cURL command" },
+  { id: "link", label: "Link", icon: <Link2 size={13} />, hint: "Paste a Flux share link. You get your own copy: edits do not sync back." },
 ];
 
 function countRequests(col: Collection): number {
@@ -21,12 +33,22 @@ function countRequests(col: Collection): number {
   return col.requests.length + walk(col.folders);
 }
 
-export function ImportModal({ open, onClose }: Props) {
-  const [tab, setTab] = useState<ImportFormat>("postman");
+export function ImportModal({ open, onClose, onImport, initialLink }: Props) {
+  const [tab, setTab] = useState<Tab>("postman");
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open && initialLink) {
+      setTab("link");
+      setText(initialLink);
+      setError(null);
+      setSuccess(null);
+    }
+  }, [open, initialLink]);
 
   if (!open) return null;
 
@@ -42,10 +64,38 @@ export function ImportModal({ open, onClose }: Props) {
     if (f) handleFile(f);
   }
 
-  function handleImport() {
+  async function save(col: Collection) {
+    await onImport(col);
+    setSuccess(`Imported "${col.name}": ${countRequests(col)} requests`);
+    setText("");
+  }
+
+  async function handleLink() {
+    const id = parseShareId(text);
+    if (!id) { setError("That does not look like a Flux share link."); return; }
+    setBusy(true);
+    try {
+      const shared = await fetchShare(id);
+      if (!shared) {
+        setError("This link does not exist, was revoked, or has expired.");
+        return;
+      }
+      const existing = useCollectionsStore.getState().collections.map(c => c.id);
+      const col = toImportable({ ...shared.collection, name: shared.name }, existing);
+      await save(col);
+      trackEvent("share_open", { requests: countRequests(col) });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleImport() {
     setError(null);
     setSuccess(null);
-    if (!text.trim()) { setError("Paste or drop content first."); return; }
+    if (!text.trim()) { setError(tab === "link" ? "Paste a link first." : "Paste or drop content first."); return; }
+    if (tab === "link") { await handleLink(); return; }
 
     try {
       const fmt = tab === "curl" ? "curl" : detectFormat(text) === tab ? tab : tab;
@@ -64,9 +114,7 @@ export function ImportModal({ open, onClose }: Props) {
       } else {
         col = importPostman(JSON.parse(text));
       }
-      useCollectionsStore.getState().addCollection(col);
-      setSuccess(`Imported "${col.name}": ${countRequests(col)} requests`);
-      setText("");
+      await save(col);
     } catch (e) {
       setError(String(e));
     }
@@ -101,7 +149,7 @@ export function ImportModal({ open, onClose }: Props) {
           {TABS.map(t => (
             <button
               key={t.id}
-              onClick={() => { setTab(t.id as ImportFormat); setError(null); setSuccess(null); }}
+              onClick={() => { setTab(t.id); setError(null); setSuccess(null); }}
               className="flex items-center gap-1.5 px-3 text-[12px] transition-colors rounded-t"
               style={{
                 height: 32, paddingBottom: 2,
@@ -129,7 +177,10 @@ export function ImportModal({ open, onClose }: Props) {
             <textarea
               value={text}
               onChange={e => { setText(e.target.value); setError(null); setSuccess(null); }}
-              placeholder={tab === "curl" ? "curl -X GET https://api.example.com/users -H ..." : "Paste JSON here or drag & drop a file..."}
+              placeholder={
+                tab === "curl" ? "curl -X GET https://api.example.com/users -H ..."
+                : tab === "link" ? "https://fluxapi.dev/share.html#…"
+                : "Paste JSON here or drag & drop a file..."}
               spellCheck={false}
               className="flex-1 w-full p-3 text-[11px] rounded-lg resize-none bg-transparent"
               style={{ fontFamily: "Geist Mono, monospace", color: "var(--color-fg-2)", outline: "none", minHeight: 200 }}
@@ -137,21 +188,23 @@ export function ImportModal({ open, onClose }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            {tab !== "link" && <button
               onClick={() => fileRef.current?.click()}
               className="flex items-center gap-1.5 px-3 rounded text-[12px] transition-opacity hover:opacity-80"
               style={{ height: 30, background: "var(--color-card)", border: "1px solid var(--color-border)", color: "var(--color-fg-2)" }}>
               <Upload size={12} /> Browse file
-            </button>
+            </button>}
             <input ref={fileRef} type="file" accept=".json,.yaml,.yml" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
 
             <div className="flex-1" />
 
             <button
-              onClick={handleImport}
-              className="flex items-center justify-center gap-1.5 px-4 rounded font-semibold text-white transition-opacity hover:opacity-90"
+              onClick={() => void handleImport()}
+              disabled={busy}
+              className="flex items-center justify-center gap-1.5 px-4 rounded font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ height: 30, fontSize: 12, background: "var(--color-accent)" }}>
+              {busy && <Loader2 size={12} className="animate-spin" />}
               Import
             </button>
           </div>

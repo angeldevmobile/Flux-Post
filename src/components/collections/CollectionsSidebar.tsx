@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch, Trash2, X, FileText, Shield } from "lucide-react";
+import { ChevronRight, Plus, Search, FolderOpen, RefreshCw, Folder, Upload, Download, Play, Network, GitBranch, Trash2, X, FileText, Shield, Link2 } from "lucide-react";
 import { useCollectionsStore } from "@/stores/collections";
 import { useRequestStore } from "@/stores/request";
 import { fromCollectionRequest } from "@/lib/requestFidelity";
@@ -13,6 +13,8 @@ import { exportPostman, exportOpenAPI } from "@/lib/exporters";
 import { exportDataAsJson } from "@/lib/tauri";
 import { toast } from "sonner";
 import { ImportModal } from "./ImportModal";
+import { ShareModal } from "./ShareModal";
+import { toImportable } from "@/lib/share";
 import { CollectionRunner } from "./CollectionRunner";
 import { GitHubSyncModal } from "./GitHubSyncModal";
 import { InheritanceModal } from "./InheritanceModal";
@@ -288,12 +290,14 @@ export function CollectionsSidebar() {
   const { collections, activeRequestId, setActiveRequest, toggleCollection, toggleFolder } = useCollectionsStore();
   const resetRequest = useRequestStore(s => s.reset);
   const { setProtoId, setServices, setEndpoint, setSelectedService, setSelectedMethod, setPayload, setMetadata } = useGrpcStore();
-  const { navigate } = useNavStore();
+  const { navigate, pendingShareId, clearShare } = useNavStore();
   const [search, setSearch] = useState("");
   const [roots, setRoots] = useState<string[]>(() => getRoots());
   const [failedRoots, setFailedRoots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [importLink, setImportLink] = useState<string | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
   const [runnerOpen, setRunnerOpen] = useState(false);
   const [exportMenuId, setExportMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -333,6 +337,33 @@ export function CollectionsSidebar() {
   useEffect(() => {
     reloadAll(roots);
   }, [roots, reloadAll]);
+
+  // Un `flux://share/…` que llego mientras la app estaba abierta o la arranco.
+  useEffect(() => {
+    if (!pendingShareId) return;
+    setImportLink(pendingShareId);
+    setImportOpen(true);
+    clearShare();
+  }, [pendingShareId, clearShare]);
+
+  /**
+   * Guarda una coleccion importada en la primera raiz.
+   *
+   * Si su id ya existe se le da otro: el id es el nombre del fichero, y
+   * reusarlo sobrescribiria una coleccion que ya esta en disco.
+   */
+  async function handleImported(col: Collection) {
+    const root = roots[0];
+    if (!root) throw new Error("Open a collections folder first, then import.");
+    const loaded = useCollectionsStore.getState().collections;
+    const free = loaded.some(c => c.id === col.id) ? toImportable(col, loaded.map(c => c.id)) : col;
+    await saveCollection(root, { ...free, rootDir: root });
+    await reloadAll(roots);
+    if (useUserStore.getState().user?.id) {
+      const saved = useCollectionsStore.getState().collections.find(c => c.id === free.id);
+      if (saved) void pushCollection(saved);
+    }
+  }
 
   /**
    * Ctrl+Shift+N. La pantalla de ajustes lo anunciaba desde siempre y no habia
@@ -607,6 +638,7 @@ export function CollectionsSidebar() {
       { label: "New request", onClick: () => createRequest(col.id, null) },
       { label: "New folder", onClick: () => createFolder(col.id, null) },
       { label: "Inherited settings…", onClick: () => setInheritTarget({ colId: col.id, folderId: null }) },
+      { label: "Share link…", onClick: () => setShareId(col.id) },
       {
         label: "Delete collection", danger: true, separated: true,
         onClick: () => confirmIn(x, y, `Delete "${col.name}" and its file`, () => {
@@ -782,6 +814,12 @@ export function CollectionsSidebar() {
               className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
               style={{ width: 18, height: 18, color: col.description ? "var(--color-accent)" : "var(--color-fg-3)", flexShrink: 0 }}>
               <FileText size={11} />
+            </button>
+            <button onClick={e => { e.stopPropagation(); setShareId(col.id); setExportMenuId(null); }}
+              title="Share a link to a copy of this collection"
+              className="flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 transition-opacity"
+              style={{ width: 18, height: 18, color: "var(--color-fg-3)", flexShrink: 0 }}>
+              <Link2 size={11} />
             </button>
             <button onClick={e => { e.stopPropagation(); setExportMenuId(exportMenuId === col.id ? null : col.id); }}
               title="Export collection"
@@ -968,7 +1006,16 @@ export function CollectionsSidebar() {
         <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />
       )}
 
-      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <ImportModal
+        open={importOpen}
+        onClose={() => { setImportOpen(false); setImportLink(null); }}
+        onImport={handleImported}
+        initialLink={importLink}
+      />
+      <ShareModal
+        collection={shareId ? authoritative(shareId) ?? null : null}
+        onClose={() => setShareId(null)}
+      />
       <CollectionRunner open={runnerOpen} onClose={() => setRunnerOpen(false)} />
       <GitHubSyncModal open={githubOpen} onClose={() => setGithubOpen(false)} collectionsDir={roots[0] ?? null} onReload={() => reloadAll(roots)} />
       {inheritTarget && (() => {

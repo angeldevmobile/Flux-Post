@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/): version
 
 ---
 
+## [Unreleased]
+
+### Added
+- A collection can be shared by link. "Share link…" in the collection's right-click menu, or the link icon next to it, creates a read-only snapshot at `fluxapi.dev/share.html#…` that anyone can open without an account, and "Open in Flux" on that page imports it through a `flux://share/…` link. It is a copy, not a live collection: later edits are not sent and nothing the other person changes comes back. Before uploading, every literal credential in auth, sensitive headers, query params and gRPC metadata is replaced by a `{{VARIABLE}}`, and the dialog lists each one; bodies and scripts are sent as they are, and the dialog says so when there are any. Environments are never included. Links can expire after 7 or 30 days, can be revoked, and show how many times they were opened. Creating a link needs an account; opening one does not.
+- Import has a Link tab that accepts a share link, the `flux://` address or the bare id.
+
+### Changed
+- Only one Flux window runs at a time. Opening Flux again, or clicking a `flux://` link, focuses the window that is already open instead of starting a second copy against the same local database.
+
+### Fixed
+- Importing from Postman, OpenAPI or cURL never wrote the collection to disk. It only lived in memory, so it disappeared on the next launch unless something in it had been edited first. Imports are saved to the first collections folder now, under a new file name if one with the same name is already open.
+---
+
 ## [0.3.1] - 2026-10-17
 
 **Automatic updates never worked, in any version until this one.** If you are on 0.3.0 or earlier, download 0.3.1 by hand once; from here on new releases arrive on their own.

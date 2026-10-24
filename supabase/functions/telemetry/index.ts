@@ -69,6 +69,8 @@ const ALLOWED_TYPES = new Set([
   "ai_action",
   "sync_run",
   "update_installed",
+  "share_create",
+  "share_open",
 ]);
 
 interface Incoming {

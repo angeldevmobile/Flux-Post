@@ -30,6 +30,7 @@ import { checkForUpdates, installAndRestart, type Update } from "@/lib/updater";
 import { syncOnLogin, stopSettingsSync, stopEnvironmentsSync } from "@/lib/sync";
 import { useNavStore } from "@/stores/nav";
 import { isLocalMode, setLocalMode } from "@/lib/localMode";
+import { initDeepLinks } from "@/lib/deepLink";
 
 type AuthScreen = "loading" | "login" | "signup" | "app";
 
@@ -161,6 +162,9 @@ export default function App() {
 
   useEffect(() => {
     initCrashReporting();
+    // Aqui y no en AppShell: un link que arranca Flux en la pantalla de login
+    // tiene que quedar esperando hasta que la barra lateral exista.
+    void initDeepLinks();
     trackEvent("app_open");
 
     async function restoreSession() {

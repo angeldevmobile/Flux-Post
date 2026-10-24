@@ -23,6 +23,16 @@ pub fn run() {
     let grpc_streams = GrpcStreams::new();
 
     tauri::Builder::default()
+        // Primero de todos: si ya hay un Flux abierto, este proceso le pasa sus
+        // argumentos (un `flux://share/…`, con la feature `deep-link`) y sale
+        // antes de abrir otra ventana y otra conexion a la misma SQLite.
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.unminimize();
+                let _ = w.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
@@ -41,6 +51,15 @@ pub fn run() {
                 .expect("failed to open SQLite");
             init_db(&conn).expect("failed to init DB");
             app.manage(Db(Mutex::new(conn)));
+
+            // El instalador registra `flux://` en Windows, macOS y los paquetes
+            // de Linux. En desarrollo y en el AppImage no hay instalador, asi
+            // que se registra al arrancar.
+            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let _ = app.deep_link().register_all();
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
